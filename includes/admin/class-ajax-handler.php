@@ -16,6 +16,7 @@ use Marketing_Analytics_MCP\Credentials\Encryption;
 use Marketing_Analytics_MCP\Credentials\Connection_Tester;
 use Marketing_Analytics_MCP\Credentials\Credential_Manager;
 use Marketing_Analytics_MCP\Credentials\OAuth_Handler;
+use Marketing_Analytics_MCP\Licensing\License_Manager;
 use Marketing_Analytics_MCP\Notifications\Notification_Manager;
 use Marketing_Analytics_MCP\Utils\Logger;
 use Marketing_Analytics_MCP\Utils\Permission_Manager;
@@ -53,10 +54,18 @@ class Ajax_Handler {
 		add_action( 'wp_ajax_marketing_analytics_test_dataforseo_connection', array( $this, 'test_dataforseo_connection' ) );
 		add_action( 'wp_ajax_marketing_analytics_get_dataforseo_balance', array( $this, 'get_dataforseo_balance' ) );
 
+		// Dashboard widget refresh
+		add_action( 'wp_ajax_marketing_analytics_mcp_refresh_widget', array( $this, 'handle_refresh_widget_data' ) );
+
 		// Notification actions
 		add_action( 'wp_ajax_marketing_analytics_test_slack', array( $this, 'test_slack' ) );
 		add_action( 'wp_ajax_marketing_analytics_test_whatsapp', array( $this, 'test_whatsapp' ) );
 		add_action( 'admin_post_marketing_analytics_save_notification_settings', array( $this, 'save_notification_settings' ) );
+
+		// License actions
+		add_action( 'wp_ajax_marketing_analytics_mcp_activate_license', array( $this, 'activate_license' ) );
+		add_action( 'wp_ajax_marketing_analytics_mcp_deactivate_license', array( $this, 'deactivate_license' ) );
+		add_action( 'wp_ajax_marketing_analytics_mcp_validate_license', array( $this, 'validate_license' ) );
 	}
 
 	/**
@@ -1145,6 +1154,84 @@ class Ajax_Handler {
 	}
 
 	/**
+	 * Handle dashboard widget data refresh
+	 */
+	public function handle_refresh_widget_data() {
+		// Check nonce
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'marketing-analytics-chat-admin' ) ) {
+			wp_send_json_error(
+				array(
+					'message' => 'Security check failed.',
+				)
+			);
+			return;
+		}
+
+		// Check permissions
+		if ( ! Permission_Manager::can_access_plugin() ) {
+			wp_send_json_error(
+				array(
+					'message' => 'Insufficient permissions.',
+				)
+			);
+			return;
+		}
+
+		$widget_data        = array();
+		$credential_manager = new Credential_Manager();
+
+		// Fetch GA4 metrics if connected
+		if ( $credential_manager->has_credentials( 'ga4' ) ) {
+			try {
+				$ga4_client              = new GA4_Client();
+				$widget_data['ga4']      = $ga4_client->run_report(
+					array( 'date' ),
+					array( 'sessions', 'activeUsers', 'screenPageViews' ),
+					array( 'date_range' => '7daysAgo' )
+				);
+			} catch ( \Exception $e ) {
+				$widget_data['ga4_error'] = $e->getMessage();
+			}
+		}
+
+		// Fetch GSC metrics if connected
+		if ( $credential_manager->has_credentials( 'gsc' ) ) {
+			try {
+				$gsc_client              = new GSC_Client();
+				$widget_data['gsc']      = $gsc_client->query_search_analytics(
+					array(
+						'start_date' => gmdate( 'Y-m-d', strtotime( '-7 days' ) ),
+						'end_date'   => gmdate( 'Y-m-d' ),
+					)
+				);
+			} catch ( \Exception $e ) {
+				$widget_data['gsc_error'] = $e->getMessage();
+			}
+		}
+
+		// Fetch Clarity metrics if connected
+		if ( $credential_manager->has_credentials( 'clarity' ) ) {
+			try {
+				$credentials              = $credential_manager->get_credentials( 'clarity' );
+				$clarity_client           = new Clarity_Client( $credentials['api_token'], $credentials['project_id'] );
+				$widget_data['clarity']   = $clarity_client->get_insights( 7 );
+			} catch ( \Exception $e ) {
+				$widget_data['clarity_error'] = $e->getMessage();
+			}
+		}
+
+		// Store in transient with 30 minute TTL
+		set_transient( 'marketing_analytics_widget_data', $widget_data, 30 * MINUTE_IN_SECONDS );
+
+		wp_send_json_success(
+			array(
+				'message' => 'Widget data refreshed successfully.',
+				'data'    => $widget_data,
+			)
+		);
+	}
+
+	/**
 	 * Test Slack notification
 	 */
 	public function test_slack() {
@@ -1318,5 +1405,79 @@ class Ajax_Handler {
 			)
 		);
 		exit;
+	}
+
+	/**
+	 * Activate a license key via AJAX
+	 */
+	public function activate_license() {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'marketing-analytics-chat-admin' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'marketing-analytics-chat' ) ) );
+			return;
+		}
+
+		if ( ! Permission_Manager::can_access_plugin() ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'marketing-analytics-chat' ) ) );
+			return;
+		}
+
+		$license_key = isset( $_POST['license_key'] ) ? sanitize_text_field( wp_unslash( $_POST['license_key'] ) ) : '';
+
+		$license_manager = new License_Manager();
+		$result          = $license_manager->activate( $license_key );
+
+		if ( $result['success'] ) {
+			wp_send_json_success( $result );
+		} else {
+			wp_send_json_error( $result );
+		}
+	}
+
+	/**
+	 * Deactivate the license via AJAX
+	 */
+	public function deactivate_license() {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'marketing-analytics-chat-admin' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'marketing-analytics-chat' ) ) );
+			return;
+		}
+
+		if ( ! Permission_Manager::can_access_plugin() ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'marketing-analytics-chat' ) ) );
+			return;
+		}
+
+		$license_manager = new License_Manager();
+		$result          = $license_manager->deactivate();
+
+		if ( $result['success'] ) {
+			wp_send_json_success( $result );
+		} else {
+			wp_send_json_error( $result );
+		}
+	}
+
+	/**
+	 * Validate the license via AJAX
+	 */
+	public function validate_license() {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'marketing-analytics-chat-admin' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'marketing-analytics-chat' ) ) );
+			return;
+		}
+
+		if ( ! Permission_Manager::can_access_plugin() ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'marketing-analytics-chat' ) ) );
+			return;
+		}
+
+		$license_manager = new License_Manager();
+		$result          = $license_manager->validate();
+
+		if ( $result['success'] ) {
+			wp_send_json_success( $result );
+		} else {
+			wp_send_json_error( $result );
+		}
 	}
 }

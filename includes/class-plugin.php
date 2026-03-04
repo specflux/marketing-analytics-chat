@@ -77,6 +77,7 @@ class Plugin {
 		$this->loader->add_action( 'admin_menu', $admin, 'add_admin_menu' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $admin, 'enqueue_scripts' );
+		$this->loader->add_action( 'wp_dashboard_setup', $admin, 'register_dashboard_widget' );
 	}
 
 	/**
@@ -121,5 +122,14 @@ class Plugin {
 	 */
 	public function run() {
 		$this->loader->run();
+
+		/**
+		 * Fires after the free plugin is fully loaded.
+		 *
+		 * Pro add-on and third-party plugins can hook here for initialization.
+		 *
+		 * @param Plugin $this The main plugin instance.
+		 */
+		do_action( 'marketing_analytics_mcp_loaded', $this );
 	}
 }

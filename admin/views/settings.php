@@ -102,7 +102,7 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'marketing_analyti
 		<a href="?page=marketing-analytics-chat-settings&tab=google-api" class="nav-tab		                                                                                <?php echo esc_attr( $active_tab === 'google-api' ? 'nav-tab-active' : '' ); ?>">
 			<?php esc_html_e( 'Google API', 'marketing-analytics-chat' ); ?>
 			<?php if ( $has_oauth_credentials ) : ?>
-				<span class="dashicons dashicons-yes-alt" style="color: #46b450; font-size: 14px; margin-left: 5px;"></span>
+				<span class="dashicons dashicons-yes-alt" style="color: #00a32a; font-size: 14px; margin-left: 5px;"></span>
 			<?php endif; ?>
 		</a>
 		<a href="?page=marketing-analytics-chat-settings&tab=cache" class="nav-tab		                                                                           <?php echo esc_attr( $active_tab === 'cache' ? 'nav-tab-active' : '' ); ?>">
@@ -113,6 +113,20 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'marketing_analyti
 		</a>
 		<a href="?page=marketing-analytics-chat-settings&tab=access-control" class="nav-tab		                                                                                    <?php echo esc_attr( $active_tab === 'access-control' ? 'nav-tab-active' : '' ); ?>">
 			<?php esc_html_e( 'Access Control', 'marketing-analytics-chat' ); ?>
+		</a>
+		<a href="?page=marketing-analytics-chat-settings&tab=license" class="nav-tab		                                                                              <?php echo esc_attr( $active_tab === 'license' ? 'nav-tab-active' : '' ); ?>">
+			<?php esc_html_e( 'License', 'marketing-analytics-chat' ); ?>
+			<?php
+			if ( class_exists( 'Marketing_Analytics_MCP\Licensing\License_Manager' ) ) {
+				$license_mgr  = new Marketing_Analytics_MCP\Licensing\License_Manager();
+				$license_info = $license_mgr->get_license_data();
+				if ( ! empty( $license_info['license_key'] ) && 'active' === ( $license_info['status'] ?? '' ) ) :
+					?>
+				<span class="dashicons dashicons-yes-alt" style="color: #00a32a; font-size: 14px; margin-left: 5px;"></span>
+					<?php
+			endif;
+			}
+			?>
 		</a>
 	</h2>
 
@@ -447,7 +461,7 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'marketing_analyti
 				<?php if ( $has_oauth_credentials ) : ?>
 						<div class="notice notice-success inline" style="margin: 20px 0;">
 							<p>
-								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<span class="dashicons dashicons-yes-alt" style="color: #00a32a;"></span>
 								<strong><?php esc_html_e( 'Credentials Configured', 'marketing-analytics-chat' ); ?></strong> -
 								<?php esc_html_e( 'Your Google OAuth credentials are saved. You can now connect GA4 and GSC from the Connections page.', 'marketing-analytics-chat' ); ?>
 							</p>
@@ -812,7 +826,7 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'marketing_analyti
 											</div>
 											<div class="validation-feedback"></div>
 							<?php if ( $has_oauth_credentials ) : ?>
-												<p class="description" style="color: #46b450;">
+												<p class="description" style="color: #00a32a;">
 													<span class="dashicons dashicons-yes-alt"></span>
 													<?php esc_html_e( 'Secret saved. Leave blank to keep current, or enter new to update.', 'marketing-analytics-chat' ); ?>
 												</p>
@@ -1070,9 +1084,9 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'marketing_analyti
 							<th scope="row"><?php esc_html_e( 'Sodium Extension', 'marketing-analytics-chat' ); ?></th>
 							<td>
 							<?php if ( extension_loaded( 'sodium' ) ) : ?>
-									<span style="color: #46b450;"><span class="dashicons dashicons-yes-alt"></span><?php esc_html_e( 'Installed', 'marketing-analytics-chat' ); ?></span>
+									<span style="color: #00a32a;"><span class="dashicons dashicons-yes-alt"></span><?php esc_html_e( 'Installed', 'marketing-analytics-chat' ); ?></span>
 								<?php else : ?>
-									<span style="color: #dc3232;"><span class="dashicons dashicons-warning"></span><?php esc_html_e( 'Not installed (required for credential encryption)', 'marketing-analytics-chat' ); ?></span>
+									<span style="color: #d63638;"><span class="dashicons dashicons-warning"></span><?php esc_html_e( 'Not installed (required for credential encryption)', 'marketing-analytics-chat' ); ?></span>
 								<?php endif; ?>
 							</td>
 						</tr>
@@ -1151,6 +1165,10 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'marketing_analyti
 					</p>
 				</form>
 						<?php
+				break;
+
+			case 'license':
+				require_once MARKETING_ANALYTICS_MCP_PATH . 'admin/views/settings/license.php';
 				break;
 		}
 		?>

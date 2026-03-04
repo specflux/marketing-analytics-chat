@@ -69,6 +69,12 @@ class Abilities_Registrar {
 		$cross_platform_abilities = new Cross_Platform_Abilities();
 		$cross_platform_abilities->register();
 
+		// Register WooCommerce abilities (only if WooCommerce is active)
+		if ( class_exists( 'WooCommerce' ) ) {
+			$woo_abilities = new WooCommerce_Abilities();
+			$woo_abilities->register();
+		}
+
 		// Register prompts
 		$prompts = new Prompts();
 		$prompts->register();
@@ -78,5 +84,12 @@ class Abilities_Registrar {
 			$quickwins_abilities = new QuickWins_Abilities();
 			$quickwins_abilities->register_abilities();
 		}
+
+		/**
+		 * Allow pro add-on and third-party plugins to register additional abilities.
+		 *
+		 * @param Abilities_Registrar $this The abilities registrar instance.
+		 */
+		do_action( 'marketing_analytics_mcp_register_pro_abilities', $this );
 	}
 }
