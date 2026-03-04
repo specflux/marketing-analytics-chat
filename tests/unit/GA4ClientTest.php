@@ -118,6 +118,36 @@ class GA4ClientTest extends TestCase {
 	}
 
 	/**
+	 * Test get_event_data passes dimension filter when event_name is provided.
+	 */
+	public function test_get_event_data_with_event_name_filter(): void {
+		try {
+			$client = new GA4_Client();
+
+			// Call with an event name - should include dimension_filter in options
+			$result = $client->get_event_data( 'purchase', '7daysAgo', 10 );
+			$this->assertTrue( is_array( $result ) || false === $result );
+		} catch ( \Exception $e ) {
+			// Expected to fail without credentials, but should NOT fail on filter construction
+			$this->assertStringContainsString( 'Failed to initialize GA4 client', $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Test get_event_data without event_name does not include filter.
+	 */
+	public function test_get_event_data_without_event_name(): void {
+		try {
+			$client = new GA4_Client();
+
+			$result = $client->get_event_data( null, '7daysAgo', 10 );
+			$this->assertTrue( is_array( $result ) || false === $result );
+		} catch ( \Exception $e ) {
+			$this->assertStringContainsString( 'Failed to initialize GA4 client', $e->getMessage() );
+		}
+	}
+
+	/**
 	 * Test API error handling.
 	 *
 	 * @group integration

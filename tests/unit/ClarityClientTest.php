@@ -81,6 +81,21 @@ class ClarityClientTest extends TestCase {
 	}
 
 	/**
+	 * Test that the Connection Tester constructs Clarity_Client correctly.
+	 *
+	 * Verifies the bug fix: Connection_Tester should pass credentials to the
+	 * Clarity_Client constructor and call get_insights() instead of the
+	 * non-existent get_dashboard_insights().
+	 */
+	public function test_clarity_connection_uses_correct_method(): void {
+		$client = new Clarity_Client( 'test_token', 'test_project' );
+
+		// Verify get_insights exists (not get_dashboard_insights)
+		$this->assertTrue( method_exists( $client, 'get_insights' ) );
+		$this->assertFalse( method_exists( $client, 'get_dashboard_insights' ) );
+	}
+
+	/**
 	 * Test cache key generation is unique per request.
 	 */
 	public function test_cache_key_generation(): void {

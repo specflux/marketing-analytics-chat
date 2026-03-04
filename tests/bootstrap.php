@@ -10,6 +10,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', '/tmp/wordpress/' );
 }
 
+if ( ! defined( 'ARRAY_A' ) ) {
+	define( 'ARRAY_A', 'ARRAY_A' );
+}
+
+if ( ! defined( 'OBJECT' ) ) {
+	define( 'OBJECT', 'OBJECT' );
+}
+
 if ( ! defined( 'WPINC' ) ) {
 	define( 'WPINC', 'wp-includes' );
 }
@@ -732,11 +740,75 @@ if ( ! function_exists( 'wp_cache_delete' ) ) {
 
 $mock_cache = array();
 
+if ( ! function_exists( 'admin_url' ) ) {
+	/**
+	 * Mock admin_url function.
+	 *
+	 * @param string $path Path relative to admin URL.
+	 * @param string $scheme URL scheme.
+	 * @return string
+	 */
+	function admin_url( $path = '', $scheme = 'admin' ) {
+		$url = 'http://localhost/wp-admin/';
+		if ( ! empty( $path ) ) {
+			$url .= ltrim( $path, '/' );
+		}
+		return $url;
+	}
+}
+
+if ( ! function_exists( 'wp_parse_url' ) ) {
+	/**
+	 * Mock wp_parse_url function.
+	 *
+	 * @param string $url       URL to parse.
+	 * @param int    $component Component to retrieve.
+	 * @return mixed
+	 */
+	function wp_parse_url( $url, $component = -1 ) {
+		return parse_url( $url, $component );
+	}
+}
+
+if ( ! function_exists( 'current_time' ) ) {
+	/**
+	 * Mock current_time function.
+	 *
+	 * @param string $type    Type of time to retrieve.
+	 * @param bool   $gmt     Whether to use GMT.
+	 * @return string|int
+	 */
+	function current_time( $type, $gmt = false ) {
+		if ( 'timestamp' === $type || 'U' === $type ) {
+			return time();
+		}
+		return gmdate( $type );
+	}
+}
+
 if ( ! function_exists( 'esc_sql' ) ) {
 	function esc_sql( $data ) {
 		if ( is_array( $data ) ) {
 			return array_map( 'esc_sql', $data );
 		}
 		return addslashes( $data );
+	}
+}
+
+if ( ! function_exists( 'wp_add_dashboard_widget' ) ) {
+	/**
+	 * Mock wp_add_dashboard_widget function.
+	 *
+	 * @param string   $widget_id Widget ID.
+	 * @param string   $widget_name Widget name.
+	 * @param callable $callback Render callback.
+	 * @param callable $control_callback Optional control callback.
+	 * @param array    $callback_args Optional callback args.
+	 * @param string   $context Dashboard context.
+	 * @param string   $priority Widget priority.
+	 * @return void
+	 */
+	function wp_add_dashboard_widget( $widget_id, $widget_name, $callback, $control_callback = null, $callback_args = null, $context = 'normal', $priority = 'core' ) {
+		// In tests, do nothing
 	}
 }

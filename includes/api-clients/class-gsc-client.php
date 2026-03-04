@@ -384,8 +384,32 @@ class GSC_Client {
 	private function build_filters( $filters ) {
 		$filter_groups = array();
 
-		// TODO: Implement dimension filters
-		// Example: filter by country, device, etc.
+		if ( empty( $filters ) ) {
+			return $filter_groups;
+		}
+
+		$api_filters = array();
+
+		foreach ( $filters as $filter ) {
+			if ( empty( $filter['dimension'] ) || empty( $filter['expression'] ) ) {
+				continue;
+			}
+
+			$api_filter = new \Google\Service\SearchConsole\ApiDimensionFilter();
+			$api_filter->setDimension( $filter['dimension'] );
+			$api_filter->setExpression( $filter['expression'] );
+			$api_filter->setOperator( isset( $filter['operator'] ) ? $filter['operator'] : 'contains' );
+
+			$api_filters[] = $api_filter;
+		}
+
+		if ( ! empty( $api_filters ) ) {
+			$filter_group = new \Google\Service\SearchConsole\ApiDimensionFilterGroup();
+			$filter_group->setGroupType( 'and' );
+			$filter_group->setFilters( $api_filters );
+
+			$filter_groups[] = $filter_group;
+		}
 
 		return $filter_groups;
 	}

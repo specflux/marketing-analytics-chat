@@ -239,4 +239,30 @@ class Admin {
 
 		require_once MARKETING_ANALYTICS_MCP_PATH . 'admin/views/settings.php';
 	}
+
+	/**
+	 * Register the WordPress dashboard widget
+	 */
+	public function register_dashboard_widget() {
+		if ( ! Permission_Manager::can_access_plugin() ) {
+			return;
+		}
+
+		wp_add_dashboard_widget(
+			'marketing_analytics_dashboard_widget',
+			__( 'Marketing Analytics', 'marketing-analytics-chat' ),
+			array( $this, 'render_dashboard_widget' )
+		);
+	}
+
+	/**
+	 * Render the WordPress dashboard widget
+	 */
+	public function render_dashboard_widget() {
+		if ( ! Permission_Manager::can_access_plugin() ) {
+			return;
+		}
+
+		require_once MARKETING_ANALYTICS_MCP_PATH . 'admin/views/widgets/dashboard-widget.php';
+	}
 }

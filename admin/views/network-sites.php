@@ -73,9 +73,9 @@ $sites = $network_manager->get_sites();
 						<td><?php echo esc_html( ucfirst( str_replace( '_', ' ', $site->auth_method ) ) ); ?></td>
 						<td>
 							<?php if ( $site->is_active ) : ?>
-								<span style="color: #46b450;">● <?php esc_html_e( 'Active', 'marketing-analytics-chat' ); ?></span>
+								<span class="site-status-active">● <?php esc_html_e( 'Active', 'marketing-analytics-chat' ); ?></span>
 							<?php else : ?>
-								<span style="color: #dc3232;">● <?php esc_html_e( 'Inactive', 'marketing-analytics-chat' ); ?></span>
+								<span class="site-status-inactive">● <?php esc_html_e( 'Inactive', 'marketing-analytics-chat' ); ?></span>
 							<?php endif; ?>
 						</td>
 						<td>
@@ -198,61 +198,6 @@ $sites = $network_manager->get_sites();
 		</form>
 	</div>
 </div>
-
-<style>
-.network-stats {
-	display: flex;
-	gap: 20px;
-	margin: 20px 0;
-}
-.stat-card {
-	background: #fff;
-	border: 1px solid #ccd0d4;
-	border-radius: 4px;
-	padding: 20px;
-	min-width: 200px;
-}
-.stat-card h3 {
-	margin-top: 0;
-	color: #23282d;
-	font-size: 14px;
-	font-weight: 600;
-}
-.stat-value {
-	font-size: 32px;
-	font-weight: 600;
-	color: #0073aa;
-	margin: 10px 0;
-}
-.modal {
-	position: fixed;
-	z-index: 100000;
-	left: 0;
-	top: 0;
-	width: 100%;
-	height: 100%;
-	background-color: rgba(0,0,0,0.4);
-}
-.modal-content {
-	background-color: #fefefe;
-	margin: 5% auto;
-	padding: 20px;
-	border: 1px solid #888;
-	width: 60%;
-	max-width: 600px;
-}
-.close {
-	color: #aaa;
-	float: right;
-	font-size: 28px;
-	font-weight: bold;
-	cursor: pointer;
-}
-.close:hover,
-.close:focus {
-	color: black;
-}
-</style>
 
 <script>
 jQuery(document).ready(function($) {

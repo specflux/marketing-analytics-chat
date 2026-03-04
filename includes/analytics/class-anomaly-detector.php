@@ -118,7 +118,17 @@ class Anomaly_Detector {
 		}
 
 		try {
-			$client = new $api_client_class();
+			// Clarity requires credentials in constructor.
+			if ( 'clarity' === $platform ) {
+				$credential_manager = new \Marketing_Analytics_MCP\Credentials\Credential_Manager();
+				$credentials        = $credential_manager->get_credentials( 'clarity' );
+				if ( empty( $credentials['api_token'] ) || empty( $credentials['project_id'] ) ) {
+					return array();
+				}
+				$client = new $api_client_class( $credentials['api_token'], $credentials['project_id'] );
+			} else {
+				$client = new $api_client_class();
+			}
 
 			// Get last 14 days of data for rolling average calculation
 			$end_date   = current_time( 'Y-m-d' );
@@ -144,10 +154,10 @@ class Anomaly_Detector {
 					);
 
 				case 'meta':
-					return $client->get_insights( $start_date, $end_date );
+					return $client->get_facebook_insights( array(), 'day', 'last_14d' );
 
 				case 'dataforseo':
-					return $client->get_serp_data( '', 100 );
+					return $client->get_domain_metrics( get_bloginfo( 'url' ) );
 
 				default:
 					return array();
@@ -416,7 +426,7 @@ class Anomaly_Detector {
 	 * @param string $metric   The metric.
 	 */
 	private function send_email_notification( $anomaly, $platform, $metric ) {
-		$to = get_option( 'admin_email' );
+		$to      = get_option( 'admin_email' );
 		$subject = sprintf(
 			/* translators: 1: severity level, 2: anomaly type (spike/drop), 3: platform name */
 			__( '[%1$s Alert] %2$s anomaly detected in %3$s', 'marketing-analytics-chat' ),
@@ -425,62 +435,14 @@ class Anomaly_Detector {
 			$platform
 		);
 
-		$message = sprintf(
-			/* translators: %s: platform name */
-			__( "An anomaly has been detected in your %s analytics:\n\n", 'marketing-analytics-chat' ),
-			$platform
-		);
+		// Get correlated context from other platforms.
+		$context = $this->get_correlated_context( $anomaly, $platform );
 
-		$message .= sprintf(
-			/* translators: %s: metric name */
-			__( "Metric: %s\n", 'marketing-analytics-chat' ),
-			$metric
-		);
+		// Build HTML email.
+		$message = $this->build_html_email( $anomaly, $platform, $metric, $context );
+		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
-		$message .= sprintf(
-			/* translators: %s: current metric value */
-			__( "Current Value: %s\n", 'marketing-analytics-chat' ),
-			number_format( $anomaly['value'], 2 )
-		);
-
-		$message .= sprintf(
-			/* translators: %s: expected metric value */
-			__( "Expected Value: %s\n", 'marketing-analytics-chat' ),
-			number_format( $anomaly['expected'], 2 )
-		);
-
-		$message .= sprintf(
-			/* translators: %s: percentage change with sign */
-			__( "Change: %s%%\n", 'marketing-analytics-chat' ),
-			$anomaly['percentage_change'] > 0 ? '+' . $anomaly['percentage_change'] : $anomaly['percentage_change']
-		);
-
-		$message .= sprintf(
-			/* translators: %s: severity level */
-			__( "Severity: %s\n\n", 'marketing-analytics-chat' ),
-			ucfirst( $anomaly['severity'] )
-		);
-
-		$message .= sprintf(
-			/* translators: %s: URL to view anomaly details */
-			__( "View details: %s\n", 'marketing-analytics-chat' ),
-			admin_url( 'admin.php?page=marketing-analytics-chat-anomalies' )
-		);
-
-		// Generate AI insights if enabled
-		if ( class_exists( 'Marketing_Analytics_MCP\AI\Insights_Generator' ) ) {
-			$insights_generator = new Insights_Generator();
-			$insights           = $insights_generator->generate_insights( $anomaly, $platform, 'anomaly' );
-
-			if ( ! is_wp_error( $insights ) && ! empty( $insights['insights'] ) ) {
-				$message .= "\n" . __( 'AI Analysis:', 'marketing-analytics-chat' ) . "\n";
-				foreach ( $insights['insights'] as $insight ) {
-					$message .= '- ' . $insight['text'] . "\n";
-				}
-			}
-		}
-
-		wp_mail( $to, $subject, $message );
+		wp_mail( $to, $subject, $message, $headers );
 	}
 
 	/**
@@ -600,6 +562,162 @@ class Anomaly_Detector {
 			default:
 				return gmdate( 'Y-m-d H:i:s', strtotime( '-1 week' ) );
 		}
+	}
+
+	/**
+	 * Correlate anomalies across platforms
+	 *
+	 * Groups anomalies by date and identifies dates with anomalies across
+	 * multiple platforms, flagging them as correlated events.
+	 *
+	 * @param int $limit Number of recent anomalies to analyze.
+	 * @return array Correlated anomaly groups.
+	 */
+	public function correlate_anomalies( $limit = 100 ) {
+		$history = $this->get_anomaly_history( $limit );
+
+		if ( empty( $history ) ) {
+			return array();
+		}
+
+		// Group by date.
+		$by_date = array();
+		foreach ( $history as $anomaly ) {
+			$date = isset( $anomaly['detected_at'] ) ? substr( $anomaly['detected_at'], 0, 10 ) : '';
+			if ( empty( $date ) ) {
+				continue;
+			}
+
+			if ( ! isset( $by_date[ $date ] ) ) {
+				$by_date[ $date ] = array();
+			}
+			$by_date[ $date ][] = $anomaly;
+		}
+
+		// Identify multi-platform correlation.
+		$correlated = array();
+		foreach ( $by_date as $date => $anomalies ) {
+			$platforms_affected = array_unique(
+				array_column( $anomalies, 'platform' )
+			);
+
+			if ( count( $platforms_affected ) > 1 ) {
+				$correlated[] = array(
+					'date'      => $date,
+					'platforms' => array_values( $platforms_affected ),
+					'anomalies' => $anomalies,
+					'count'     => count( $anomalies ),
+				);
+			}
+		}
+
+		return $correlated;
+	}
+
+	/**
+	 * Get correlated context for an anomaly
+	 *
+	 * When an anomaly is found on one platform, pull data from other
+	 * connected platforms for context.
+	 *
+	 * @param array  $anomaly  The anomaly data.
+	 * @param string $platform The platform where the anomaly was detected.
+	 * @return array Contextual data from other platforms.
+	 */
+	public function get_correlated_context( $anomaly, $platform ) {
+		$context          = array();
+		$other_platforms  = array_diff( array( 'clarity', 'ga4', 'gsc', 'meta', 'dataforseo' ), array( $platform ) );
+
+		foreach ( $other_platforms as $other_platform ) {
+			$api_class = $this->get_api_client_class( $other_platform );
+			if ( empty( $api_class ) || ! class_exists( $api_class ) ) {
+				continue;
+			}
+
+			// Check if this platform has configured credentials.
+			if ( ! get_option( "marketing_analytics_mcp_anomaly_{$other_platform}_enabled", true ) ) {
+				continue;
+			}
+
+			try {
+				$data = $this->get_platform_data( $other_platform );
+				if ( ! empty( $data ) ) {
+					$context[ $other_platform ] = array(
+						'platform' => $other_platform,
+						'data'     => $data,
+					);
+				}
+			} catch ( \Exception $e ) {
+				Logger::debug( 'Correlated context error for ' . $other_platform . ': ' . $e->getMessage() );
+			}
+		}
+
+		return $context;
+	}
+
+	/**
+	 * Build HTML email for anomaly notification
+	 *
+	 * @param array  $anomaly  The anomaly data.
+	 * @param string $platform The platform.
+	 * @param string $metric   The metric.
+	 * @param array  $context  Correlated context from other platforms.
+	 * @return string HTML email content.
+	 */
+	public function build_html_email( $anomaly, $platform, $metric, $context = array() ) {
+		$severity_colors = array(
+			'critical' => '#dc3232',
+			'high'     => '#e65100',
+			'medium'   => '#dba617',
+			'low'      => '#2271b1',
+		);
+
+		$severity    = isset( $anomaly['severity'] ) ? $anomaly['severity'] : 'medium';
+		$header_color = isset( $severity_colors[ $severity ] ) ? $severity_colors[ $severity ] : '#2271b1';
+
+		$change_sign   = $anomaly['percentage_change'] > 0 ? '+' : '';
+		$change_display = $change_sign . $anomaly['percentage_change'] . '%';
+
+		$html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">';
+
+		// Header with severity color.
+		$html .= '<div style="background-color: ' . esc_attr( $header_color ) . '; color: #fff; padding: 20px; border-radius: 4px 4px 0 0;">';
+		$html .= '<h1 style="margin: 0; font-size: 20px;">' . esc_html( ucfirst( $severity ) ) . ' ' . esc_html( ucfirst( $anomaly['type'] ) ) . ' Alert</h1>';
+		$html .= '<p style="margin: 5px 0 0 0; opacity: 0.9;">' . esc_html( ucfirst( $platform ) ) . ' - ' . esc_html( $metric ) . '</p>';
+		$html .= '</div>';
+
+		// Metric comparison.
+		$html .= '<div style="background: #f6f7f7; padding: 20px; border: 1px solid #c3c4c7; border-top: none;">';
+		$html .= '<table style="width: 100%; border-collapse: collapse;">';
+		$html .= '<tr><td style="padding: 8px; font-weight: bold;">' . esc_html__( 'Current Value', 'marketing-analytics-chat' ) . '</td><td style="padding: 8px; text-align: right;">' . esc_html( number_format( $anomaly['value'], 2 ) ) . '</td></tr>';
+		$html .= '<tr><td style="padding: 8px; font-weight: bold;">' . esc_html__( 'Expected Value', 'marketing-analytics-chat' ) . '</td><td style="padding: 8px; text-align: right;">' . esc_html( number_format( $anomaly['expected'], 2 ) ) . '</td></tr>';
+		$html .= '<tr><td style="padding: 8px; font-weight: bold;">' . esc_html__( 'Change', 'marketing-analytics-chat' ) . '</td><td style="padding: 8px; text-align: right; font-weight: bold; color: ' . esc_attr( $header_color ) . ';">' . esc_html( $change_display ) . '</td></tr>';
+		$html .= '</table>';
+		$html .= '</div>';
+
+		// Correlated context.
+		if ( ! empty( $context ) ) {
+			$html .= '<div style="padding: 20px; border: 1px solid #c3c4c7; border-top: none;">';
+			$html .= '<h3 style="margin-top: 0;">' . esc_html__( 'Correlated Platform Data', 'marketing-analytics-chat' ) . '</h3>';
+
+			foreach ( $context as $ctx_platform => $ctx_data ) {
+				$html .= '<p><strong>' . esc_html( ucfirst( $ctx_platform ) ) . ':</strong> ';
+				$html .= esc_html__( 'Data available for investigation.', 'marketing-analytics-chat' );
+				$html .= '</p>';
+			}
+
+			$html .= '</div>';
+		}
+
+		// CTA.
+		$html .= '<div style="padding: 20px; text-align: center; border: 1px solid #c3c4c7; border-top: none; border-radius: 0 0 4px 4px;">';
+		$html .= '<a href="' . esc_url( admin_url( 'admin.php?page=marketing-analytics-chat-ai-assistant' ) ) . '" style="display: inline-block; background: #2271b1; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">';
+		$html .= esc_html__( 'Investigate with AI Assistant', 'marketing-analytics-chat' );
+		$html .= '</a></div>';
+
+		$html .= '</body></html>';
+
+		return $html;
 	}
 
 	/**

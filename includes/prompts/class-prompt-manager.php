@@ -231,6 +231,34 @@ class Prompt_Manager {
 				'category'     => 'marketing-analytics',
 			),
 
+			'anomaly-investigation'      => array(
+				'name'         => 'anomaly-investigation',
+				'label'        => __( 'Anomaly Investigation', 'marketing-analytics-chat' ),
+				'description'  => __( 'Investigate an anomaly by pulling data from the affected platform, checking other platforms for correlated changes, and providing recommendations', 'marketing-analytics-chat' ),
+				'instructions' => "Investigate the reported anomaly:\n\n1. Pull recent data from the anomaly's platform:\n   - Use the appropriate marketing-analytics tool for the affected platform\n   - Get data for the last 7 days to see the trend\n\n2. Check other connected platforms for correlated changes:\n   - If the anomaly is in GA4, check GSC for ranking/traffic changes and Clarity for behavior changes\n   - If the anomaly is in GSC, check GA4 for traffic impact and Clarity for engagement changes\n   - If the anomaly is in Clarity, check GA4 for traffic changes and GSC for search visibility\n\n3. Compare the anomaly period with the previous period:\n   - Call marketing-analytics/compare-periods to quantify the change\n\n4. Analyze possible causes:\n   - External factors (algorithm updates, seasonal trends, market events)\n   - Internal factors (content changes, technical issues, campaign changes)\n   - Correlations across platforms\n\n5. Provide a summary with:\n   - Anomaly description and severity\n   - Cross-platform correlation findings\n   - Most likely cause(s)\n   - Specific actionable recommendations\n   - Suggested monitoring plan",
+				'arguments'    => array(
+					array(
+						'name'        => 'platform',
+						'type'        => 'string',
+						'description' => 'Platform where the anomaly was detected (ga4, gsc, clarity)',
+						'required'    => true,
+					),
+					array(
+						'name'        => 'metric',
+						'type'        => 'string',
+						'description' => 'The metric that showed the anomaly',
+						'required'    => true,
+					),
+					array(
+						'name'        => 'anomaly_type',
+						'type'        => 'string',
+						'description' => 'Type of anomaly: "spike" or "drop"',
+						'required'    => false,
+					),
+				),
+				'category'     => 'marketing-analytics',
+			),
+
 			'conversion-funnel-analysis' => array(
 				'name'         => 'conversion-funnel-analysis',
 				'label'        => __( 'Conversion Funnel Analysis', 'marketing-analytics-chat' ),

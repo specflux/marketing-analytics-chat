@@ -151,6 +151,11 @@ class GA4_Client {
 				$request->setOffset( absint( $options['offset'] ) );
 			}
 
+			if ( isset( $options['dimension_filter'] ) ) {
+				$filter = new \Google\Service\AnalyticsData\FilterExpression( $options['dimension_filter'] );
+				$request->setDimensionFilter( $filter );
+			}
+
 			// Run report
 			$response = $analytics->properties->runReport( 'properties/' . $this->property_id, $request );
 
@@ -224,7 +229,18 @@ class GA4_Client {
 
 		$options = array( 'limit' => $limit );
 
-		// TODO: Add dimension filter for specific event name if provided
+		// Add dimension filter for specific event name if provided.
+		if ( ! empty( $event_name ) ) {
+			$options['dimension_filter'] = array(
+				'filter' => array(
+					'fieldName'    => 'eventName',
+					'stringFilter' => array(
+						'matchType' => 'EXACT',
+						'value'     => $event_name,
+					),
+				),
+			);
+		}
 
 		return $this->run_report( $metrics, $dimensions, $date_range, $options );
 	}

@@ -215,14 +215,58 @@ class GSCClientTest extends TestCase {
 	}
 
 	/**
-	 * Test build_filters returns empty array (not implemented).
+	 * Test build_filters returns empty array for empty input.
 	 */
-	public function test_build_filters(): void {
+	public function test_build_filters_empty(): void {
 		$reflection = new ReflectionClass( $this->client );
 		$method     = $reflection->getMethod( 'build_filters' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->client, array() );
+		$this->assertIsArray( $result );
+		$this->assertCount( 0, $result );
+	}
+
+	/**
+	 * Test build_filters returns filter groups for valid input.
+	 */
+	public function test_build_filters_returns_filter_groups(): void {
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'build_filters' );
+		$method->setAccessible( true );
+
+		$filters = array(
+			array(
+				'dimension'  => 'country',
+				'expression' => 'USA',
+				'operator'   => 'equals',
+			),
+			array(
+				'dimension'  => 'query',
+				'expression' => 'wordpress',
+			),
+		);
+
+		$result = $method->invoke( $this->client, $filters );
+		$this->assertIsArray( $result );
+		$this->assertCount( 1, $result );
+		$this->assertInstanceOf( \Google\Service\SearchConsole\ApiDimensionFilterGroup::class, $result[0] );
+	}
+
+	/**
+	 * Test build_filters skips invalid entries.
+	 */
+	public function test_build_filters_skips_invalid_entries(): void {
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'build_filters' );
+		$method->setAccessible( true );
+
+		$filters = array(
+			array( 'dimension' => 'country' ), // Missing expression
+			array( 'expression' => 'USA' ),    // Missing dimension
+		);
+
+		$result = $method->invoke( $this->client, $filters );
 		$this->assertIsArray( $result );
 		$this->assertCount( 0, $result );
 	}

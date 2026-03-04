@@ -61,10 +61,10 @@ class Connection_Tester {
 		}
 
 		try {
-			$client = new Clarity_Client();
+			$client = new Clarity_Client( $credentials['api_token'], $credentials['project_id'] );
 
 			// Try to fetch insights for 1 day (minimal request)
-			$result = $client->get_dashboard_insights( 1 );
+			$result = $client->get_insights( 1 );
 
 			if ( ! empty( $result ) ) {
 				return array(
