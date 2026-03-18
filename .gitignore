@@ -1,0 +1,7 @@
+/vendor/
+/node_modules/
+/coverage/
+.phpunit.result.cache
+.phpcs-cache
+*.log
+.DS_Store

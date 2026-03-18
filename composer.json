@@ -1,0 +1,63 @@
+{
+  "name": "marketing-analytics-chat/wordpress-plugin",
+  "description": "WordPress plugin that exposes marketing analytics data (Microsoft Clarity, Google Analytics 4, Google Search Console) via Model Context Protocol for AI assistants",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    {
+      "name": "Stephen Paul Samynathan",
+      "homepage": "https://www.specflux.com/author/stephen/"
+    }
+  ],
+  "require": {
+    "php": ">=8.1",
+    "automattic/jetpack-autoloader": "^5.0",
+    "google/apiclient": "^2.15",
+    "guzzlehttp/guzzle": "^7.8"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.0",
+    "phpstan/phpstan": "^1.10",
+    "wp-coding-standards/wpcs": "^3.3",
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.2"
+  },
+  "autoload": {
+    "classmap": [
+      "includes/"
+    ],
+    "files": []
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Marketing_Analytics_MCP\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "pre-autoload-dump": "Google\\Task\\Composer::cleanup",
+    "test": "phpunit",
+    "phpcs": "phpcs --standard=WordPress includes/",
+    "phpcbf": "phpcbf --standard=WordPress includes/",
+    "phpstan": "phpstan analyse includes/ --level=8"
+  },
+  "config": {
+    "allow-plugins": {
+      "automattic/jetpack-autoloader": true,
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    },
+    "platform": {
+      "php": "8.2"
+    },
+    "optimize-autoloader": true,
+    "classmap-authoritative": true,
+    "apcu-autoloader": true
+  },
+  "extra": {
+    "google/apiclient-services": [
+      "GoogleAnalyticsAdmin",
+      "AnalyticsData",
+      "Drive",
+      "SearchConsole",
+      "Sheets"
+    ]
+  }
+}
