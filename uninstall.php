@@ -36,6 +36,18 @@ function marketing_analytics_mcp_uninstall() {
 	// Delete OAuth tokens
 	delete_option( 'marketing_analytics_mcp_oauth_tokens' );
 
+	// Delete Google OAuth credentials
+	delete_option( 'marketing_analytics_mcp_google_client_id' );
+	delete_option( 'marketing_analytics_mcp_google_client_secret' );
+	delete_option( 'marketing_analytics_mcp_oauth_state' );
+
+	// Delete onboarding and prompt options
+	delete_option( 'marketing_analytics_mcp_onboarding_complete' );
+	delete_option( 'marketing_analytics_mcp_custom_prompts' );
+
+	// Delete anomaly data
+	delete_option( 'marketing_analytics_recent_anomalies' );
+
 	// Delete rate limit counters
 	delete_option( 'marketing_analytics_mcp_rate_limits' );
 

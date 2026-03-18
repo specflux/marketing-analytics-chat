@@ -9,6 +9,8 @@
 
 namespace Marketing_Analytics_MCP\Prompts;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Handles CRUD operations for custom prompts
  */

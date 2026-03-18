@@ -11,6 +11,8 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Marketing_Analytics_MCP\Utils\Logger;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Client for Microsoft Clarity Data Export API
  *

@@ -9,6 +9,8 @@
 
 namespace Marketing_Analytics_MCP\Cache;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Handles caching for API responses
  */

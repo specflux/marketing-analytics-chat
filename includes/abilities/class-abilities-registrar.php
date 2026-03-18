@@ -9,6 +9,8 @@ namespace Marketing_Analytics_MCP\Abilities;
 
 use Marketing_Analytics_MCP\Utils\Logger;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Registers all MCP abilities with WordPress Abilities API
  */

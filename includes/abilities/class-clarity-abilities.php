@@ -11,6 +11,8 @@ use Marketing_Analytics_MCP\API_Clients\Clarity_Client;
 use Marketing_Analytics_MCP\Credentials\Credential_Manager;
 use Marketing_Analytics_MCP\Utils\Permission_Manager;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Registers Microsoft Clarity MCP abilities
  */

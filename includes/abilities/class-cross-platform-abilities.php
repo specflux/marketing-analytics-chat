@@ -17,6 +17,8 @@ use Marketing_Analytics_MCP\Credentials\Credential_Manager;
 use Marketing_Analytics_MCP\Utils\Logger;
 use Marketing_Analytics_MCP\Utils\Permission_Manager;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Registers cross-platform MCP abilities
  */

@@ -17,6 +17,8 @@ use Marketing_Analytics_MCP\Credentials\OAuth_Handler;
 use Marketing_Analytics_MCP\Utils\Logger;
 use Marketing_Analytics_MCP\Utils\Permission_Manager;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Handles AJAX requests from admin interface
  */
@@ -36,8 +38,14 @@ class Ajax_Handler {
 		add_action( 'wp_ajax_marketing_analytics_mcp_list_gsc_sites', array( $this, 'list_gsc_sites' ) );
 		add_action( 'wp_ajax_marketing_analytics_mcp_save_gsc_site', array( $this, 'save_gsc_site' ) );
 
-		// Dashboard widget refresh
+		// Dashboard widget refresh.
 		add_action( 'wp_ajax_marketing_analytics_mcp_refresh_widget', array( $this, 'handle_refresh_widget_data' ) );
+
+		// Dashboard insights panel refresh (transient reads only).
+		add_action( 'wp_ajax_marketing_analytics_mcp_refresh_dashboard_metrics', array( $this, 'handle_refresh_dashboard_metrics' ) );
+
+		// Onboarding wizard dismissal.
+		add_action( 'wp_ajax_marketing_analytics_mcp_dismiss_wizard', array( $this, 'dismiss_onboarding_wizard' ) );
 
 		/**
 		 * Allow pro add-on to register additional AJAX handlers.
@@ -278,6 +286,14 @@ class Ajax_Handler {
 
 			if ( $result ) {
 				Logger::debug( 'Credentials saved successfully' );
+
+				/**
+				 * Fires when a platform connection is saved.
+				 *
+				 * @param string $platform The platform that was connected (e.g., 'clarity').
+				 */
+				do_action( 'marketing_analytics_mcp_platform_connected', $platform );
+
 				wp_send_json_success(
 					array(
 						'message' => 'Credentials saved successfully!',
@@ -456,6 +472,10 @@ class Ajax_Handler {
 
 			if ( $result ) {
 				Logger::debug( sprintf( 'Property ID saved: %s', $property_id ) );
+
+				/** This action is documented in class-ajax-handler.php */
+				do_action( 'marketing_analytics_mcp_platform_connected', 'ga4' );
+
 				wp_send_json_success(
 					array(
 						'message'     => 'Property saved successfully!',
@@ -591,6 +611,10 @@ class Ajax_Handler {
 
 			if ( $result ) {
 				Logger::debug( sprintf( 'Site URL saved: %s', $site_url ) );
+
+				/** This action is documented in class-ajax-handler.php */
+				do_action( 'marketing_analytics_mcp_platform_connected', 'gsc' );
+
 				wp_send_json_success(
 					array(
 						'message'  => 'Site saved successfully!',
@@ -691,6 +715,325 @@ class Ajax_Handler {
 			array(
 				'message' => 'Widget data refreshed successfully.',
 				'data'    => $widget_data,
+			)
+		);
+	}
+
+	/**
+	 * Handle dashboard insights panel metrics refresh.
+	 *
+	 * Reads from existing transients ONLY — no live API calls.
+	 */
+	public function handle_refresh_dashboard_metrics() {
+		// Check nonce.
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'marketing-analytics-dashboard-insights' ) ) {
+			wp_send_json_error(
+				array(
+					'message' => 'Security check failed.',
+				)
+			);
+			return;
+		}
+
+		// Check permissions.
+		if ( ! Permission_Manager::can_access_plugin() ) {
+			wp_send_json_error(
+				array(
+					'message' => 'Insufficient permissions.',
+				)
+			);
+			return;
+		}
+
+		$credential_manager = new Credential_Manager();
+		$metrics            = array();
+
+		// GA4 metrics from transient.
+		if ( $credential_manager->has_credentials( 'ga4' ) ) {
+			$ga4_data = get_transient( 'marketing_analytics_ga4_day_summary' );
+			if ( false !== $ga4_data ) {
+				$metrics['ga4'] = $this->extract_ga4_metrics( $ga4_data );
+			}
+		}
+
+		// Clarity metrics from transient.
+		if ( $credential_manager->has_credentials( 'clarity' ) ) {
+			$clarity_data = get_transient( 'marketing_analytics_clarity_day_summary' );
+			if ( false !== $clarity_data ) {
+				$metrics['clarity'] = $this->extract_clarity_metrics( $clarity_data );
+			}
+		}
+
+		// GSC metrics from transient.
+		if ( $credential_manager->has_credentials( 'gsc' ) ) {
+			$gsc_data = get_transient( 'marketing_analytics_gsc_day_summary' );
+			if ( false !== $gsc_data ) {
+				$metrics['gsc'] = $this->extract_gsc_metrics( $gsc_data );
+			}
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => 'Metrics refreshed from cache.',
+				'metrics' => $metrics,
+			)
+		);
+	}
+
+	/**
+	 * Extract GA4 metrics from transient data.
+	 *
+	 * @param array $data GA4 day summary transient data.
+	 * @return array Formatted metrics.
+	 */
+	private function extract_ga4_metrics( $data ) {
+		$metrics = array();
+
+		if ( ! isset( $data['rows'] ) || ! is_array( $data['rows'] ) ) {
+			return $metrics;
+		}
+
+		$sessions  = 0;
+		$users     = 0;
+		$pageviews = 0;
+
+		foreach ( $data['rows'] as $row ) {
+			if ( isset( $row['metricValues'] ) && is_array( $row['metricValues'] ) ) {
+				$sessions  += isset( $row['metricValues'][0]['value'] ) ? (int) $row['metricValues'][0]['value'] : 0;
+				$users     += isset( $row['metricValues'][1]['value'] ) ? (int) $row['metricValues'][1]['value'] : 0;
+				$pageviews += isset( $row['metricValues'][2]['value'] ) ? (int) $row['metricValues'][2]['value'] : 0;
+			}
+		}
+
+		// Build sparkline arrays from daily rows.
+		$sessions_spark  = array();
+		$users_spark     = array();
+		$pageviews_spark = array();
+
+		foreach ( $data['rows'] as $row ) {
+			if ( isset( $row['metricValues'] ) && is_array( $row['metricValues'] ) ) {
+				$sessions_spark[]  = isset( $row['metricValues'][0]['value'] ) ? (int) $row['metricValues'][0]['value'] : 0;
+				$users_spark[]     = isset( $row['metricValues'][1]['value'] ) ? (int) $row['metricValues'][1]['value'] : 0;
+				$pageviews_spark[] = isset( $row['metricValues'][2]['value'] ) ? (int) $row['metricValues'][2]['value'] : 0;
+			}
+		}
+
+		$metrics[] = array(
+			'key'       => 'sessions',
+			'label'     => __( 'Sessions', 'marketing-analytics-chat' ),
+			'formatted' => number_format_i18n( $sessions ),
+			'direction' => $this->calc_direction( $sessions_spark ),
+			'change'    => $this->calc_change( $sessions_spark ),
+			'sparkline' => $sessions_spark,
+		);
+
+		$metrics[] = array(
+			'key'       => 'users',
+			'label'     => __( 'Users', 'marketing-analytics-chat' ),
+			'formatted' => number_format_i18n( $users ),
+			'direction' => $this->calc_direction( $users_spark ),
+			'change'    => $this->calc_change( $users_spark ),
+			'sparkline' => $users_spark,
+		);
+
+		$metrics[] = array(
+			'key'       => 'pageviews',
+			'label'     => __( 'Pageviews', 'marketing-analytics-chat' ),
+			'formatted' => number_format_i18n( $pageviews ),
+			'direction' => $this->calc_direction( $pageviews_spark ),
+			'change'    => $this->calc_change( $pageviews_spark ),
+			'sparkline' => $pageviews_spark,
+		);
+
+		return $metrics;
+	}
+
+	/**
+	 * Extract Clarity metrics from transient data.
+	 *
+	 * @param array $data Clarity day summary transient data.
+	 * @return array Formatted metrics.
+	 */
+	private function extract_clarity_metrics( $data ) {
+		$metrics = array();
+
+		$total_sessions   = isset( $data['totalSessions'] ) ? (int) $data['totalSessions'] : 0;
+		$pages_per_session = isset( $data['pagesPerSession'] ) ? (float) $data['pagesPerSession'] : 0;
+
+		$metrics[] = array(
+			'key'       => 'sessions',
+			'label'     => __( 'Sessions', 'marketing-analytics-chat' ),
+			'formatted' => number_format_i18n( $total_sessions ),
+			'direction' => 'neutral',
+			'change'    => '',
+			'sparkline' => array(),
+		);
+
+		$metrics[] = array(
+			'key'       => 'pages_per_session',
+			'label'     => __( 'Pages / Session', 'marketing-analytics-chat' ),
+			'formatted' => number_format( $pages_per_session, 1 ),
+			'direction' => 'neutral',
+			'change'    => '',
+			'sparkline' => array(),
+		);
+
+		return $metrics;
+	}
+
+	/**
+	 * Extract GSC metrics from transient data.
+	 *
+	 * @param array $data GSC day summary transient data.
+	 * @return array Formatted metrics.
+	 */
+	private function extract_gsc_metrics( $data ) {
+		$metrics = array();
+
+		if ( ! isset( $data['rows'] ) || ! is_array( $data['rows'] ) ) {
+			return $metrics;
+		}
+
+		$total_clicks      = 0;
+		$total_impressions = 0;
+		$total_position    = 0;
+		$row_count         = count( $data['rows'] );
+
+		$clicks_spark      = array();
+		$impressions_spark = array();
+
+		foreach ( $data['rows'] as $row ) {
+			$clicks      = isset( $row['clicks'] ) ? (int) $row['clicks'] : 0;
+			$impressions = isset( $row['impressions'] ) ? (int) $row['impressions'] : 0;
+			$position    = isset( $row['position'] ) ? (float) $row['position'] : 0;
+
+			$total_clicks      += $clicks;
+			$total_impressions += $impressions;
+			$total_position    += $position;
+
+			$clicks_spark[]      = $clicks;
+			$impressions_spark[] = $impressions;
+		}
+
+		$avg_position = $row_count > 0 ? $total_position / $row_count : 0;
+
+		$metrics[] = array(
+			'key'       => 'clicks',
+			'label'     => __( 'Clicks', 'marketing-analytics-chat' ),
+			'formatted' => number_format_i18n( $total_clicks ),
+			'direction' => $this->calc_direction( $clicks_spark ),
+			'change'    => $this->calc_change( $clicks_spark ),
+			'sparkline' => $clicks_spark,
+		);
+
+		$metrics[] = array(
+			'key'       => 'impressions',
+			'label'     => __( 'Impressions', 'marketing-analytics-chat' ),
+			'formatted' => number_format_i18n( $total_impressions ),
+			'direction' => $this->calc_direction( $impressions_spark ),
+			'change'    => $this->calc_change( $impressions_spark ),
+			'sparkline' => $impressions_spark,
+		);
+
+		$metrics[] = array(
+			'key'       => 'avg_position',
+			'label'     => __( 'Avg Position', 'marketing-analytics-chat' ),
+			'formatted' => number_format( $avg_position, 1 ),
+			'direction' => 'neutral',
+			'change'    => '',
+			'sparkline' => array(),
+		);
+
+		return $metrics;
+	}
+
+	/**
+	 * Calculate trend direction by comparing first half to second half of data.
+	 *
+	 * @param array $data Array of numeric values.
+	 * @return string 'positive', 'negative', or 'neutral'.
+	 */
+	private function calc_direction( $data ) {
+		if ( count( $data ) < 2 ) {
+			return 'neutral';
+		}
+
+		$mid        = (int) floor( count( $data ) / 2 );
+		$first_half = array_slice( $data, 0, $mid );
+		$second_half = array_slice( $data, $mid );
+
+		$first_avg  = array_sum( $first_half ) / count( $first_half );
+		$second_avg = array_sum( $second_half ) / count( $second_half );
+
+		if ( 0.0 === (float) $first_avg ) {
+			return $second_avg > 0 ? 'positive' : 'neutral';
+		}
+
+		$pct = ( ( $second_avg - $first_avg ) / $first_avg ) * 100;
+
+		if ( $pct > 1 ) {
+			return 'positive';
+		} elseif ( $pct < -1 ) {
+			return 'negative';
+		}
+
+		return 'neutral';
+	}
+
+	/**
+	 * Calculate percentage change string comparing first half to second half.
+	 *
+	 * @param array $data Array of numeric values.
+	 * @return string Formatted percentage string, e.g. '12.3%'.
+	 */
+	private function calc_change( $data ) {
+		if ( count( $data ) < 2 ) {
+			return '';
+		}
+
+		$mid         = (int) floor( count( $data ) / 2 );
+		$first_half  = array_slice( $data, 0, $mid );
+		$second_half = array_slice( $data, $mid );
+
+		$first_avg  = array_sum( $first_half ) / count( $first_half );
+		$second_avg = array_sum( $second_half ) / count( $second_half );
+
+		if ( 0.0 === (float) $first_avg ) {
+			return '';
+		}
+
+		$pct = abs( ( ( $second_avg - $first_avg ) / $first_avg ) * 100 );
+
+		return number_format( $pct, 1 ) . '%';
+	}
+
+	/**
+	 * Dismiss the onboarding wizard
+	 */
+	public function dismiss_onboarding_wizard() {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'marketing_analytics_mcp_dismiss_wizard' ) ) {
+			wp_send_json_error(
+				array(
+					'message' => 'Security check failed.',
+				)
+			);
+			return;
+		}
+
+		if ( ! Permission_Manager::can_access_plugin() ) {
+			wp_send_json_error(
+				array(
+					'message' => 'You do not have permission to perform this action.',
+				)
+			);
+			return;
+		}
+
+		update_option( 'marketing_analytics_mcp_onboarding_complete', true );
+
+		wp_send_json_success(
+			array(
+				'message' => 'Onboarding wizard dismissed.',
 			)
 		);
 	}

@@ -518,6 +518,21 @@ if ( ! function_exists( 'esc_attr__' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sanitize_title' ) ) {
+	/**
+	 * Mock sanitize_title function.
+	 *
+	 * @param string $title The title to sanitize.
+	 * @return string
+	 */
+	function sanitize_title( $title ) {
+		$title = strtolower( $title );
+		$title = preg_replace( '/[^a-z0-9\-]/', '-', $title );
+		$title = preg_replace( '/-+/', '-', $title );
+		return trim( $title, '-' );
+	}
+}
+
 if ( ! function_exists( 'sanitize_key' ) ) {
 	/**
 	 * Mock sanitize_key function.

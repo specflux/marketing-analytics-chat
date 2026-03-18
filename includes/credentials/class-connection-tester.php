@@ -11,6 +11,8 @@ namespace Marketing_Analytics_MCP\Credentials;
 
 use Marketing_Analytics_MCP\API_Clients\Clarity_Client;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Tests connections to analytics platforms
  */

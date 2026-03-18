@@ -9,6 +9,8 @@
 
 namespace Marketing_Analytics_MCP\Utils;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Permission Manager Class
  *

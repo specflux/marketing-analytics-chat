@@ -11,6 +11,8 @@ use Marketing_Analytics_MCP\Credentials\Credential_Manager;
 use Marketing_Analytics_MCP\Prompts\Prompt_Manager;
 use Marketing_Analytics_MCP\Utils\Permission_Manager;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Registers MCP prompts for common analysis workflows
  */

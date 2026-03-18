@@ -7,6 +7,8 @@
 
 namespace Marketing_Analytics_MCP\Utils;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Global helper function for debug logging.
  *

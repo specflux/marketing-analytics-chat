@@ -13,6 +13,8 @@ use Marketing_Analytics_MCP\Credentials\OAuth_Handler;
 use Marketing_Analytics_MCP\Cache\Cache_Manager;
 use Marketing_Analytics_MCP\Utils\Logger;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * GA4 API Client class
  */

@@ -9,6 +9,8 @@ namespace Marketing_Analytics_MCP\Credentials;
 
 use Marketing_Analytics_MCP\Utils\Logger;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Handles encryption and decryption of API credentials using libsodium
  */

@@ -7,8 +7,11 @@
 
 namespace Marketing_Analytics_MCP;
 
+use Marketing_Analytics_MCP\Prompts\Prompt_Manager;
 use Marketing_Analytics_MCP\Utils\Permission_Manager;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Fired during plugin activation
  */
@@ -72,6 +75,9 @@ class Activator {
 		// Register custom capabilities for role-based access control
 		Permission_Manager::register_capabilities();
 
+		// Install default smart prompts on first activation
+		self::install_default_prompts();
+
 		// Flush rewrite rules
 		flush_rewrite_rules();
 	}
@@ -107,6 +113,31 @@ class Activator {
 	}
 
 	/**
+	 * Install default smart prompts on first activation
+	 *
+	 * Imports preset prompt templates so new users have useful
+	 * prompts available immediately after activation.
+	 */
+	private static function install_default_prompts() {
+		// Only install if prompts option doesn't already exist (first activation).
+		if ( false !== get_option( Prompt_Manager::OPTION_NAME ) ) {
+			return;
+		}
+
+		$prompt_manager = new Prompt_Manager();
+
+		$default_presets = array(
+			'weekly-report',
+			'seo-health-check',
+			'anomaly-investigation',
+		);
+
+		foreach ( $default_presets as $preset_key ) {
+			$prompt_manager->import_preset( $preset_key );
+		}
+	}
+
+	/**
 	 * Generate encryption key for credentials
 	 */
 	private static function generate_encryption_key() {
@@ -118,5 +149,4 @@ class Activator {
 			add_option( $key_option, $key, '', false ); // Don't autoload
 		}
 	}
-
 }

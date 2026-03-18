@@ -9,6 +9,8 @@ namespace Marketing_Analytics_MCP;
 
 use Marketing_Analytics_MCP\Utils\Permission_Manager;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Main plugin class that initializes all components
  */
@@ -77,6 +79,8 @@ class Plugin {
 		$this->loader->add_action( 'admin_enqueue_scripts', $admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $admin, 'enqueue_scripts' );
 		$this->loader->add_action( 'wp_dashboard_setup', $admin, 'register_dashboard_widget' );
+		$this->loader->add_action( 'admin_bar_menu', $admin, 'add_admin_bar_item', 100 );
+		$this->loader->add_action( 'admin_head', $admin, 'admin_bar_styles' );
 	}
 
 	/**
@@ -85,7 +89,6 @@ class Plugin {
 	private function define_ajax_hooks() {
 		$ajax_handler = new Admin\Ajax_Handler();
 		$ajax_handler->register_hooks();
-
 	}
 
 	/**

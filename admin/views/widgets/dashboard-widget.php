@@ -68,8 +68,8 @@ $widget_data        = get_transient( 'marketing_analytics_widget_data' );
 
 	<!-- Quick Action -->
 	<div class="marketing-analytics-widget-section" style="margin-top: 15px; text-align: center;">
-		<a href="<?php echo esc_url( admin_url( 'admin.php?page=marketing-analytics-chat-ai-assistant' ) ); ?>" class="button button-primary" style="width: 100%; text-align: center;">
-			<?php esc_html_e( 'Open AI Assistant', 'marketing-analytics-chat' ); ?>
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=marketing-analytics-chat' ) ); ?>" class="button button-primary" style="width: 100%; text-align: center;">
+			<?php esc_html_e( 'View Dashboard', 'marketing-analytics-chat' ); ?>
 		</a>
 	</div>
 
@@ -81,27 +81,3 @@ $widget_data        = get_transient( 'marketing_analytics_widget_data' );
 		</button>
 	</div>
 </div>
-
-<script>
-jQuery(document).ready(function($) {
-	$('.marketing-analytics-refresh-widget').on('click', function() {
-		var $btn = $(this);
-		$btn.prop('disabled', true).find('.dashicons').addClass('spin');
-
-		$.ajax({
-			url: ajaxurl,
-			type: 'POST',
-			data: {
-				action: 'marketing_analytics_mcp_refresh_widget',
-				nonce: '<?php echo esc_js( wp_create_nonce( 'marketing-analytics-chat-admin' ) ); ?>'
-			},
-			success: function() {
-				location.reload();
-			},
-			error: function() {
-				$btn.prop('disabled', false).find('.dashicons').removeClass('spin');
-			}
-		});
-	});
-});
-</script>

@@ -10,7 +10,7 @@ Requires Plugins: mcp-adapter
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Chat with your marketing analytics using AI. Connect Google Analytics 4, Search Console, Microsoft Clarity, Meta, and more to get instant insights.
+Expose Google Analytics 4, Search Console, and Microsoft Clarity data to AI assistants via the Model Context Protocol.
 
 == Description ==
 
@@ -21,21 +21,29 @@ Marketing Analytics Chat lets you have conversations with your marketing data us
 * **Google Analytics 4** - Traffic metrics, user behavior, conversions, real-time data
 * **Google Search Console** - Search performance, queries, indexing status
 * **Microsoft Clarity** - Session recordings, heatmaps, user behavior insights
-* **Meta Business Suite** - Facebook and Instagram analytics
-* **DataForSEO** - SEO metrics and keyword data
 
 = Key Features =
 
-* **AI-Powered Chat** - Ask questions about your analytics in plain English
+* **MCP-Native Architecture** - Exposes analytics as MCP abilities for any compatible AI assistant
+* **Interactive Onboarding Wizard** - Step-by-step setup with guided configuration
+* **Analytics at a Glance Dashboard** - Dashboard widget with sparkline trends
+* **Admin Bar Pulse Indicator** - Quick analytics status in the WordPress admin bar
+* **Smart Prompt Templates** - Auto-installed prompts for common analytics questions
+* **MCP Abilities Catalog** - Browse all available analytics abilities in one place
+* **Connection Depth Prompts** - Contextual prompts that adapt to your connected platforms
 * **Multi-Platform Support** - Connect all your marketing data sources
 * **Secure Credentials** - OAuth 2.0 and encrypted API key storage
 * **Smart Caching** - Reduce API calls with intelligent caching
 * **Cross-Platform Analysis** - Compare data across all connected platforms
 
+= Pro Add-on =
+
+Additional platforms and features are available through the Pro add-on, including Meta Business Suite, DataForSEO, WooCommerce analytics, AI-powered insights, anomaly detection, and notification integrations. Visit our website for details.
+
 = How It Works =
 
 1. Connect your analytics platforms via OAuth or API keys
-2. Open the chat interface in your WordPress admin
+2. Configure your MCP client (e.g., Claude Desktop, ChatGPT, Cursor)
 3. Ask questions like "How did my traffic change this week?"
 4. Get AI-powered insights and recommendations
 
@@ -49,13 +57,12 @@ Marketing Analytics Chat lets you have conversations with your marketing data us
 
 = External Services =
 
-This plugin connects to the following third-party services:
+This plugin connects to the following third-party services when you configure the corresponding platform connections:
 
-* **Google APIs** - For GA4 and Search Console data
-* **Microsoft Clarity API** - For behavior analytics
-* **Meta Graph API** - For Facebook/Instagram data
-* **DataForSEO API** - For SEO metrics
-* **Anthropic API** - For AI chat functionality (optional)
+* **Google Analytics Data API** (https://developers.google.com/analytics/devguides/reporting/data/v1) - Retrieves traffic metrics, user behavior, and conversion data from your GA4 property. Your GA4 property ID and OAuth tokens are sent to Google servers. [Google Privacy Policy](https://policies.google.com/privacy)
+* **Google Analytics Admin API** (https://developers.google.com/analytics/devguides/config/admin/v1) - Lists your GA4 properties during connection setup. [Google Privacy Policy](https://policies.google.com/privacy)
+* **Google Search Console API** (https://developers.google.com/webmaster-tools/search-console-api-original) - Retrieves search performance data including queries, clicks, and impressions. Your site URL and OAuth tokens are sent to Google servers. [Google Privacy Policy](https://policies.google.com/privacy)
+* **Microsoft Clarity Data Export API** (https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-data-export-api) - Retrieves session recordings, heatmap data, and user behavior insights. Your Clarity API token and project ID are sent to Microsoft servers. [Microsoft Privacy Statement](https://privacy.microsoft.com/privacystatement)
 
 == Installation ==
 
@@ -94,15 +101,13 @@ Add this to your Claude Desktop configuration:
 
 = How does the AI chat work? =
 
-The plugin connects your analytics platforms and uses AI (Claude) to answer questions about your data. Just type a question like "What are my top traffic sources?" and get an instant answer.
+The plugin exposes your analytics data as MCP abilities. Any MCP-compatible AI assistant (Claude Desktop, ChatGPT, Cursor) can query your data by calling these abilities. Just type a question like "What are my top traffic sources?" and get an instant answer.
 
 = Do I need to pay for API access? =
 
 The plugin itself is free. However, you may need API access for:
 * Google Analytics and Search Console - Free with Google Cloud account
 * Microsoft Clarity - Free
-* DataForSEO - Paid service
-* Anthropic Claude API - Paid for AI chat functionality
 
 = Is my data secure? =
 
@@ -123,36 +128,40 @@ WordPress 6.9 and higher is required. The plugin uses the Abilities API (include
 == Screenshots ==
 
 1. Dashboard overview with connected platforms
-2. AI Assistant chat interface
+2. MCP Abilities Catalog showing available analytics abilities
 3. Google Analytics 4 connection setup
 4. Settings page with API configuration
 
 == Changelog ==
 
 = 0.1.2 - 2025-12-13 =
-* Release version 0.1.2
+* Added interactive onboarding wizard with guided setup
+* Added Analytics at a Glance dashboard widget with sparkline trends
+* Added admin bar analytics pulse indicator
+* Added auto-installed smart prompt templates
+* Added MCP Abilities Catalog page
+* Added connection depth prompts for contextual suggestions
+* Improved cross-platform summary abilities
 
 = 0.1.1 - 2025-12-13 =
 * Release version 0.1.1
 
 = 0.1.0 - 2025-12-06 =
-* Release version 0.1.0
-
-= 1.0.0 =
 * Initial release
-* AI-powered chat interface for analytics
+* MCP-native analytics abilities for AI assistants
 * Google Analytics 4 integration
 * Google Search Console integration
 * Microsoft Clarity integration
-* Meta Business Suite integration
-* DataForSEO integration
 * Secure OAuth and credential management
 * Cross-platform comparison tools
 * Smart caching system
 
 == Upgrade Notice ==
 
-= 1.0.0 =
+= 0.1.2 =
+New onboarding wizard, dashboard widget, and abilities catalog. Recommended update for all users.
+
+= 0.1.0 =
 Initial release. Please backup your site before installing.
 
 == Privacy Policy ==

@@ -9,6 +9,8 @@ namespace Marketing_Analytics_MCP;
 
 use Marketing_Analytics_MCP\Utils\Permission_Manager;
 
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 /**
  * Fired during plugin deactivation
  */
