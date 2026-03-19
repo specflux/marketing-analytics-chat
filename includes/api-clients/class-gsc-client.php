@@ -154,7 +154,7 @@ class GSC_Client {
 
 			return $data;
 		} catch ( \Exception $e ) {
-			throw new \Exception( 'GSC API error: ' . $e->getMessage() );
+			throw new \Exception( 'GSC API error: ' . esc_html( $e->getMessage() ) );
 		}
 	}
 
@@ -224,7 +224,7 @@ class GSC_Client {
 				'page_fetch_state' => $response->getInspectionResult()->getIndexStatusResult()->getPageFetchState(),
 			);
 		} catch ( \Exception $e ) {
-			throw new \Exception( 'GSC URL Inspection error: ' . $e->getMessage() );
+			throw new \Exception( 'GSC URL Inspection error: ' . esc_html( $e->getMessage() ) );
 		}
 	}
 
@@ -264,7 +264,7 @@ class GSC_Client {
 
 			return $sitemap_data;
 		} catch ( \Exception $e ) {
-			throw new \Exception( 'GSC Sitemap error: ' . $e->getMessage() );
+			throw new \Exception( 'GSC Sitemap error: ' . esc_html( $e->getMessage() ) );
 		}
 	}
 

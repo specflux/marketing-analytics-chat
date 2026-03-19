@@ -169,7 +169,7 @@ class GA4_Client {
 
 			return $data;
 		} catch ( \Exception $e ) {
-			throw new \Exception( 'GA4 API error: ' . $e->getMessage() );
+			throw new \Exception( 'GA4 API error: ' . esc_html( $e->getMessage() ) );
 		}
 	}
 
@@ -213,7 +213,7 @@ class GA4_Client {
 
 			return $this->parse_report_response( $response );
 		} catch ( \Exception $e ) {
-			throw new \Exception( 'GA4 realtime API error: ' . $e->getMessage() );
+			throw new \Exception( 'GA4 realtime API error: ' . esc_html( $e->getMessage() ) );
 		}
 	}
 

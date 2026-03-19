@@ -28,7 +28,6 @@ class Plugin {
 	 */
 	public function __construct() {
 		$this->load_dependencies();
-		$this->set_locale();
 		$this->define_admin_hooks();
 		$this->define_ajax_hooks();
 		$this->define_abilities_hooks();
@@ -39,28 +38,6 @@ class Plugin {
 	 */
 	private function load_dependencies() {
 		$this->loader = new Loader();
-	}
-
-	/**
-	 * Define the locale for internationalization
-	 */
-	private function set_locale() {
-		$this->loader->add_action(
-			'plugins_loaded',
-			$this,
-			'load_plugin_textdomain'
-		);
-	}
-
-	/**
-	 * Load plugin text domain
-	 */
-	public function load_plugin_textdomain() {
-		load_plugin_textdomain(
-			'marketing-analytics-chat',
-			false,
-			dirname( MARKETING_ANALYTICS_MCP_BASENAME ) . '/languages/'
-		);
 	}
 
 	/**
