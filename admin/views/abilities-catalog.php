@@ -196,7 +196,7 @@ $mac_mcp_endpoint = rest_url( 'mcp/mcp-adapter-default-server' );
 			printf(
 				/* translators: %s: link to documentation */
 				esc_html__( 'Works with Claude Desktop, ChatGPT, Cursor, and any MCP-compatible client. See our %s for setup guides.', 'marketing-analytics-chat' ),
-				'<a href="https://github.com/stephen1204paul/marketing-analytics-chat/blob/main/docs/setup-guides/" target="_blank">' . esc_html__( 'documentation', 'marketing-analytics-chat' ) . '</a>'
+				'<a href="https://github.com/specflux/marketing-analytics-chat/blob/main/docs/setup-guides/" target="_blank">' . esc_html__( 'documentation', 'marketing-analytics-chat' ) . '</a>'
 			);
 			?>
 		</p>

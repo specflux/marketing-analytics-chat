@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Marketing Analytics Chat
- * Plugin URI: https://github.com/stephen1204paul/marketing-analytics-chat
+ * Plugin URI: https://github.com/specflux/marketing-analytics-chat
  * Description: Chat with your marketing analytics data using AI. Connects Google Analytics 4, Search Console, Microsoft Clarity, and more.
  * Version: 0.1.2
  * Requires at least: 6.9

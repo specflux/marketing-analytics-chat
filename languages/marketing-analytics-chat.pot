@@ -21,7 +21,7 @@ msgstr ""
 
 #. Plugin URI of the plugin
 #: marketing-analytics-chat.php
-msgid "https://github.com/stephen1204paul/marketing-analytics-chat"
+msgid "https://github.com/specflux/marketing-analytics-chat"
 msgstr ""
 
 #. Description of the plugin

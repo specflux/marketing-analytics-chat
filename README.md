@@ -58,7 +58,7 @@ This WordPress plugin bridges your marketing analytics platforms with AI assista
 
 ```bash
 cd wp-content/plugins/
-git clone https://github.com/stephen1204paul/marketing-analytics-chat.git
+git clone https://github.com/specflux/marketing-analytics-chat.git
 cd marketing-analytics-chat
 composer install --no-dev
 wp plugin activate marketing-analytics-chat
@@ -147,5 +147,5 @@ Built with:
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/stephen1204paul/marketing-analytics-chat/issues)
+- **Issues**: [GitHub Issues](https://github.com/specflux/marketing-analytics-chat/issues)
 - **Website**: [specflux.com](https://www.specflux.com/)
