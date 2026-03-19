@@ -37,10 +37,6 @@ Marketing Analytics Chat lets you have conversations with your marketing data us
 * **Smart Caching** - Reduce API calls with intelligent caching
 * **Cross-Platform Analysis** - Compare data across all connected platforms
 
-= Pro Add-on =
-
-Additional platforms and features are available through the Pro add-on, including Meta Business Suite, DataForSEO, WooCommerce analytics, AI-powered insights, anomaly detection, and notification integrations. Visit our website for details.
-
 = How It Works =
 
 1. Connect your analytics platforms via OAuth or API keys

@@ -117,19 +117,6 @@ vendor/bin/phpcs          # Check coding standards
 vendor/bin/phpcbf         # Auto-fix standards
 ```
 
-## Pro Add-on
-
-Additional platforms and features are available through the Pro add-on:
-
-- Meta Business Suite, DataForSEO
-- WooCommerce analytics
-- AI-powered insights and anomaly detection
-- Slack and WhatsApp notifications
-- Google Sheets export
-- Multisite support
-
-Visit [specflux.com](https://www.specflux.com/) for details.
-
 ## Security
 
 - **Credential Encryption**: libsodium `crypto_secretbox` with per-site keys
