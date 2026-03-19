@@ -29,7 +29,7 @@ class Activator {
 		// Check minimum WordPress version
 		if ( version_compare( get_bloginfo( 'version' ), '6.9', '<' ) ) {
 			wp_die(
-				esc_html__( 'Marketing Analytics Chat requires WordPress 6.90 or higher.', 'marketing-analytics-chat' ),
+				esc_html__( 'Marketing Analytics Chat requires WordPress 6.9 or higher.', 'marketing-analytics-chat' ),
 				esc_html__( 'Plugin Activation Error', 'marketing-analytics-chat' ),
 				array( 'back_link' => true )
 			);
@@ -68,6 +68,9 @@ class Activator {
 
 		// Set default options
 		self::set_default_options();
+
+		// Create chat tables
+		self::create_chat_tables();
 
 		// Generate encryption key if it doesn't exist
 		self::generate_encryption_key();
@@ -134,6 +137,52 @@ class Activator {
 
 		foreach ( $default_presets as $preset_key ) {
 			$prompt_manager->import_preset( $preset_key );
+		}
+	}
+
+	/**
+	 * Create database tables for AI chat conversations and messages
+	 */
+	private static function create_chat_tables() {
+		global $wpdb;
+
+		$charset_collate = $wpdb->get_charset_collate();
+
+		$conversations_table = $wpdb->prefix . 'marketing_analytics_mcp_conversations';
+		$messages_table      = $wpdb->prefix . 'marketing_analytics_mcp_messages';
+
+		$sql = "CREATE TABLE {$conversations_table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			title varchar(255) NOT NULL DEFAULT '',
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY user_id (user_id),
+			KEY updated_at (updated_at)
+		) {$charset_collate};
+
+		CREATE TABLE {$messages_table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			conversation_id bigint(20) unsigned NOT NULL,
+			role varchar(20) NOT NULL DEFAULT 'user',
+			content longtext NOT NULL,
+			tool_calls longtext DEFAULT NULL,
+			tool_call_id varchar(255) DEFAULT NULL,
+			tool_name varchar(255) DEFAULT NULL,
+			metadata longtext DEFAULT NULL,
+			tokens_used int(11) unsigned DEFAULT 0,
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY conversation_id (conversation_id),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		if ( file_exists( ABSPATH . 'wp-admin/includes/upgrade.php' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
+		if ( function_exists( 'dbDelta' ) ) {
+			dbDelta( $sql );
 		}
 	}
 

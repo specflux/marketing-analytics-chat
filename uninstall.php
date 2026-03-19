@@ -45,6 +45,11 @@ function marketing_analytics_mcp_uninstall() {
 	delete_option( 'marketing_analytics_mcp_onboarding_complete' );
 	delete_option( 'marketing_analytics_mcp_custom_prompts' );
 
+	// Delete connection and access control options
+	delete_option( 'marketing_analytics_mcp_ga4_property_id' );
+	delete_option( 'marketing_analytics_mcp_gsc_site_url' );
+	delete_option( 'marketing_analytics_mcp_allowed_roles' );
+
 	// Delete anomaly data
 	delete_option( 'marketing_analytics_recent_anomalies' );
 
@@ -91,8 +96,11 @@ function marketing_analytics_mcp_uninstall() {
 		}
 	}
 
-	// Note: We don't delete any custom database tables here
-	// because this plugin uses wp_options for everything
+	// Drop chat tables
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Uninstall cleanup.
+	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}marketing_analytics_mcp_messages" );
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Uninstall cleanup.
+	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}marketing_analytics_mcp_conversations" );
 }
 
 marketing_analytics_mcp_uninstall();

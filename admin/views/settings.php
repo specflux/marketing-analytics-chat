@@ -44,7 +44,8 @@ if ( isset( $_POST['save_google_oauth'] ) && check_admin_referer( 'marketing_ana
 
 	// Handle general settings form submission
 if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'marketing_analytics_mcp_save_settings', 'settings_nonce' ) ) {
-	$new_settings = array();
+	$existing_settings = get_option( 'marketing_analytics_mcp_settings', array() );
+	$new_settings      = array();
 
 	// AI Chat Settings
 	$new_settings['ai_provider']    = sanitize_text_field( wp_unslash( $_POST['ai_provider'] ?? 'claude' ) );
@@ -69,8 +70,10 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'marketing_analyti
 	$new_settings['cache_ttl_gsc']     = absint( $_POST['cache_ttl_gsc'] ?? 1440 ) * 60;
 
 	// Debug Settings
-	$new_settings['debug_mode'] = isset( $_POST['debug_mode'] ) ? 1 : 0;
+	$new_settings['debug_mode'] = ! empty( $_POST['debug_mode'] ) ? 1 : 0;
 
+	// Preserve keys not present in the form (e.g. platforms, version).
+	$new_settings = array_merge( $existing_settings, $new_settings );
 	update_option( 'marketing_analytics_mcp_settings', $new_settings );
 
 	$success_message = __( 'Settings saved successfully.', 'marketing-analytics-chat' );

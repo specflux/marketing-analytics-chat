@@ -24,6 +24,7 @@ Marketing Analytics Chat lets you have conversations with your marketing data us
 
 = Key Features =
 
+* **Built-in AI Chat** - Chat with your analytics data using Claude, OpenAI, or Google Gemini directly in WordPress
 * **MCP-Native Architecture** - Exposes analytics as MCP abilities for any compatible AI assistant
 * **Interactive Onboarding Wizard** - Step-by-step setup with guided configuration
 * **Analytics at a Glance Dashboard** - Dashboard widget with sparkline trends
@@ -63,6 +64,9 @@ This plugin connects to the following third-party services when you configure th
 * **Google Analytics Admin API** (https://developers.google.com/analytics/devguides/config/admin/v1) - Lists your GA4 properties during connection setup. [Google Privacy Policy](https://policies.google.com/privacy)
 * **Google Search Console API** (https://developers.google.com/webmaster-tools/search-console-api-original) - Retrieves search performance data including queries, clicks, and impressions. Your site URL and OAuth tokens are sent to Google servers. [Google Privacy Policy](https://policies.google.com/privacy)
 * **Microsoft Clarity Data Export API** (https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-data-export-api) - Retrieves session recordings, heatmap data, and user behavior insights. Your Clarity API token and project ID are sent to Microsoft servers. [Microsoft Privacy Statement](https://privacy.microsoft.com/privacystatement)
+* **Anthropic API** (https://docs.anthropic.com/en/api) - When Claude is selected as the AI provider, your analytics data and chat messages are sent to Anthropic's servers for AI responses. Requires your own API key. [Anthropic Privacy Policy](https://www.anthropic.com/privacy)
+* **OpenAI API** (https://platform.openai.com/docs) - When OpenAI is selected as the AI provider, your analytics data and chat messages are sent to OpenAI's servers for AI responses. Requires your own API key. [OpenAI Privacy Policy](https://openai.com/policies/privacy-policy)
+* **Google Gemini API** (https://ai.google.dev/docs) - When Gemini is selected as the AI provider, your analytics data and chat messages are sent to Google's servers for AI responses. Requires your own API key. [Google Privacy Policy](https://policies.google.com/privacy)
 
 == Installation ==
 

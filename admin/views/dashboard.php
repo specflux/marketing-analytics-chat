@@ -265,7 +265,7 @@ $gsc_connected      = $credential_manager->has_credentials( 'gsc' );
 	 * Used by the pro add-on to inject additional dashboard cards
 	 * (e.g. Quick Wins, AI Insights summary).
 	 */
-	do_action( 'marketing_analytics_mcp_dashboard_cards' );
+	do_action( 'marketing_analytics_mcp_dashboard_cards_after_insights' );
 	?>
 
 	<div class="marketing-analytics-status-cards">

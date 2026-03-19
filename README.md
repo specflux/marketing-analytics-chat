@@ -25,6 +25,10 @@ This WordPress plugin bridges your marketing analytics platforms with AI assista
 - Get Clarity Insights and Metrics
 - Cross-Platform Summary and Compare Platforms
 
+### Built-in AI Chat
+
+Chat with your analytics data directly in WordPress using Claude (Anthropic), OpenAI GPT, or Google Gemini. Bring your own API key — the plugin connects to the MCP abilities and lets the AI analyze your data conversationally.
+
 ### Additional Features
 
 - Interactive onboarding wizard with guided setup

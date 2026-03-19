@@ -81,6 +81,16 @@ class Admin {
 			array( $this, 'render_settings_page' )
 		);
 
+		// AI Chat page
+		add_submenu_page(
+			'marketing-analytics-chat',
+			__( 'AI Assistant', 'marketing-analytics-chat' ),
+			__( 'AI Assistant', 'marketing-analytics-chat' ),
+			'access_marketing_analytics', // phpcs:ignore WordPress.WP.Capabilities.Unknown -- Custom capability registered on activation.
+			'marketing-analytics-chat-ai-assistant',
+			array( $this, 'render_chat_page' )
+		);
+
 		/**
 		 * Allow pro add-on to register additional submenu pages.
 		 */
@@ -104,6 +114,16 @@ class Admin {
 			array(),
 			MARKETING_ANALYTICS_MCP_VERSION
 		);
+
+		// Enqueue chat styles on AI Assistant page
+		if ( strpos( $hook, 'marketing-analytics-chat-ai-assistant' ) !== false ) {
+			wp_enqueue_style(
+				'marketing-analytics-chat-interface',
+				MARKETING_ANALYTICS_MCP_URL . 'admin/css/chat-interface.css',
+				array(),
+				MARKETING_ANALYTICS_MCP_VERSION
+			);
+		}
 
 		// Enqueue wizard styles on settings page
 		if ( strpos( $hook, 'marketing-analytics-chat-settings' ) !== false ) {
@@ -225,6 +245,33 @@ class Admin {
 				array(
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'marketing_analytics_mcp_dismiss_wizard' ),
+				)
+			);
+		}
+
+		// Enqueue chat interface script on AI Assistant page.
+		if ( strpos( $hook, 'marketing-analytics-chat-ai-assistant' ) !== false ) {
+			wp_enqueue_script(
+				'marketing-analytics-chat-interface',
+				MARKETING_ANALYTICS_MCP_URL . 'admin/js/chat-interface.js',
+				array( 'jquery' ),
+				MARKETING_ANALYTICS_MCP_VERSION,
+				true
+			);
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading conversation_id for localization only.
+			$active_conversation_id = isset( $_GET['conversation_id'] ) ? absint( $_GET['conversation_id'] ) : 0;
+
+			wp_localize_script(
+				'marketing-analytics-chat-interface',
+				'marketingAnalyticsMCPChat',
+				array(
+					'ajaxUrl'           => admin_url( 'admin-ajax.php' ),
+					'nonce'             => wp_create_nonce( 'marketing-analytics-chat-admin' ),
+					'conversationId'    => $active_conversation_id ? $active_conversation_id : null,
+					'userId'            => get_current_user_id(),
+					'chatPageUrl'       => admin_url( 'admin.php?page=marketing-analytics-chat-ai-assistant' ),
+					'conversationNonce' => wp_create_nonce( 'marketing_analytics_chat_conversation' ),
 				)
 			);
 		}
@@ -386,6 +433,17 @@ class Admin {
 		}
 
 		require_once MARKETING_ANALYTICS_MCP_PATH . 'admin/views/abilities-catalog.php';
+	}
+
+	/**
+	 * Render AI chat page
+	 */
+	public function render_chat_page() {
+		if ( ! Permission_Manager::can_access_plugin() ) {
+			return;
+		}
+
+		require_once MARKETING_ANALYTICS_MCP_PATH . 'admin/views/chat.php';
 	}
 
 	/**

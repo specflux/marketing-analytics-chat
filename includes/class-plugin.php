@@ -89,6 +89,10 @@ class Plugin {
 	private function define_ajax_hooks() {
 		$ajax_handler = new Admin\Ajax_Handler();
 		$ajax_handler->register_hooks();
+
+		// Register chat AJAX handlers.
+		$chat_ajax = new Chat\Chat_Ajax_Handler();
+		$chat_ajax->register_handlers();
 	}
 
 	/**

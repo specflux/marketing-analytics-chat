@@ -68,8 +68,8 @@ $widget_data        = get_transient( 'marketing_analytics_widget_data' );
 
 	<!-- Quick Action -->
 	<div class="marketing-analytics-widget-section" style="margin-top: 15px; text-align: center;">
-		<a href="<?php echo esc_url( admin_url( 'admin.php?page=marketing-analytics-chat' ) ); ?>" class="button button-primary" style="width: 100%; text-align: center;">
-			<?php esc_html_e( 'View Dashboard', 'marketing-analytics-chat' ); ?>
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=marketing-analytics-chat-ai-assistant' ) ); ?>" class="button button-primary" style="width: 100%; text-align: center;">
+			<?php esc_html_e( 'Open AI Assistant', 'marketing-analytics-chat' ); ?>
 		</a>
 	</div>
 
