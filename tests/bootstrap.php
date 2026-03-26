@@ -810,6 +810,35 @@ if ( ! function_exists( 'esc_sql' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_register_ability' ) ) {
+	/**
+	 * Mock wp_register_ability function.
+	 *
+	 * Tracks registered abilities via the Abilities_Registrar for introspection.
+	 *
+	 * @param string $name   Ability name.
+	 * @param array  $config Ability configuration.
+	 * @return bool
+	 */
+	function wp_register_ability( $name, $config = array() ) {
+		\Marketing_Analytics_MCP\Abilities\Abilities_Registrar::track_ability( $name, $config );
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_register_ability_category' ) ) {
+	/**
+	 * Mock wp_register_ability_category function.
+	 *
+	 * @param string $name   Category name.
+	 * @param array  $config Category configuration.
+	 * @return bool
+	 */
+	function wp_register_ability_category( $name, $config = array() ) {
+		return true;
+	}
+}
+
 if ( ! function_exists( 'wp_add_dashboard_widget' ) ) {
 	/**
 	 * Mock wp_add_dashboard_widget function.

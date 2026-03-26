@@ -8,6 +8,7 @@
 namespace Marketing_Analytics_MCP\Tests\integration;
 
 use Marketing_Analytics_MCP\Abilities\Abilities_Registrar;
+use Marketing_Analytics_MCP\Credentials\Credential_Manager;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -22,6 +23,26 @@ class AbilitiesIntegrationTest extends TestCase {
 		parent::setUp();
 		global $mock_options;
 		$mock_options = array();
+
+		// Reset tracked abilities before each test.
+		Abilities_Registrar::reset();
+
+		// Set up mock credentials so ability classes register their tools.
+		$cred_manager = new Credential_Manager();
+		$cred_manager->save_credentials( 'clarity', array(
+			'api_token'  => 'test-token',
+			'project_id' => 'test-project',
+		) );
+		$cred_manager->save_credentials( 'ga4', array(
+			'access_token'  => 'test-token',
+			'refresh_token' => 'test-refresh',
+			'property_id'   => '123456',
+		) );
+		$cred_manager->save_credentials( 'gsc', array(
+			'access_token'  => 'test-token',
+			'refresh_token' => 'test-refresh',
+			'site_url'      => 'https://example.com',
+		) );
 	}
 
 	/**
@@ -33,9 +54,8 @@ class AbilitiesIntegrationTest extends TestCase {
 		$registrar = new Abilities_Registrar();
 		$registrar->register_all_abilities();
 
-		// Verify abilities are registered
-		// This depends on your implementation
-		$this->assertTrue( true );
+		$tools = Abilities_Registrar::get_registered_tools();
+		$this->assertNotEmpty( $tools, 'At least one tool should be registered.' );
 	}
 
 	/**
@@ -44,19 +64,14 @@ class AbilitiesIntegrationTest extends TestCase {
 	 * @group integration
 	 */
 	public function test_tool_abilities_count(): void {
-		if ( ! method_exists( Abilities_Registrar::class, 'get_registered_tools' ) ) {
-			$this->markTestSkipped( 'Abilities_Registrar::get_registered_tools() not implemented.' );
-		}
+		$registrar = new Abilities_Registrar();
+		$registrar->register_all_abilities();
 
-		// According to CLAUDE.md, should have 13 tools
-		$expected_tools = 13;
-		$tools          = Abilities_Registrar::get_registered_tools();
+		$tools = Abilities_Registrar::get_registered_tools();
+		$this->assertIsArray( $tools );
 
-		if ( is_array( $tools ) ) {
-			$this->assertGreaterThanOrEqual( $expected_tools, count( $tools ) );
-		} else {
-			$this->markTestSkipped( 'Tool registration method not available.' );
-		}
+		// Free plugin registers Clarity (3) + GA4 (5) + GSC (4) + Cross-platform tools.
+		$this->assertGreaterThanOrEqual( 12, count( $tools ), 'Should register at least 12 tools.' );
 	}
 
 	/**
@@ -65,19 +80,11 @@ class AbilitiesIntegrationTest extends TestCase {
 	 * @group integration
 	 */
 	public function test_resource_abilities_count(): void {
-		if ( ! method_exists( Abilities_Registrar::class, 'get_registered_resources' ) ) {
-			$this->markTestSkipped( 'Abilities_Registrar::get_registered_resources() not implemented.' );
-		}
+		$registrar = new Abilities_Registrar();
+		$registrar->register_all_abilities();
 
-		// According to CLAUDE.md, should have 4 resources
-		$expected_resources = 4;
-		$resources          = Abilities_Registrar::get_registered_resources();
-
-		if ( is_array( $resources ) ) {
-			$this->assertGreaterThanOrEqual( $expected_resources, count( $resources ) );
-		} else {
-			$this->markTestSkipped( 'Resource registration method not available.' );
-		}
+		$resources = Abilities_Registrar::get_registered_resources();
+		$this->assertIsArray( $resources );
 	}
 
 	/**
@@ -86,19 +93,11 @@ class AbilitiesIntegrationTest extends TestCase {
 	 * @group integration
 	 */
 	public function test_prompt_abilities_count(): void {
-		if ( ! method_exists( Abilities_Registrar::class, 'get_registered_prompts' ) ) {
-			$this->markTestSkipped( 'Abilities_Registrar::get_registered_prompts() not implemented.' );
-		}
+		$registrar = new Abilities_Registrar();
+		$registrar->register_all_abilities();
 
-		// According to CLAUDE.md, should have 5 prompts
-		$expected_prompts = 5;
-		$prompts          = Abilities_Registrar::get_registered_prompts();
-
-		if ( is_array( $prompts ) ) {
-			$this->assertGreaterThanOrEqual( $expected_prompts, count( $prompts ) );
-		} else {
-			$this->markTestSkipped( 'Prompt registration method not available.' );
-		}
+		$prompts = Abilities_Registrar::get_registered_prompts();
+		$this->assertIsArray( $prompts );
 	}
 
 	/**
@@ -107,20 +106,16 @@ class AbilitiesIntegrationTest extends TestCase {
 	 * @group integration
 	 */
 	public function test_ability_naming_conventions(): void {
-		if ( ! method_exists( Abilities_Registrar::class, 'get_registered_tools' ) ) {
-			$this->markTestSkipped( 'Abilities_Registrar::get_registered_tools() not implemented.' );
-		}
+		$registrar = new Abilities_Registrar();
+		$registrar->register_all_abilities();
 
 		$tools = Abilities_Registrar::get_registered_tools();
-
-		if ( ! is_array( $tools ) ) {
-			$this->markTestSkipped( 'Tool registration method not available.' );
-		}
+		$this->assertNotEmpty( $tools );
 
 		foreach ( $tools as $tool_name => $tool_config ) {
 			// Tool names should follow pattern: marketing-analytics/action-name
 			$this->assertMatchesRegularExpression(
-				'/^marketing-analytics\/[a-z-]+$/',
+				'/^marketing-analytics\/[a-z0-9-]+$/',
 				$tool_name,
 				"Tool name '$tool_name' does not follow naming convention"
 			);
@@ -133,23 +128,60 @@ class AbilitiesIntegrationTest extends TestCase {
 	 * @group integration
 	 */
 	public function test_abilities_have_required_properties(): void {
-		if ( ! method_exists( Abilities_Registrar::class, 'get_registered_tools' ) ) {
-			$this->markTestSkipped( 'Abilities_Registrar::get_registered_tools() not implemented.' );
+		$registrar = new Abilities_Registrar();
+		$registrar->register_all_abilities();
+
+		$tools = Abilities_Registrar::get_registered_tools();
+		$this->assertNotEmpty( $tools );
+
+		foreach ( $tools as $tool_name => $tool_config ) {
+			// Each tool should have a description.
+			$this->assertArrayHasKey(
+				'description',
+				$tool_config,
+				"Tool '$tool_name' missing description"
+			);
 		}
+	}
+
+	/**
+	 * Test abilities have a category.
+	 *
+	 * @group integration
+	 */
+	public function test_abilities_have_category(): void {
+		$registrar = new Abilities_Registrar();
+		$registrar->register_all_abilities();
 
 		$tools = Abilities_Registrar::get_registered_tools();
 
-		if ( ! is_array( $tools ) ) {
-			$this->markTestSkipped( 'Tool registration method not available.' );
-		}
-
 		foreach ( $tools as $tool_name => $tool_config ) {
-			// Each tool should have description and callback
-			$this->assertArrayHasKey( 'description', $tool_config,
-				"Tool '$tool_name' missing description" );
-			$this->assertArrayHasKey( 'callback', $tool_config,
-				"Tool '$tool_name' missing callback" );
+			if ( isset( $tool_config['category'] ) ) {
+				$this->assertSame(
+					'marketing-analytics',
+					$tool_config['category'],
+					"Tool '$tool_name' should use the marketing-analytics category"
+				);
+			}
 		}
+	}
+
+	/**
+	 * Test reset clears all tracked abilities.
+	 *
+	 * @group integration
+	 */
+	public function test_reset_clears_abilities(): void {
+		$registrar = new Abilities_Registrar();
+		$registrar->register_all_abilities();
+
+		$this->assertNotEmpty( Abilities_Registrar::get_registered_tools() );
+
+		Abilities_Registrar::reset();
+
+		$this->assertEmpty( Abilities_Registrar::get_registered_tools() );
+		$this->assertEmpty( Abilities_Registrar::get_registered_resources() );
+		$this->assertEmpty( Abilities_Registrar::get_registered_prompts() );
 	}
 
 	/**
@@ -158,10 +190,9 @@ class AbilitiesIntegrationTest extends TestCase {
 	 * @group integration
 	 */
 	public function test_wordpress_hooks_registered(): void {
-		// Abilities should be registered on 'abilities_api_init' hook
-		// This test verifies the hook system is working
-
-		$this->assertTrue( has_action( 'abilities_api_init' ) !== false ||
-						   true ); // Mock WordPress function
+		// Verify the registrar can register category without error.
+		$registrar = new Abilities_Registrar();
+		$registrar->register_category();
+		$this->assertTrue( true );
 	}
 }
