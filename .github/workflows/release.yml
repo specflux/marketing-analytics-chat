@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. 0.1.2). Leave empty to use version from plugin header.'
+        description: 'Version tag (e.g. 0.1.3). Leave empty to use version from plugin header.'
         required: false
 
 jobs:
@@ -79,13 +79,13 @@ jobs:
           elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
           else
-            VERSION=$(grep -oP 'Version:\s*\K[0-9.]+' marketing-analytics-chat.php)
+            VERSION=$(grep -oP 'Version:\s*\K[0-9.]+' specflux-marketing-analytics-chat.php)
             echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build release ZIP
         run: |
-          PLUGIN_SLUG="marketing-analytics-chat"
+          PLUGIN_SLUG="specflux-marketing-analytics-chat"
           VERSION="${{ steps.version.outputs.version }}"
           BUILD_DIR="/tmp/build"
           DEST_DIR="${BUILD_DIR}/${PLUGIN_SLUG}"
@@ -94,64 +94,14 @@ jobs:
 
           # Copy production files using rsync, excluding dev files via .distignore
           rsync -a \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='node_modules' \
-            --exclude='tests' \
-            --exclude='bin' \
-            --exclude='.wordpress-org' \
-            --exclude='presentation' \
-            --exclude='docs' \
-            --exclude='build' \
-            --exclude='dist' \
-            --exclude='assets' \
-            --exclude='.distignore' \
-            --exclude='.editorconfig' \
-            --exclude='.gitignore' \
-            --exclude='.gitattributes' \
-            --exclude='.phpcs.xml' \
-            --exclude='phpcs.xml.dist' \
-            --exclude='phpstan.neon' \
-            --exclude='phpunit.xml' \
-            --exclude='phpunit.xml.dist' \
-            --exclude='composer.json' \
-            --exclude='composer.lock' \
-            --exclude='package.json' \
-            --exclude='package-lock.json' \
-            --exclude='Gruntfile.js' \
-            --exclude='webpack.config.js' \
-            --exclude='CLAUDE.md' \
-            --exclude='CONTRIBUTING.md' \
-            --exclude='CHANGELOG.md' \
-            --exclude='RELEASE.md' \
-            --exclude='REPOSITORY.md' \
-            --exclude='README.md' \
-            --exclude='plan.md' \
-            --exclude='upload-to-repo.md' \
-            --exclude='*.log' \
-            --exclude='*.sql' \
-            --exclude='*.tar.gz' \
-            --exclude='*.zip' \
-            --exclude='*.sh' \
-            --exclude='.phpunit.result.cache' \
-            --exclude='.idea' \
-            --exclude='.vscode' \
-            --exclude='*.swp' \
-            --exclude='*.swo' \
-            --exclude='.DS_Store' \
-            --exclude='Thumbs.db' \
-            --exclude='docker-compose.yml' \
-            --exclude='Dockerfile' \
-            --exclude='.travis.yml' \
-            --exclude='.circleci' \
-            --exclude='.gitlab-ci.yml' \
+            --exclude-from=.distignore \
             ./ "$DEST_DIR/"
 
           # Remove dev-only vendor packages that may have been included
           cd "$DEST_DIR"
           rm -rf vendor/phpunit vendor/phpstan vendor/squizlabs vendor/sebastian \
                  vendor/phpcsstandards vendor/wp-coding-standards vendor/dealerdirect \
-                 vendor/phar-io vendor/myclabs vendor/nikic vendor/theseer
+                 vendor/phar-io vendor/myclabs vendor/nikic vendor/theseer vendor/yoast
 
           # Create ZIP
           cd "$BUILD_DIR"
@@ -167,14 +117,14 @@ jobs:
       - name: Upload ZIP as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: marketing-analytics-chat-${{ steps.version.outputs.version }}
-          path: marketing-analytics-chat-${{ steps.version.outputs.version }}.zip
+          name: specflux-marketing-analytics-chat-${{ steps.version.outputs.version }}
+          path: specflux-marketing-analytics-chat-${{ steps.version.outputs.version }}.zip
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: marketing-analytics-chat-${{ steps.version.outputs.version }}.zip
+          files: specflux-marketing-analytics-chat-${{ steps.version.outputs.version }}.zip
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -26,7 +26,7 @@ jobs:
         env:
           SVN_USERNAME: ${{ secrets.WPORG_SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.WPORG_SVN_PASSWORD }}
-          SLUG: marketing-analytics-chat
+          SLUG: specflux-marketing-analytics-chat
           VERSION: ${{ github.event.release.tag_name }}
           ASSETS_DIR: .wordpress-org
         with:

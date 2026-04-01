@@ -44,22 +44,26 @@ jobs:
       - name: Bump version in plugin file
         run: |
           VERSION="${{ github.event.inputs.version }}"
-          PLUGIN_FILE="marketing-analytics-chat.php"
+          PLUGIN_FILE="specflux-marketing-analytics-chat.php"
 
           # Update plugin header version
           sed -i "s/^ \* Version: .*/ * Version: ${VERSION}/" "$PLUGIN_FILE"
 
           # Update PHP constant version
-          sed -i "s/define( 'MARKETING_ANALYTICS_MCP_VERSION', '.*' );/define( 'MARKETING_ANALYTICS_MCP_VERSION', '${VERSION}' );/" "$PLUGIN_FILE"
+          sed -i "s/define( 'SPECFLUX_MAC_VERSION', '.*' );/define( 'SPECFLUX_MAC_VERSION', '${VERSION}' );/" "$PLUGIN_FILE"
+
+          # Update readme.txt stable tag
+          sed -i "s/^Stable tag: .*/Stable tag: ${VERSION}/" "readme.txt"
 
           # Verify changes
           echo "=== Version updated to ${VERSION} ==="
           grep "Version:" "$PLUGIN_FILE"
-          grep "MARKETING_ANALYTICS_MCP_VERSION" "$PLUGIN_FILE"
+          grep "SPECFLUX_MAC_VERSION" "$PLUGIN_FILE"
+          grep "Stable tag:" "readme.txt"
 
       - name: Commit version bump
         run: |
-          git add marketing-analytics-chat.php
+          git add specflux-marketing-analytics-chat.php readme.txt
           git commit -m "chore: bump version to ${{ github.event.inputs.version }}"
 
       - name: Push release branch
@@ -80,7 +84,8 @@ jobs:
 
           ### Checklist
           - [ ] Version bumped in plugin header
-          - [ ] Version bumped in `MARKETING_ANALYTICS_MCP_VERSION` constant
+          - [ ] Version bumped in `SPECFLUX_MAC_VERSION` constant
+          - [ ] Stable tag updated in readme.txt
           - [ ] Tests passing
           - [ ] Ready for release
 

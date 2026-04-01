@@ -13,10 +13,10 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Plugin details
-PLUGIN_SLUG="marketing-analytics-chat"
-PLUGIN_FILE="marketing-analytics-chat.php"
+PLUGIN_SLUG="specflux-marketing-analytics-chat"
+PLUGIN_FILE="specflux-marketing-analytics-chat.php"
 README_FILE="readme.txt"
-MAIN_FILE="marketing-analytics-chat.php"
+MAIN_FILE="specflux-marketing-analytics-chat.php"
 
 # Get current version from plugin file
 CURRENT_VERSION=$(grep -m 1 "Version:" "$MAIN_FILE" | awk '{print $3}' | tr -d '\r')
@@ -183,7 +183,7 @@ update_version_in_file "$MAIN_FILE" \
     "Version: ${NEW_VERSION}"
 
 update_version_in_file "$MAIN_FILE" \
-    "s/define( 'MARKETING_ANALYTICS_MCP_VERSION', '${CURRENT_VERSION}' );/define( 'MARKETING_ANALYTICS_MCP_VERSION', '${NEW_VERSION}' );/" \
+    "s/define( 'SPECFLUX_MAC_VERSION', '${CURRENT_VERSION}' );/define( 'SPECFLUX_MAC_VERSION', '${NEW_VERSION}' );/" \
     "define( 'MARKETING_ANALYTICS_MCP_VERSION', '${NEW_VERSION}' );"
 
 # Update version in readme.txt
