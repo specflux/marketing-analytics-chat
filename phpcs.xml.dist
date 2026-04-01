@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<ruleset name="Marketing Analytics Chat">
-    <description>WordPress Coding Standards for Marketing Analytics Chat Plugin</description>
+<ruleset name="Specflux Marketing Analytics Chat">
+    <description>WordPress Coding Standards for Specflux Marketing Analytics Chat Plugin</description>
 
     <!-- What to scan -->
     <file>.</file>

@@ -65,7 +65,7 @@
 				url: marketingAnalyticsMCPChat.ajaxUrl,
 				type: 'POST',
 				data: {
-					action: 'marketing_analytics_mcp_create_conversation',
+					action: 'specflux_mac_create_conversation',
 					nonce: marketingAnalyticsMCPChat.nonce,
 					user_id: marketingAnalyticsMCPChat.userId
 				},
@@ -110,7 +110,7 @@
 			url: marketingAnalyticsMCPChat.ajaxUrl,
 			type: 'POST',
 			data: {
-				action: 'marketing_analytics_mcp_delete_conversation',
+				action: 'specflux_mac_delete_conversation',
 				nonce: marketingAnalyticsMCPChat.nonce,
 				conversation_id: conversationId
 			},
@@ -179,7 +179,7 @@
 				url: marketingAnalyticsMCPChat.ajaxUrl,
 				type: 'POST',
 				data: {
-					action: 'marketing_analytics_mcp_send_message',
+					action: 'specflux_mac_send_message',
 					nonce: marketingAnalyticsMCPChat.nonce,
 					conversation_id: marketingAnalyticsMCPChat.conversationId,
 					message: message
@@ -353,7 +353,7 @@
 				url: marketingAnalyticsMCPChat.ajaxUrl,
 				type: 'POST',
 				data: {
-					action: 'marketing_analytics_mcp_retry_tool',
+					action: 'specflux_mac_retry_tool',
 					nonce: marketingAnalyticsMCPChat.nonce,
 					conversation_id: marketingAnalyticsMCPChat.conversationId,
 					tool_name: toolName,
@@ -538,7 +538,7 @@
 	 * Initialize on document ready
 	 */
 	$(document).ready(function() {
-		if ($('.marketing-analytics-chat').length) {
+		if ($('.specflux-marketing-analytics-chat').length) {
 			ChatInterface.init();
 		}
 	});

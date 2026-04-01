@@ -2,12 +2,12 @@
 /**
  * Credential Encryption Handler
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Credentials;
+namespace Specflux_Marketing_Analytics\Credentials;
 
-use Marketing_Analytics_MCP\Utils\Logger;
+use Specflux_Marketing_Analytics\Utils\Logger;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -19,7 +19,7 @@ class Encryption {
 	/**
 	 * Encryption key option name
 	 */
-	const KEY_OPTION = 'marketing_analytics_mcp_encryption_key';
+	const KEY_OPTION = 'specflux_mac_encryption_key';
 
 	/**
 	 * Get or generate encryption key
@@ -33,18 +33,18 @@ class Encryption {
 			Logger::debug( 'Encryption key not found, generating new key' );
 			$new_key = base64_encode( random_bytes( SODIUM_CRYPTO_SECRETBOX_KEYBYTES ) );
 
-			// Use add_option which will fail if the option already exists (race condition protection)
+			// Use add_option which will fail if the option already exists (race condition protection).
 			$added = add_option( self::KEY_OPTION, $new_key, '', false );
 
 			if ( $added ) {
 				Logger::debug( 'New encryption key generated and stored' );
 				$key = $new_key;
 			} else {
-				// Another process already created the key, fetch it
+				// Another process already created the key, fetch it.
 				Logger::debug( 'Key was already created by another process, fetching it' );
 				$key = get_option( self::KEY_OPTION );
 
-				// Double-check that we got a key
+				// Double-check that we got a key.
 				if ( ! $key ) {
 					throw new \RuntimeException( 'Failed to generate or retrieve encryption key' );
 				}
@@ -79,7 +79,7 @@ class Encryption {
 			$ciphertext = sodium_crypto_secretbox( $plaintext, $nonce, $key );
 			$encrypted  = base64_encode( $nonce . $ciphertext );
 
-			// Clean up
+			// Clean up.
 			sodium_memzero( $plaintext );
 			sodium_memzero( $key );
 
@@ -113,7 +113,7 @@ class Encryption {
 			$key     = self::get_key();
 			$decoded = base64_decode( $encrypted );
 
-			if ( $decoded === false ) {
+			if ( false === $decoded ) {
 				Logger::error( sprintf( 'Base64 decode failed for %s', $platform ) );
 				return false;
 			}
@@ -125,10 +125,10 @@ class Encryption {
 
 			$plaintext = sodium_crypto_secretbox_open( $ciphertext, $nonce, $key );
 
-			// Clean up
+			// Clean up.
 			sodium_memzero( $key );
 
-			if ( $plaintext === false ) {
+			if ( false === $plaintext ) {
 				Logger::error( sprintf( 'Decryption failed for %s (invalid key or corrupted data)', $platform ) );
 				return false;
 			}
@@ -136,7 +136,7 @@ class Encryption {
 			$credentials = json_decode( $plaintext, true );
 			sodium_memzero( $plaintext );
 
-			if ( $credentials === null ) {
+			if ( null === $credentials ) {
 				Logger::error( sprintf( 'JSON decode failed for %s', $platform ) );
 				return false;
 			}
@@ -164,12 +164,12 @@ class Encryption {
 
 		$encrypted = self::encrypt( $credentials, $platform );
 
-		if ( $encrypted === false ) {
+		if ( false === $encrypted ) {
 			Logger::error( sprintf( 'Failed to encrypt credentials for %s', $platform ) );
 			return false;
 		}
 
-		$option_name = 'marketing_analytics_mcp_credentials_' . $platform;
+		$option_name = 'specflux_mac_credentials_' . $platform;
 		$result      = update_option( $option_name, $encrypted, false );
 
 		if ( $result ) {
@@ -190,7 +190,7 @@ class Encryption {
 	public static function get_credentials( $platform ) {
 		Logger::debug( sprintf( 'Retrieving credentials for platform: %s', $platform ) );
 
-		$option_name = 'marketing_analytics_mcp_credentials_' . $platform;
+		$option_name = 'specflux_mac_credentials_' . $platform;
 		$encrypted   = get_option( $option_name );
 
 		if ( ! $encrypted ) {
@@ -212,7 +212,7 @@ class Encryption {
 	public static function delete_credentials( $platform ) {
 		Logger::debug( sprintf( 'Deleting credentials for platform: %s', $platform ) );
 
-		$option_name = 'marketing_analytics_mcp_credentials_' . $platform;
+		$option_name = 'specflux_mac_credentials_' . $platform;
 		$result      = delete_option( $option_name );
 
 		if ( $result ) {

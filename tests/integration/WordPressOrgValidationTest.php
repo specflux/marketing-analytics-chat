@@ -4,10 +4,10 @@
  *
  * These tests check requirements for WordPress.org submission.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Tests\integration;
+namespace Specflux_Marketing_Analytics\Tests\integration;
 
 use PHPUnit\Framework\TestCase;
 
@@ -28,7 +28,7 @@ class WordPressOrgValidationTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->plugin_dir = MARKETING_ANALYTICS_MCP_PATH;
+		$this->plugin_dir = SPECFLUX_MAC_PATH;
 	}
 
 	/**
@@ -37,7 +37,7 @@ class WordPressOrgValidationTest extends TestCase {
 	 * @group wporg
 	 */
 	public function test_plugin_has_valid_header(): void {
-		$main_file = $this->plugin_dir . 'marketing-analytics-chat.php';
+		$main_file = $this->plugin_dir . 'specflux-marketing-analytics-chat.php';
 		$this->assertFileExists( $main_file );
 
 		$content = file_get_contents( $main_file );
@@ -67,7 +67,7 @@ class WordPressOrgValidationTest extends TestCase {
 	 * @group wporg
 	 */
 	public function test_plugin_uses_gpl_license(): void {
-		$main_file = $this->plugin_dir . 'marketing-analytics-chat.php';
+		$main_file = $this->plugin_dir . 'specflux-marketing-analytics-chat.php';
 		$content   = file_get_contents( $main_file );
 
 		// Should contain GPL license
@@ -237,7 +237,7 @@ class WordPressOrgValidationTest extends TestCase {
 	 * @group wporg
 	 */
 	public function test_proper_text_domain(): void {
-		$main_file = $this->plugin_dir . 'marketing-analytics-chat.php';
+		$main_file = $this->plugin_dir . 'specflux-marketing-analytics-chat.php';
 		$content   = file_get_contents( $main_file );
 
 		// Should have Text Domain header
@@ -248,7 +248,7 @@ class WordPressOrgValidationTest extends TestCase {
 		$text_domain = isset( $matches[1] ) ? trim( $matches[1] ) : '';
 
 		// Text domain should match plugin slug
-		$this->assertEquals( 'marketing-analytics-chat', $text_domain );
+		$this->assertEquals( 'specflux-marketing-analytics-chat', $text_domain );
 	}
 
 	/**
@@ -322,9 +322,9 @@ class WordPressOrgValidationTest extends TestCase {
 			$content = file_get_contents( $file );
 
 			// Should use namespace or prefix
-			$has_namespace = strpos( $content, 'namespace Marketing_Analytics_MCP' ) !== false;
-			$has_prefix    = strpos( $content, 'class Marketing_Analytics_MCP_' ) !== false ||
-							 strpos( $content, 'function marketing_analytics_mcp_' ) !== false;
+			$has_namespace = strpos( $content, 'namespace Specflux_Marketing_Analytics' ) !== false;
+			$has_prefix    = strpos( $content, 'class Specflux_Marketing_Analytics_' ) !== false ||
+							 strpos( $content, 'function specflux_mac_' ) !== false;
 
 			$this->assertTrue(
 				$has_namespace || $has_prefix,

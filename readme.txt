@@ -1,10 +1,10 @@
-=== Marketing Analytics Chat ===
+=== Specflux Marketing Analytics Chat ===
 Contributors: stephenpaulsamynathan
 Donate link: https://www.specflux.com/
 Tags: marketing analytics, ai, chat, mcp
 Requires at least: 6.9
 Tested up to: 6.9
-Stable tag: 0.1.2
+Stable tag: 0.1.3
 Requires PHP: 8.1
 Requires Plugins: mcp-adapter
 License: GPLv2 or later
@@ -14,7 +14,7 @@ Expose Google Analytics 4, Search Console, and Microsoft Clarity data to AI assi
 
 == Description ==
 
-Marketing Analytics Chat lets you have conversations with your marketing data using AI. Connect your analytics platforms and ask questions in plain English to get instant insights and recommendations.
+Specflux Marketing Analytics Chat lets you have conversations with your marketing data using AI. Connect your analytics platforms and ask questions in plain English to get instant insights and recommendations.
 
 = Supported Platforms =
 
@@ -73,7 +73,7 @@ This plugin connects to the following third-party services when you configure th
 
 = Plugin Installation =
 
-1. Upload the `marketing-analytics-chat` folder to `/wp-content/plugins/`
+1. Upload the `specflux-marketing-analytics-chat` folder to `/wp-content/plugins/`
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Go to Marketing Analytics > Settings > Google API to configure OAuth credentials
 4. Connect your analytics platforms from the Connections page

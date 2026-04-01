@@ -4,18 +4,18 @@
  *
  * Registers MCP abilities that combine data from multiple analytics platforms.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Abilities;
+namespace Specflux_Marketing_Analytics\Abilities;
 
-use Marketing_Analytics_MCP\API_Clients\Clarity_Client;
-use Marketing_Analytics_MCP\API_Clients\GA4_Client;
-use Marketing_Analytics_MCP\API_Clients\GSC_Client;
-use Marketing_Analytics_MCP\Cache\Cache_Manager;
-use Marketing_Analytics_MCP\Credentials\Credential_Manager;
-use Marketing_Analytics_MCP\Utils\Logger;
-use Marketing_Analytics_MCP\Utils\Permission_Manager;
+use Specflux_Marketing_Analytics\API_Clients\Clarity_Client;
+use Specflux_Marketing_Analytics\API_Clients\GA4_Client;
+use Specflux_Marketing_Analytics\API_Clients\GSC_Client;
+use Specflux_Marketing_Analytics\Cache\Cache_Manager;
+use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Utils\Logger;
+use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -70,10 +70,10 @@ class Cross_Platform_Abilities {
 		wp_register_ability(
 			'marketing-analytics/compare-periods',
 			array(
-				'type'        => 'tool',
-				'label'       => __( 'Compare Periods', 'marketing-analytics-chat' ),
-				'description' => __( 'Compare analytics metrics between two time periods across connected platforms.', 'marketing-analytics-chat' ),
-				'category'    => 'marketing-analytics',
+				'type'         => 'tool',
+				'label'        => __( 'Compare Periods', 'specflux-marketing-analytics-chat' ),
+				'description'  => __( 'Compare analytics metrics between two time periods across connected platforms.', 'specflux-marketing-analytics-chat' ),
+				'category'     => 'marketing-analytics',
 				'input_schema' => array(
 					'type'       => 'object',
 					'properties' => array(
@@ -98,7 +98,7 @@ class Cross_Platform_Abilities {
 					),
 					'required'   => array( 'period_a', 'period_b' ),
 				),
-				'callback'    => array( $this, 'handle_compare_periods' ),
+				'callback'     => array( $this, 'handle_compare_periods' ),
 			)
 		);
 	}
@@ -110,10 +110,10 @@ class Cross_Platform_Abilities {
 		wp_register_ability(
 			'marketing-analytics/get-top-content',
 			array(
-				'type'        => 'tool',
-				'label'       => __( 'Get Top Content', 'marketing-analytics-chat' ),
-				'description' => __( 'Get top performing content by combining GA4 engagement and GSC search data.', 'marketing-analytics-chat' ),
-				'category'    => 'marketing-analytics',
+				'type'         => 'tool',
+				'label'        => __( 'Get Top Content', 'specflux-marketing-analytics-chat' ),
+				'description'  => __( 'Get top performing content by combining GA4 engagement and GSC search data.', 'specflux-marketing-analytics-chat' ),
+				'category'     => 'marketing-analytics',
 				'input_schema' => array(
 					'type'       => 'object',
 					'properties' => array(
@@ -127,7 +127,7 @@ class Cross_Platform_Abilities {
 						),
 					),
 				),
-				'callback'    => array( $this, 'handle_get_top_content' ),
+				'callback'     => array( $this, 'handle_get_top_content' ),
 			)
 		);
 	}
@@ -139,10 +139,10 @@ class Cross_Platform_Abilities {
 		wp_register_ability(
 			'marketing-analytics/generate-summary-report',
 			array(
-				'type'        => 'tool',
-				'label'       => __( 'Generate Summary Report', 'marketing-analytics-chat' ),
-				'description' => __( 'Generate a comprehensive analytics summary report from all connected platforms.', 'marketing-analytics-chat' ),
-				'category'    => 'marketing-analytics',
+				'type'         => 'tool',
+				'label'        => __( 'Generate Summary Report', 'specflux-marketing-analytics-chat' ),
+				'description'  => __( 'Generate a comprehensive analytics summary report from all connected platforms.', 'specflux-marketing-analytics-chat' ),
+				'category'     => 'marketing-analytics',
 				'input_schema' => array(
 					'type'       => 'object',
 					'properties' => array(
@@ -157,7 +157,7 @@ class Cross_Platform_Abilities {
 						),
 					),
 				),
-				'callback'    => array( $this, 'handle_generate_summary_report' ),
+				'callback'     => array( $this, 'handle_generate_summary_report' ),
 			)
 		);
 	}
@@ -170,7 +170,7 @@ class Cross_Platform_Abilities {
 	 */
 	public function handle_compare_periods( $args ) {
 		if ( ! $this->check_permissions() ) {
-			return array( 'error' => __( 'Insufficient permissions.', 'marketing-analytics-chat' ) );
+			return array( 'error' => __( 'Insufficient permissions.', 'specflux-marketing-analytics-chat' ) );
 		}
 
 		$period_a  = $args['period_a'];
@@ -228,7 +228,7 @@ class Cross_Platform_Abilities {
 	 */
 	public function handle_get_top_content( $args ) {
 		if ( ! $this->check_permissions() ) {
-			return array( 'error' => __( 'Insufficient permissions.', 'marketing-analytics-chat' ) );
+			return array( 'error' => __( 'Insufficient permissions.', 'specflux-marketing-analytics-chat' ) );
 		}
 
 		$date_range = isset( $args['date_range'] ) ? $args['date_range'] : '7daysAgo';
@@ -314,7 +314,7 @@ class Cross_Platform_Abilities {
 	 */
 	public function handle_generate_summary_report( $args ) {
 		if ( ! $this->check_permissions() ) {
-			return array( 'error' => __( 'Insufficient permissions.', 'marketing-analytics-chat' ) );
+			return array( 'error' => __( 'Insufficient permissions.', 'specflux-marketing-analytics-chat' ) );
 		}
 
 		$date_range = isset( $args['date_range'] ) ? $args['date_range'] : '7daysAgo';
@@ -335,12 +335,12 @@ class Cross_Platform_Abilities {
 		}
 
 		$platforms = $this->get_available_platforms();
-		$report   = array(
-			'date_range'      => $date_range,
-			'generated_at'    => current_time( 'mysql' ),
-			'platforms'       => $platforms,
-			'platform_data'   => array(),
-			'key_takeaways'   => array(),
+		$report    = array(
+			'date_range'    => $date_range,
+			'generated_at'  => current_time( 'mysql' ),
+			'platforms'     => $platforms,
+			'platform_data' => array(),
+			'key_takeaways' => array(),
 		);
 
 		// Collect data from each platform.
@@ -455,7 +455,7 @@ class Cross_Platform_Abilities {
 				return $client->query_search_analytics( $period );
 
 			case 'clarity':
-				$client  = $this->get_clarity_client();
+				$client   = $this->get_clarity_client();
 				$num_days = $this->parse_clarity_days( $period );
 				return $client->get_insights( $num_days );
 
@@ -483,9 +483,9 @@ class Cross_Platform_Abilities {
 					$val_b = isset( $data_b['totals'][ $metric ] ) ? (float) $data_b['totals'][ $metric ] : 0;
 
 					$comparison[ $metric ] = array(
-						'period_a'        => $val_a,
-						'period_b'        => $val_b,
-						'change'          => $val_b - $val_a,
+						'period_a'          => $val_a,
+						'period_b'          => $val_b,
+						'change'            => $val_b - $val_a,
 						'percentage_change' => $this->calculate_percentage_change( $val_a, $val_b ),
 					);
 				}
@@ -501,9 +501,9 @@ class Cross_Platform_Abilities {
 						$val_b = $totals_b[ $metric ] ?? 0;
 
 						$comparison[ $metric ] = array(
-							'period_a'        => $val_a,
-							'period_b'        => $val_b,
-							'change'          => $val_b - $val_a,
+							'period_a'          => $val_a,
+							'period_b'          => $val_b,
+							'change'            => $val_b - $val_a,
 							'percentage_change' => $this->calculate_percentage_change( $val_a, $val_b ),
 						);
 					}
@@ -517,9 +517,9 @@ class Cross_Platform_Abilities {
 						$val_b = isset( $data_b[ $metric ] ) ? (float) $data_b[ $metric ] : 0;
 
 						$comparison[ $metric ] = array(
-							'period_a'        => $val_a,
-							'period_b'        => $val_b,
-							'change'          => $val_b - $val_a,
+							'period_a'          => $val_a,
+							'period_b'          => $val_b,
+							'change'            => $val_b - $val_a,
 							'percentage_change' => $this->calculate_percentage_change( $val_a, $val_b ),
 						);
 					}
@@ -621,9 +621,9 @@ class Cross_Platform_Abilities {
 
 				if ( isset( $merged[ $path ] ) ) {
 					$merged[ $path ]['clicks']      = isset( $row['clicks'] ) ? $row['clicks'] : 0;
-					$merged[ $path ]['impressions']  = isset( $row['impressions'] ) ? $row['impressions'] : 0;
-					$merged[ $path ]['ctr']          = isset( $row['ctr'] ) ? $row['ctr'] : 0;
-					$merged[ $path ]['position']     = isset( $row['position'] ) ? $row['position'] : 0;
+					$merged[ $path ]['impressions'] = isset( $row['impressions'] ) ? $row['impressions'] : 0;
+					$merged[ $path ]['ctr']         = isset( $row['ctr'] ) ? $row['ctr'] : 0;
+					$merged[ $path ]['position']    = isset( $row['position'] ) ? $row['position'] : 0;
 				} else {
 					$merged[ $path ] = array(
 						'path'        => $path,
@@ -662,7 +662,7 @@ class Cross_Platform_Abilities {
 				return $client->query_search_analytics( $date_range );
 
 			case 'clarity':
-				$client  = $this->get_clarity_client();
+				$client   = $this->get_clarity_client();
 				$num_days = $this->parse_clarity_days( $date_range );
 				return $client->get_insights( $num_days );
 
@@ -685,29 +685,29 @@ class Cross_Platform_Abilities {
 			if ( isset( $totals['sessions'] ) ) {
 				$takeaways[] = sprintf(
 					/* translators: %s: number of sessions */
-					__( 'Total sessions: %s', 'marketing-analytics-chat' ),
+					__( 'Total sessions: %s', 'specflux-marketing-analytics-chat' ),
 					number_format( (float) $totals['sessions'] )
 				);
 			}
 			if ( isset( $totals['activeUsers'] ) ) {
 				$takeaways[] = sprintf(
 					/* translators: %s: number of active users */
-					__( 'Active users: %s', 'marketing-analytics-chat' ),
+					__( 'Active users: %s', 'specflux-marketing-analytics-chat' ),
 					number_format( (float) $totals['activeUsers'] )
 				);
 			}
 		}
 
 		if ( isset( $platform_data['gsc']['rows'] ) ) {
-			$gsc_totals = $this->aggregate_gsc_totals( $platform_data['gsc']['rows'] );
+			$gsc_totals  = $this->aggregate_gsc_totals( $platform_data['gsc']['rows'] );
 			$takeaways[] = sprintf(
 				/* translators: %s: number of search clicks */
-				__( 'Search clicks: %s', 'marketing-analytics-chat' ),
+				__( 'Search clicks: %s', 'specflux-marketing-analytics-chat' ),
 				number_format( $gsc_totals['clicks'] )
 			);
 			$takeaways[] = sprintf(
 				/* translators: %s: number of search impressions */
-				__( 'Search impressions: %s', 'marketing-analytics-chat' ),
+				__( 'Search impressions: %s', 'specflux-marketing-analytics-chat' ),
 				number_format( $gsc_totals['impressions'] )
 			);
 		}
@@ -722,7 +722,7 @@ class Cross_Platform_Abilities {
 	 * @return string Markdown formatted report.
 	 */
 	public function format_report_markdown( $report ) {
-		$md = "# Marketing Analytics Summary Report\n\n";
+		$md  = "# Marketing Analytics Summary Report\n\n";
 		$md .= sprintf( "**Date Range:** %s\n", $report['date_range'] );
 		$md .= sprintf( "**Generated:** %s\n\n", $report['generated_at'] );
 
@@ -760,9 +760,9 @@ class Cross_Platform_Abilities {
 
 		// Clarity section.
 		if ( isset( $report['platform_data']['clarity'] ) && ! isset( $report['platform_data']['clarity']['error'] ) && is_array( $report['platform_data']['clarity'] ) ) {
-			$md      .= "## Microsoft Clarity\n\n";
-			$clarity  = $report['platform_data']['clarity'];
-			$md      .= "| Metric | Value |\n|--------|-------|\n";
+			$md     .= "## Microsoft Clarity\n\n";
+			$clarity = $report['platform_data']['clarity'];
+			$md     .= "| Metric | Value |\n|--------|-------|\n";
 
 			if ( isset( $clarity['totalSessions'] ) ) {
 				$md .= sprintf( "| Sessions | %s |\n", number_format( (float) $clarity['totalSessions'] ) );

@@ -4,14 +4,14 @@
  *
  * Handles interactions with Google Analytics Data API v1 for GA4 properties.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\API_Clients;
+namespace Specflux_Marketing_Analytics\API_Clients;
 
-use Marketing_Analytics_MCP\Credentials\OAuth_Handler;
-use Marketing_Analytics_MCP\Cache\Cache_Manager;
-use Marketing_Analytics_MCP\Utils\Logger;
+use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
+use Specflux_Marketing_Analytics\Cache\Cache_Manager;
+use Specflux_Marketing_Analytics\Utils\Logger;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -48,8 +48,8 @@ class GA4_Client {
 		$this->oauth_handler = new OAuth_Handler();
 		$this->cache_manager = new Cache_Manager();
 
-		// Get configured property ID from options
-		$this->property_id = get_option( 'marketing_analytics_mcp_ga4_property_id' );
+		// Get configured property ID from options.
+		$this->property_id = get_option( 'specflux_mac_ga4_property_id' );
 	}
 
 	/**
@@ -89,7 +89,7 @@ class GA4_Client {
 			throw new \Exception( 'GA4 property ID not configured' );
 		}
 
-		// Check cache first
+		// Check cache first.
 		$cache_key = $this->cache_manager->generate_key(
 			'ga4',
 			'run_report',
@@ -113,7 +113,7 @@ class GA4_Client {
 		}
 
 		try {
-			// Build date range
+			// Build date range.
 			$date_ranges = array(
 				new \Google\Service\AnalyticsData\DateRange(
 					array(
@@ -123,19 +123,19 @@ class GA4_Client {
 				),
 			);
 
-			// Build metrics
+			// Build metrics.
 			$metric_objects = array();
 			foreach ( $metrics as $metric ) {
 				$metric_objects[] = new \Google\Service\AnalyticsData\Metric( array( 'name' => $metric ) );
 			}
 
-			// Build dimensions
+			// Build dimensions.
 			$dimension_objects = array();
 			foreach ( $dimensions as $dimension ) {
 				$dimension_objects[] = new \Google\Service\AnalyticsData\Dimension( array( 'name' => $dimension ) );
 			}
 
-			// Build request
+			// Build request.
 			$request = new \Google\Service\AnalyticsData\RunReportRequest(
 				array(
 					'dateRanges' => $date_ranges,
@@ -144,7 +144,7 @@ class GA4_Client {
 				)
 			);
 
-			// Add optional parameters
+			// Add optional parameters.
 			if ( isset( $options['limit'] ) ) {
 				$request->setLimit( absint( $options['limit'] ) );
 			}
@@ -158,13 +158,13 @@ class GA4_Client {
 				$request->setDimensionFilter( $filter );
 			}
 
-			// Run report
+			// Run report.
 			$response = $analytics->properties->runReport( 'properties/' . $this->property_id, $request );
 
-			// Parse response
+			// Parse response.
 			$data = $this->parse_report_response( $response );
 
-			// Cache for 30 minutes
+			// Cache for 30 minutes.
 			$this->cache_manager->set( $cache_key, $data, $this->cache_manager->get_default_ttl( 'ga4' ) );
 
 			return $data;
@@ -195,20 +195,20 @@ class GA4_Client {
 		}
 
 		try {
-			// Build metrics
+			// Build metrics.
 			$metric_objects = array();
 			foreach ( $metrics as $metric ) {
 				$metric_objects[] = new \Google\Service\AnalyticsData\Metric( array( 'name' => $metric ) );
 			}
 
-			// Build request
+			// Build request.
 			$request = new \Google\Service\AnalyticsData\RunRealtimeReportRequest(
 				array(
 					'metrics' => $metric_objects,
 				)
 			);
 
-			// Run realtime report
+			// Run realtime report.
 			$response = $analytics->properties->runRealtimeReport( 'properties/' . $this->property_id, $request );
 
 			return $this->parse_report_response( $response );
@@ -281,7 +281,7 @@ class GA4_Client {
 
 			$analytics_admin = new \Google\Service\GoogleAnalyticsAdmin( $client );
 
-			// Get account summaries
+			// Get account summaries.
 			$account_summaries = $analytics_admin->accountSummaries->listAccountSummaries();
 
 			$properties = array();
@@ -305,7 +305,7 @@ class GA4_Client {
 			$error_message = $e->getMessage();
 			Logger::error( 'Failed to list GA4 properties: ' . $error_message );
 
-			// Check if the error is about the Admin API not being enabled
+			// Check if the error is about the Admin API not being enabled.
 			if ( strpos( $error_message, 'analyticsadmin.googleapis.com' ) !== false ||
 				strpos( $error_message, 'Google Analytics Admin API' ) !== false ) {
 				throw new \Exception( 'Google Analytics Admin API is not enabled. Please enable it in your Google Cloud Console: https://console.cloud.google.com/apis/library/analyticsadmin.googleapis.com' );
@@ -323,7 +323,7 @@ class GA4_Client {
 	 */
 	public function set_property_id( $property_id ) {
 		$this->property_id = $property_id;
-		return update_option( 'marketing_analytics_mcp_ga4_property_id', $property_id, false );
+		return update_option( 'specflux_mac_ga4_property_id', $property_id, false );
 	}
 
 	/**
@@ -343,17 +343,17 @@ class GA4_Client {
 	 * @return string Formatted date string.
 	 */
 	private function parse_date_range( $date_range, $boundary = 'start' ) {
-		// If it's already a date, return it
+		// If it's already a date, return it.
 		if ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_range ) ) {
 			return $date_range;
 		}
 
-		// Handle relative dates
+		// Handle relative dates.
 		if ( 'start' === $boundary ) {
 			return $date_range;
 		}
 
-		// For end boundary, return 'today' if not specified
+		// For end boundary, return 'today' if not specified.
 		return 'today';
 	}
 
@@ -369,7 +369,7 @@ class GA4_Client {
 			'totals' => array(),
 		);
 
-		// Parse dimension headers
+		// Parse dimension headers.
 		$dimension_headers = array();
 		if ( $response->getDimensionHeaders() ) {
 			foreach ( $response->getDimensionHeaders() as $header ) {
@@ -377,7 +377,7 @@ class GA4_Client {
 			}
 		}
 
-		// Parse metric headers
+		// Parse metric headers.
 		$metric_headers = array();
 		if ( $response->getMetricHeaders() ) {
 			foreach ( $response->getMetricHeaders() as $header ) {
@@ -385,18 +385,18 @@ class GA4_Client {
 			}
 		}
 
-		// Parse rows
+		// Parse rows.
 		if ( $response->getRows() ) {
 			foreach ( $response->getRows() as $row ) {
 				$row_data = array();
 
-				// Add dimensions
+				// Add dimensions.
 				$dimension_values = $row->getDimensionValues();
 				foreach ( $dimension_values as $index => $value ) {
 					$row_data[ $dimension_headers[ $index ] ] = $value->getValue();
 				}
 
-				// Add metrics
+				// Add metrics.
 				$metric_values = $row->getMetricValues();
 				foreach ( $metric_values as $index => $value ) {
 					$row_data[ $metric_headers[ $index ] ] = $value->getValue();
@@ -406,7 +406,7 @@ class GA4_Client {
 			}
 		}
 
-		// Parse totals
+		// Parse totals.
 		if ( $response->getTotals() ) {
 			foreach ( $response->getTotals() as $total ) {
 				$total_values = $total->getMetricValues();
@@ -416,7 +416,7 @@ class GA4_Client {
 			}
 		}
 
-		// Add row count
+		// Add row count.
 		$data['row_count'] = $response->getRowCount();
 
 		return $data;

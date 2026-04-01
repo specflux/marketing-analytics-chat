@@ -10,7 +10,7 @@ jQuery(document).ready(function($) {
 			url: ajaxurl,
 			type: 'POST',
 			data: {
-				action: 'marketing_analytics_mcp_get_ga4_properties',
+				action: 'specflux_mac_get_ga4_properties',
 				nonce: macGA4Connection.nonce
 			},
 			success: function(response) {
@@ -51,7 +51,7 @@ jQuery(document).ready(function($) {
 			url: ajaxurl,
 			type: 'POST',
 			data: {
-				action: 'marketing_analytics_mcp_save_ga4_property',
+				action: 'specflux_mac_save_ga4_property',
 				nonce: macGA4Connection.nonce,
 				property_id: propertyId
 			},

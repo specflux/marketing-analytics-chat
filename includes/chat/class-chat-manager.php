@@ -4,10 +4,10 @@
  *
  * Handles database operations for AI chat conversations and messages.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Chat;
+namespace Specflux_Marketing_Analytics\Chat;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -24,7 +24,7 @@ class Chat_Manager {
 	 *
 	 * @var string
 	 */
-	private $cache_group = 'marketing_analytics_chat';
+	private $cache_group = 'specflux_mac';
 
 	/**
 	 * Get conversations for a user
@@ -37,7 +37,7 @@ class Chat_Manager {
 	public function get_conversations( $user_id, $limit = 20, $offset = 0 ) {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'marketing_analytics_mcp_conversations';
+		$table = $wpdb->prefix . 'specflux_mac_conversations';
 
 		$cache_key = 'conversations_' . $this->get_cache_version() . '_' . (int) $user_id . '_' . (int) $limit . '_' . (int) $offset;
 		$cached    = wp_cache_get( $cache_key, $this->cache_group );
@@ -72,7 +72,7 @@ class Chat_Manager {
 	public function get_conversation( $conversation_id ) {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'marketing_analytics_mcp_conversations';
+		$table = $wpdb->prefix . 'specflux_mac_conversations';
 
 		$cache_key = 'conversation_' . $this->get_cache_version() . '_' . (int) $conversation_id;
 		$cached    = wp_cache_get( $cache_key, $this->cache_group );
@@ -105,7 +105,7 @@ class Chat_Manager {
 	public function create_conversation( $user_id, $title = 'New Conversation' ) {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'marketing_analytics_mcp_conversations';
+		$table = $wpdb->prefix . 'specflux_mac_conversations';
 		$now   = current_time( 'mysql' );
 
 		$result = $wpdb->insert(
@@ -137,7 +137,7 @@ class Chat_Manager {
 	public function update_conversation_title( $conversation_id, $title ) {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'marketing_analytics_mcp_conversations';
+		$table = $wpdb->prefix . 'specflux_mac_conversations';
 
 		$result = $wpdb->update(
 			$table,
@@ -167,7 +167,7 @@ class Chat_Manager {
 	public function touch_conversation( $conversation_id ) {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'marketing_analytics_mcp_conversations';
+		$table = $wpdb->prefix . 'specflux_mac_conversations';
 
 		$result = $wpdb->update(
 			$table,
@@ -195,14 +195,14 @@ class Chat_Manager {
 		global $wpdb;
 
 		// Delete messages first (no FK cascade in dbDelta tables).
-		$messages_table = $wpdb->prefix . 'marketing_analytics_mcp_messages';
+		$messages_table = $wpdb->prefix . 'specflux_mac_messages';
 		$wpdb->delete(
 			$messages_table,
 			array( 'conversation_id' => $conversation_id ),
 			array( '%d' )
 		);
 
-		$table = $wpdb->prefix . 'marketing_analytics_mcp_conversations';
+		$table = $wpdb->prefix . 'specflux_mac_conversations';
 
 		$result = $wpdb->delete(
 			$table,
@@ -228,7 +228,7 @@ class Chat_Manager {
 	public function get_messages( $conversation_id, $limit = 50 ) {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'marketing_analytics_mcp_messages';
+		$table = $wpdb->prefix . 'specflux_mac_messages';
 
 		$cache_key = 'messages_' . $this->get_cache_version() . '_' . (int) $conversation_id . '_' . (int) $limit;
 		$cached    = wp_cache_get( $cache_key, $this->cache_group );
@@ -248,7 +248,7 @@ class Chat_Manager {
 			)
 		);
 
-		// Parse JSON fields
+		// Parse JSON fields.
 		foreach ( $messages as $message ) {
 			if ( ! empty( $message->tool_calls ) ) {
 				$message->tool_calls = json_decode( $message->tool_calls, true );
@@ -275,7 +275,7 @@ class Chat_Manager {
 	public function add_message( $conversation_id, $role, $content, $metadata = array() ) {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'marketing_analytics_mcp_messages';
+		$table = $wpdb->prefix . 'specflux_mac_messages';
 
 		$data = array(
 			'conversation_id' => $conversation_id,
@@ -286,7 +286,7 @@ class Chat_Manager {
 
 		$format = array( '%d', '%s', '%s', '%s' );
 
-		// Add metadata if provided
+		// Add metadata if provided.
 		if ( ! empty( $metadata ) ) {
 			$data['metadata'] = wp_json_encode( $metadata );
 			$format[]         = '%s';
@@ -295,7 +295,7 @@ class Chat_Manager {
 		$result = $wpdb->insert( $table, $data, $format );
 
 		if ( $result ) {
-			// Update conversation timestamp
+			// Update conversation timestamp.
 			$this->touch_conversation( $conversation_id );
 			return $wpdb->insert_id;
 		}
@@ -314,7 +314,7 @@ class Chat_Manager {
 	public function add_tool_message( $conversation_id, $tool_calls, $content = '' ) {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'marketing_analytics_mcp_messages';
+		$table = $wpdb->prefix . 'specflux_mac_messages';
 
 		$result = $wpdb->insert(
 			$table,
@@ -329,7 +329,7 @@ class Chat_Manager {
 		);
 
 		if ( $result ) {
-			// Update conversation timestamp
+			// Update conversation timestamp.
 			$this->touch_conversation( $conversation_id );
 			return $wpdb->insert_id;
 		}
@@ -349,7 +349,7 @@ class Chat_Manager {
 	public function add_tool_result( $conversation_id, $tool_call_id, $tool_name, $result ) {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'marketing_analytics_mcp_messages';
+		$table = $wpdb->prefix . 'specflux_mac_messages';
 
 		$content = is_string( $result ) ? $result : wp_json_encode( $result );
 
@@ -367,7 +367,7 @@ class Chat_Manager {
 		);
 
 		if ( $insert_result ) {
-			// Update conversation timestamp
+			// Update conversation timestamp.
 			$this->touch_conversation( $conversation_id );
 			return $wpdb->insert_id;
 		}
@@ -384,7 +384,7 @@ class Chat_Manager {
 	public function get_message_count( $conversation_id ) {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'marketing_analytics_mcp_messages';
+		$table = $wpdb->prefix . 'specflux_mac_messages';
 
 		$cache_key = 'message_count_' . $this->get_cache_version() . '_' . (int) $conversation_id;
 		$cached    = wp_cache_get( $cache_key, $this->cache_group );
@@ -412,7 +412,7 @@ class Chat_Manager {
 	 * @return string Generated title.
 	 */
 	public function generate_title_from_message( $message ) {
-		// Get first 50 characters or first sentence
+		// Get first 50 characters or first sentence.
 		$title = wp_trim_words( $message, 8, '...' );
 		return $title;
 	}
@@ -428,7 +428,7 @@ class Chat_Manager {
 	public function search_conversations( $user_id, $search, $limit = 10 ) {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'marketing_analytics_mcp_conversations';
+		$table = $wpdb->prefix . 'specflux_mac_conversations';
 
 		$cache_key = 'search_' . $this->get_cache_version() . '_' . (int) $user_id . '_' . md5( $search ) . '_' . (int) $limit;
 		$cached    = wp_cache_get( $cache_key, $this->cache_group );

@@ -1,5 +1,5 @@
 {
-  "name": "marketing-analytics-chat/wordpress-plugin",
+  "name": "specflux-marketing-analytics-chat/wordpress-plugin",
   "description": "WordPress plugin that exposes marketing analytics data (Microsoft Clarity, Google Analytics 4, Google Search Console) via Model Context Protocol for AI assistants",
   "type": "wordpress-plugin",
   "license": "GPL-2.0-or-later",
@@ -29,7 +29,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Marketing_Analytics_MCP\\Tests\\": "tests/"
+      "Specflux_Marketing_Analytics\\Tests\\": "tests/"
     }
   },
   "scripts": {

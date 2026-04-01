@@ -1,7 +1,7 @@
 jQuery(document).ready(function($) {
 	'use strict';
 
-	$('.marketing-analytics-refresh-widget').on('click', function() {
+	$('.smac-refresh-widget').on('click', function() {
 		var $btn = $(this);
 		$btn.prop('disabled', true).find('.dashicons').addClass('spin');
 
@@ -9,7 +9,7 @@ jQuery(document).ready(function($) {
 			url: ajaxurl,
 			type: 'POST',
 			data: {
-				action: 'marketing_analytics_mcp_refresh_widget',
+				action: 'specflux_mac_refresh_widget',
 				nonce: macDashboardWidget.nonce
 			},
 			success: function() {

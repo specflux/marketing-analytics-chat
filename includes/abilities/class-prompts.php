@@ -2,14 +2,14 @@
 /**
  * MCP Prompts
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Abilities;
+namespace Specflux_Marketing_Analytics\Abilities;
 
-use Marketing_Analytics_MCP\Credentials\Credential_Manager;
-use Marketing_Analytics_MCP\Prompts\Prompt_Manager;
-use Marketing_Analytics_MCP\Utils\Permission_Manager;
+use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Prompts\Prompt_Manager;
+use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -38,7 +38,7 @@ class Prompts {
 	 * Dynamically registers all user-created custom prompts
 	 */
 	public function register() {
-		// Only register prompts if at least one platform has credentials configured
+		// Only register prompts if at least one platform has credentials configured.
 		$credential_manager  = new Credential_Manager();
 		$has_any_credentials = $credential_manager->has_credentials( 'clarity' )
 			|| $credential_manager->has_credentials( 'ga4' )
@@ -48,7 +48,7 @@ class Prompts {
 			return;
 		}
 
-		// Get all custom prompts and register them
+		// Get all custom prompts and register them.
 		$custom_prompts = $this->prompt_manager->get_all_prompts();
 
 		foreach ( $custom_prompts as $prompt_id => $prompt_data ) {
@@ -63,7 +63,7 @@ class Prompts {
 	 * @param array  $prompt_data Prompt configuration.
 	 */
 	private function register_custom_prompt( $prompt_id, $prompt_data ) {
-		// Build input schema from arguments
+		// Build input schema from arguments.
 		$input_schema = array(
 			'type'       => 'object',
 			'properties' => array(),
@@ -110,7 +110,7 @@ class Prompts {
 	 * @return array Prompt result.
 	 */
 	private function execute_prompt( $prompt_data, $args ) {
-		// Replace placeholders in instructions with actual argument values
+		// Replace placeholders in instructions with actual argument values.
 		$instructions = $prompt_data['instructions'];
 
 		if ( ! empty( $args ) ) {
@@ -119,7 +119,7 @@ class Prompts {
 			}
 		}
 
-		// Add context about available arguments
+		// Add context about available arguments.
 		if ( ! empty( $args ) ) {
 			$context = "\n\n## Context\nYou have been provided with the following arguments:\n";
 			foreach ( $args as $key => $value ) {

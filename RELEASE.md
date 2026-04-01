@@ -1,6 +1,6 @@
 # Release Process
 
-This document describes how to create releases for the Marketing Analytics Chat plugin.
+This document describes how to create releases for the Specflux Marketing Analytics Chat plugin.
 
 ## Release Script
 
@@ -59,8 +59,8 @@ The `release.sh` script automates the entire release process:
 
 The script updates version numbers in:
 
-- ✅ `marketing-analytics-chat.php` - Main plugin file header
-- ✅ `marketing-analytics-chat.php` - `MARKETING_ANALYTICS_MCP_VERSION` constant
+- ✅ `specflux-marketing-analytics-chat.php` - Main plugin file header
+- ✅ `specflux-marketing-analytics-chat.php` - `SPECFLUX_MAC_VERSION` constant
 - ✅ `readme.txt` - Stable tag
 - ✅ `readme.txt` - Changelog (automatic entry)
 
@@ -70,7 +70,7 @@ After running the script:
 
 ```
 dist/
-└── marketing-analytics-chat-{VERSION}.zip  # Ready to upload
+└── specflux-marketing-analytics-chat-{VERSION}.zip  # Ready to upload
 ```
 
 ## Git Operations
@@ -99,13 +99,13 @@ git status
 git log -1 --stat
 
 # 4. Test the distribution package
-# unzip and test dist/marketing-analytics-chat-0.1.1.zip locally
+# unzip and test dist/specflux-marketing-analytics-chat-0.1.1.zip locally
 
 # 5. Push to remote
 git push && git push --tags
 
 # 6. Upload to WordPress.org
-# Upload dist/marketing-analytics-chat-0.1.1.zip
+# Upload dist/specflux-marketing-analytics-chat-0.1.1.zip
 
 # 7. Create GitHub release
 # Go to https://github.com/your-repo/releases/new

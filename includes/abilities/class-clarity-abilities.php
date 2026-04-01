@@ -2,14 +2,14 @@
 /**
  * Microsoft Clarity Abilities
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Abilities;
+namespace Specflux_Marketing_Analytics\Abilities;
 
-use Marketing_Analytics_MCP\API_Clients\Clarity_Client;
-use Marketing_Analytics_MCP\Credentials\Credential_Manager;
-use Marketing_Analytics_MCP\Utils\Permission_Manager;
+use Specflux_Marketing_Analytics\API_Clients\Clarity_Client;
+use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -22,7 +22,7 @@ class Clarity_Abilities {
 	 * Register Clarity abilities
 	 */
 	public function register() {
-		// Only register abilities if credentials are configured
+		// Only register abilities if credentials are configured.
 		$credential_manager = new Credential_Manager();
 		if ( ! $credential_manager->has_credentials( 'clarity' ) ) {
 			return;
@@ -41,8 +41,8 @@ class Clarity_Abilities {
 		wp_register_ability(
 			'marketing-analytics/get-clarity-insights',
 			array(
-				'label'               => __( 'Get Microsoft Clarity Insights', 'marketing-analytics-chat' ),
-				'description'         => __( 'Retrieve analytics dashboard data from Microsoft Clarity for a specified time period with optional dimension filters.', 'marketing-analytics-chat' ),
+				'label'               => __( 'Get Microsoft Clarity Insights', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Retrieve analytics dashboard data from Microsoft Clarity for a specified time period with optional dimension filters.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -103,8 +103,8 @@ class Clarity_Abilities {
 		wp_register_ability(
 			'marketing-analytics/get-clarity-recordings',
 			array(
-				'label'               => __( 'Get Clarity Session Recordings', 'marketing-analytics-chat' ),
-				'description'         => __( 'Fetch session recording URLs from Microsoft Clarity based on filters.', 'marketing-analytics-chat' ),
+				'label'               => __( 'Get Clarity Session Recordings', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Fetch session recording URLs from Microsoft Clarity based on filters.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -165,8 +165,8 @@ class Clarity_Abilities {
 		wp_register_ability(
 			'marketing-analytics/analyze-clarity-heatmaps',
 			array(
-				'label'               => __( 'Analyze Clarity Heatmaps', 'marketing-analytics-chat' ),
-				'description'         => __( 'Get heatmap data and AI-friendly insights from Microsoft Clarity.', 'marketing-analytics-chat' ),
+				'label'               => __( 'Analyze Clarity Heatmaps', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Get heatmap data and AI-friendly insights from Microsoft Clarity.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -213,8 +213,8 @@ class Clarity_Abilities {
 		wp_register_ability(
 			'marketing-analytics/clarity-dashboard',
 			array(
-				'label'               => __( 'Clarity Dashboard Summary', 'marketing-analytics-chat' ),
-				'description'         => __( 'Get current Microsoft Clarity project summary with session counts and user metrics.', 'marketing-analytics-chat' ),
+				'label'               => __( 'Clarity Dashboard Summary', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Get current Microsoft Clarity project summary with session counts and user metrics.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'output_schema'       => array(
@@ -260,7 +260,7 @@ class Clarity_Abilities {
 		try {
 			$client = $this->get_clarity_client();
 
-			// Build dimensions array
+			// Build dimensions array.
 			$dimensions = array();
 			if ( ! empty( $args['dimension1'] ) ) {
 				$dimensions[] = $args['dimension1'];
@@ -342,8 +342,8 @@ class Clarity_Abilities {
 		try {
 			$client = $this->get_clarity_client();
 
-			// Note: This is a placeholder - Clarity API may not directly support heatmap data export
-			// You may need to use their web interface or alternative methods
+			// Note: This is a placeholder - Clarity API may not directly support heatmap data export.
+			// You may need to use their web interface or alternative methods.
 			$heatmap_data = array(
 				'page_url'     => $args['page_url'],
 				'heatmap_type' => $args['heatmap_type'] ?? 'click',
@@ -381,11 +381,11 @@ class Clarity_Abilities {
 		try {
 			$client = $this->get_clarity_client();
 
-			// Get 1-day insights for dashboard summary
+			// Get 1-day insights for dashboard summary.
 			$data = $client->get_insights( 1 );
 
 			$summary = array(
-				'project_id' => get_option( 'marketing_analytics_mcp_clarity_project_id', 'Not configured' ),
+				'project_id' => get_option( 'specflux_mac_clarity_project_id', 'Not configured' ),
 				'period'     => 'Last 24 hours',
 				'data'       => $data,
 			);

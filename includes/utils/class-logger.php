@@ -1,13 +1,13 @@
 <?php
 /**
- * Logger utility for Marketing Analytics Chat
+ * Logger utility for Specflux Marketing Analytics Chat
  *
  * Centralizes logging and respects debug mode settings.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Utils;
+namespace Specflux_Marketing_Analytics\Utils;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -31,7 +31,7 @@ class Logger {
 			$message = print_r( $message, true ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 		}
 
-		error_log( '[Marketing Analytics Chat] ' . $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( '[Specflux Marketing Analytics Chat] ' . $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 	}
 
 	/**
@@ -45,7 +45,7 @@ class Logger {
 			$message = print_r( $message, true ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 		}
 
-		error_log( '[Marketing Analytics Chat ERROR] ' . $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( '[Specflux Marketing Analytics Chat ERROR] ' . $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 	}
 
 	/**
@@ -63,7 +63,7 @@ class Logger {
 			$message = print_r( $message, true ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 		}
 
-		error_log( '[Marketing Analytics Chat WARNING] ' . $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( '[Specflux Marketing Analytics Chat WARNING] ' . $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 	}
 
 	/**
@@ -72,13 +72,13 @@ class Logger {
 	 * @return bool True if debug logging is enabled.
 	 */
 	public static function is_debug_enabled() {
-		// Check plugin-specific debug setting first
-		$plugin_debug = get_option( 'marketing_analytics_mcp_debug_mode', false );
+		// Check plugin-specific debug setting first.
+		$plugin_debug = get_option( 'specflux_mac_debug_mode', false );
 		if ( $plugin_debug ) {
 			return true;
 		}
 
-		// Fall back to WP_DEBUG constant
+		// Fall back to WP_DEBUG constant.
 		return defined( 'WP_DEBUG' ) && WP_DEBUG;
 	}
 }

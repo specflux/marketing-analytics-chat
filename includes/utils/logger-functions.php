@@ -2,10 +2,10 @@
 /**
  * Logger helper functions.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Utils;
+namespace Specflux_Marketing_Analytics\Utils;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;

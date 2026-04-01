@@ -1,5 +1,5 @@
 /**
- * Sparkline Renderer for Marketing Analytics Chat
+ * Sparkline Renderer for Specflux Marketing Analytics Chat
  *
  * Lightweight inline SVG sparkline generator — no external dependencies.
  *
@@ -88,7 +88,7 @@
 	 * Auto-initialize sparklines from data attributes on page load.
 	 */
 	$( document ).ready( function() {
-		$( '.mac-sparkline' ).each( function() {
+		$( '.smac-sparkline' ).each( function() {
 			var rawData = $( this ).attr( 'data-values' ) || '[]';
 			var color   = $( this ).attr( 'data-color' ) || '#2271b1';
 
@@ -106,12 +106,12 @@
 	 * Dashboard metrics refresh handler.
 	 */
 	$( document ).ready( function() {
-		var $panel = $( '.mac-insights-panel' );
+		var $panel = $( '.smac-insights-panel' );
 		if ( ! $panel.length ) {
 			return;
 		}
 
-		$panel.on( 'click', '.mac-insights-refresh', function( e ) {
+		$panel.on( 'click', '.smac-insights-refresh', function( e ) {
 			e.preventDefault();
 
 			var $btn = $( this );
@@ -122,7 +122,7 @@
 			$btn.addClass( 'updating-message' ).prop( 'disabled', true );
 
 			$.post( macDashboardInsights.ajaxUrl, {
-				action: 'marketing_analytics_mcp_refresh_dashboard_metrics',
+				action: 'specflux_mac_refresh_dashboard_metrics',
 				nonce: macDashboardInsights.nonce
 			}, function( response ) {
 				$btn.removeClass( 'updating-message' ).prop( 'disabled', false );
@@ -143,14 +143,14 @@
 		function updateMetricCards( metrics ) {
 			$.each( metrics, function( platform, platformMetrics ) {
 				$.each( platformMetrics, function( _, metric ) {
-					var $card = $( '.mac-metric-card[data-platform="' + platform + '"][data-metric="' + metric.key + '"]' );
+					var $card = $( '.smac-metric-card[data-platform="' + platform + '"][data-metric="' + metric.key + '"]' );
 					if ( ! $card.length ) {
 						return;
 					}
 
-					$card.find( '.mac-metric-value' ).text( metric.formatted );
+					$card.find( '.smac-metric-value' ).text( metric.formatted );
 
-					var $change = $card.find( '.mac-metric-change' );
+					var $change = $card.find( '.smac-metric-change' );
 					$change
 						.removeClass( 'positive negative neutral' )
 						.addClass( metric.direction );
@@ -158,7 +158,7 @@
 					var arrow = 'neutral' === metric.direction ? '' : ( 'positive' === metric.direction ? '\u2191 ' : '\u2193 ' );
 					$change.text( arrow + metric.change );
 
-					var $sparkline = $card.find( '.mac-sparkline' );
+					var $sparkline = $card.find( '.smac-sparkline' );
 					if ( $sparkline.length && metric.sparkline && metric.sparkline.length > 1 ) {
 						var color = 'positive' === metric.direction ? '#00a32a' : ( 'negative' === metric.direction ? '#d63638' : '#2271b1' );
 						MacSparkline.render( $sparkline[0], metric.sparkline, { color: color } );

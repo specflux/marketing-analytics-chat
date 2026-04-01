@@ -2,12 +2,12 @@
 /**
  * Plugin Deactivation Handler
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP;
+namespace Specflux_Marketing_Analytics;
 
-use Marketing_Analytics_MCP\Utils\Permission_Manager;
+use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -24,16 +24,16 @@ class Deactivator {
 	 * - Flush rewrite rules
 	 */
 	public static function deactivate() {
-		// Clear all plugin transients
+		// Clear all plugin transients.
 		self::clear_all_caches();
 
-		// Clear any scheduled cron jobs
+		// Clear any scheduled cron jobs.
 		self::clear_scheduled_events();
 
-		// Remove custom capabilities for role-based access control
+		// Remove custom capabilities for role-based access control.
 		Permission_Manager::remove_capabilities();
 
-		// Flush rewrite rules
+		// Flush rewrite rules.
 		flush_rewrite_rules();
 	}
 
@@ -48,8 +48,8 @@ class Deactivator {
 		$wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
-				$wpdb->esc_like( '_transient_marketing_analytics_mcp_' ) . '%',
-				$wpdb->esc_like( '_transient_timeout_marketing_analytics_mcp_' ) . '%'
+				$wpdb->esc_like( '_transient_specflux_mac_' ) . '%',
+				$wpdb->esc_like( '_transient_timeout_specflux_mac_' ) . '%'
 			)
 		);
 	}
@@ -58,10 +58,10 @@ class Deactivator {
 	 * Clear scheduled cron events
 	 */
 	private static function clear_scheduled_events() {
-		// Clear any scheduled events (if we add cron jobs in the future)
+		// Clear any scheduled events (if we add cron jobs in the future).
 		$scheduled_hooks = array(
-			'marketing_analytics_mcp_daily_cleanup',
-			'marketing_analytics_mcp_refresh_tokens',
+			'specflux_mac_daily_cleanup',
+			'specflux_mac_refresh_tokens',
 		);
 
 		foreach ( $scheduled_hooks as $hook ) {

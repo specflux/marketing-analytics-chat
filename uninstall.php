@@ -4,10 +4,10 @@
  *
  * Fired when the plugin is uninstalled.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-// If uninstall not called from WordPress, exit
+// If uninstall not called from WordPress, exit.
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
@@ -21,47 +21,47 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
  * - All transient caches
  * - API rate limit counters
  */
-function marketing_analytics_mcp_uninstall() {
+function specflux_mac_uninstall() {
 	global $wpdb;
 
-	// Delete main plugin options
-	delete_option( 'marketing_analytics_mcp_settings' );
-	delete_option( 'marketing_analytics_mcp_encryption_key' );
+	// Delete main plugin options.
+	delete_option( 'specflux_mac_settings' );
+	delete_option( 'specflux_mac_encryption_key' );
 
-	// Delete encrypted credentials
-	delete_option( 'marketing_analytics_mcp_credentials_clarity' );
-	delete_option( 'marketing_analytics_mcp_credentials_ga4' );
-	delete_option( 'marketing_analytics_mcp_credentials_gsc' );
+	// Delete encrypted credentials.
+	delete_option( 'specflux_mac_credentials_clarity' );
+	delete_option( 'specflux_mac_credentials_ga4' );
+	delete_option( 'specflux_mac_credentials_gsc' );
 
-	// Delete OAuth tokens
-	delete_option( 'marketing_analytics_mcp_oauth_tokens' );
+	// Delete OAuth tokens.
+	delete_option( 'specflux_mac_oauth_tokens' );
 
-	// Delete Google OAuth credentials
-	delete_option( 'marketing_analytics_mcp_google_client_id' );
-	delete_option( 'marketing_analytics_mcp_google_client_secret' );
-	delete_option( 'marketing_analytics_mcp_oauth_state' );
+	// Delete Google OAuth credentials.
+	delete_option( 'specflux_mac_google_client_id' );
+	delete_option( 'specflux_mac_google_client_secret' );
+	delete_option( 'specflux_mac_oauth_state' );
 
-	// Delete onboarding and prompt options
-	delete_option( 'marketing_analytics_mcp_onboarding_complete' );
-	delete_option( 'marketing_analytics_mcp_custom_prompts' );
+	// Delete onboarding and prompt options.
+	delete_option( 'specflux_mac_onboarding_complete' );
+	delete_option( 'specflux_mac_custom_prompts' );
 
-	// Delete connection and access control options
-	delete_option( 'marketing_analytics_mcp_ga4_property_id' );
-	delete_option( 'marketing_analytics_mcp_gsc_site_url' );
-	delete_option( 'marketing_analytics_mcp_allowed_roles' );
+	// Delete connection and access control options.
+	delete_option( 'specflux_mac_ga4_property_id' );
+	delete_option( 'specflux_mac_gsc_site_url' );
+	delete_option( 'specflux_mac_allowed_roles' );
 
-	// Delete anomaly data
-	delete_option( 'marketing_analytics_recent_anomalies' );
+	// Delete anomaly data.
+	delete_option( 'specflux_mac_recent_anomalies' );
 
-	// Delete rate limit counters
-	delete_option( 'marketing_analytics_mcp_rate_limits' );
+	// Delete rate limit counters.
+	delete_option( 'specflux_mac_rate_limits' );
 
-	// Delete all transients (properly escape LIKE patterns)
-	$transient_pattern = $wpdb->esc_like( '_transient_marketing_analytics_mcp_' ) . '%';
-	$timeout_pattern   = $wpdb->esc_like( '_transient_timeout_marketing_analytics_mcp_' ) . '%';
+	// Delete all transients (properly escape LIKE patterns).
+	$transient_pattern = $wpdb->esc_like( '_transient_specflux_mac_' ) . '%';
+	$timeout_pattern   = $wpdb->esc_like( '_transient_timeout_specflux_mac_' ) . '%';
 
 	// Fetch matching transients and delete via API to clear caches.
-	$cache_group       = 'marketing_analytics_mcp_uninstall';
+	$cache_group       = 'specflux_mac_uninstall';
 	$cache_key         = 'transient_options';
 	$transient_options = wp_cache_get( $cache_key, $cache_group );
 
@@ -83,10 +83,10 @@ function marketing_analytics_mcp_uninstall() {
 		}
 	}
 
-	// Clear any scheduled cron jobs
+	// Clear any scheduled cron jobs.
 	$scheduled_hooks = array(
-		'marketing_analytics_mcp_daily_cleanup',
-		'marketing_analytics_mcp_refresh_tokens',
+		'specflux_mac_daily_cleanup',
+		'specflux_mac_refresh_tokens',
 	);
 
 	foreach ( $scheduled_hooks as $hook ) {
@@ -96,11 +96,11 @@ function marketing_analytics_mcp_uninstall() {
 		}
 	}
 
-	// Drop chat tables
+	// Drop chat tables.
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Uninstall cleanup.
-	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}marketing_analytics_mcp_messages" );
+	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}specflux_mac_messages" );
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Uninstall cleanup.
-	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}marketing_analytics_mcp_conversations" );
+	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}specflux_mac_conversations" );
 }
 
-marketing_analytics_mcp_uninstall();
+specflux_mac_uninstall();

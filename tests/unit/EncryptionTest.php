@@ -2,12 +2,12 @@
 /**
  * Tests for the Encryption class.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Tests\unit;
+namespace Specflux_Marketing_Analytics\Tests\unit;
 
-use Marketing_Analytics_MCP\Credentials\Encryption;
+use Specflux_Marketing_Analytics\Credentials\Encryption;
 use PHPUnit\Framework\TestCase;
 
 /**

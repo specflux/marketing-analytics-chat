@@ -2,12 +2,12 @@
 /**
  * Tests for the Logger class.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Tests\unit;
+namespace Specflux_Marketing_Analytics\Tests\unit;
 
-use Marketing_Analytics_MCP\Utils\Logger;
+use Specflux_Marketing_Analytics\Utils\Logger;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -38,7 +38,7 @@ class LoggerTest extends TestCase {
 	 */
 	public function test_is_debug_enabled_with_plugin_setting(): void {
 		global $mock_options;
-		$mock_options['marketing_analytics_mcp_debug_mode'] = true;
+		$mock_options['specflux_mac_debug_mode'] = true;
 
 		$this->assertTrue( Logger::is_debug_enabled() );
 	}

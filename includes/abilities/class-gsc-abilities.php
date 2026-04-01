@@ -2,14 +2,14 @@
 /**
  * Google Search Console Abilities
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Abilities;
+namespace Specflux_Marketing_Analytics\Abilities;
 
-use Marketing_Analytics_MCP\API_Clients\GSC_Client;
-use Marketing_Analytics_MCP\Credentials\Credential_Manager;
-use Marketing_Analytics_MCP\Utils\Permission_Manager;
+use Specflux_Marketing_Analytics\API_Clients\GSC_Client;
+use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -22,7 +22,7 @@ class GSC_Abilities {
 	 * Register GSC abilities
 	 */
 	public function register() {
-		// Only register abilities if credentials are configured
+		// Only register abilities if credentials are configured.
 		$credential_manager = new Credential_Manager();
 		if ( ! $credential_manager->has_credentials( 'gsc' ) ) {
 			return;
@@ -41,8 +41,8 @@ class GSC_Abilities {
 		wp_register_ability(
 			'marketing-analytics/get-search-performance',
 			array(
-				'label'               => __( 'Get Search Performance', 'marketing-analytics-chat' ),
-				'description'         => __( 'Retrieve search performance data from Google Search Console including clicks, impressions, CTR, and position.', 'marketing-analytics-chat' ),
+				'label'               => __( 'Get Search Performance', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Retrieve search performance data from Google Search Console including clicks, impressions, CTR, and position.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -102,8 +102,8 @@ class GSC_Abilities {
 		wp_register_ability(
 			'marketing-analytics/get-top-queries',
 			array(
-				'label'               => __( 'Get Top Queries', 'marketing-analytics-chat' ),
-				'description'         => __( 'Get top-performing search queries from Google Search Console.', 'marketing-analytics-chat' ),
+				'label'               => __( 'Get Top Queries', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Get top-performing search queries from Google Search Console.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -157,8 +157,8 @@ class GSC_Abilities {
 		wp_register_ability(
 			'marketing-analytics/get-indexing-status',
 			array(
-				'label'               => __( 'Get Indexing Status', 'marketing-analytics-chat' ),
-				'description'         => __( 'Check page indexing status and coverage issues in Google Search Console.', 'marketing-analytics-chat' ),
+				'label'               => __( 'Get Indexing Status', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Check page indexing status and coverage issues in Google Search Console.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -202,8 +202,8 @@ class GSC_Abilities {
 		wp_register_ability(
 			'marketing-analytics/gsc-overview',
 			array(
-				'label'               => __( 'Search Console Overview', 'marketing-analytics-chat' ),
-				'description'         => __( 'Get Google Search Console site summary with verification status, indexed pages, and top queries.', 'marketing-analytics-chat' ),
+				'label'               => __( 'Search Console Overview', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Get Google Search Console site summary with verification status, indexed pages, and top queries.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'output_schema'       => array(
@@ -307,10 +307,10 @@ class GSC_Abilities {
 			$client = new GSC_Client();
 
 			if ( ! empty( $args['page_url'] ) ) {
-				// Get URL inspection data
+				// Get URL inspection data.
 				$data = $client->get_url_inspection( $args['page_url'] );
 			} else {
-				// Get sitemap status
+				// Get sitemap status.
 				$data = $client->get_sitemap_status();
 			}
 
@@ -345,10 +345,10 @@ class GSC_Abilities {
 		try {
 			$client = new GSC_Client();
 
-			// Get top queries for overview
+			// Get top queries for overview.
 			$top_queries = $client->get_top_queries( '7daysAgo', 10, 5 );
 
-			// Get search performance summary
+			// Get search performance summary.
 			$performance = $client->query_search_analytics( '7daysAgo', array(), array(), array( 'row_limit' => 1 ) );
 
 			$summary = array(

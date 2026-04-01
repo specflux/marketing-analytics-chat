@@ -1,4 +1,4 @@
-# Marketing Analytics Chat - WordPress Plugin
+# Specflux Marketing Analytics Chat - WordPress Plugin
 
 This is a clean development repository for the WordPress MCP Marketing Analytics Plugin.
 
@@ -18,7 +18,7 @@ This will create a distributable zip file in the `dist/` directory.
 
 ## Development
 
-- Main plugin file: `marketing-analytics-chat.php`
+- Main plugin file: `specflux-marketing-analytics-chat.php`
 - Core classes: `includes/`
 - Admin UI: `admin/`
 - Documentation: `docs/`
@@ -26,7 +26,7 @@ This will create a distributable zip file in the `dist/` directory.
 ## Testing
 
 Install the plugin in a WordPress installation:
-- Copy to `wp-content/plugins/marketing-analytics-chat/`
+- Copy to `wp-content/plugins/specflux-marketing-analytics-chat/`
 - Or install the zip from `dist/` via WordPress admin
 
 ## Documentation

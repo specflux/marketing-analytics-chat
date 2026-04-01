@@ -4,13 +4,13 @@
  *
  * LLM provider for OpenAI's Chat Completions API with function calling support.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Chat;
+namespace Specflux_Marketing_Analytics\Chat;
 
 use WP_Error;
-use Marketing_Analytics_MCP\Utils\Logger;
+use Specflux_Marketing_Analytics\Utils\Logger;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -39,7 +39,7 @@ class OpenAI_Provider extends Abstract_LLM_Provider {
 	 * @return string Provider display name.
 	 */
 	public function get_display_name() {
-		return __( 'OpenAI GPT', 'marketing-analytics-chat' );
+		return __( 'OpenAI GPT', 'specflux-marketing-analytics-chat' );
 	}
 
 	/**
@@ -63,21 +63,21 @@ class OpenAI_Provider extends Abstract_LLM_Provider {
 		if ( ! $this->is_configured() ) {
 			return new WP_Error(
 				'provider_not_configured',
-				__( 'OpenAI API is not configured', 'marketing-analytics-chat' )
+				__( 'OpenAI API is not configured', 'specflux-marketing-analytics-chat' )
 			);
 		}
 
-		// Build request body
+		// Build request body.
 		$model = $options['model'] ?? $this->model;
 		$body  = array(
 			'model'    => $model,
 			'messages' => $this->format_messages( $messages, $options ),
 		);
 
-		// Check if this model supports custom parameters
+		// Check if this model supports custom parameters.
 		$supports_temperature = $this->model_supports_temperature( $model );
 
-		// Add temperature if specified and supported by model
+		// Add temperature if specified and supported by model.
 		if ( $supports_temperature ) {
 			if ( isset( $options['temperature'] ) ) {
 				$body['temperature'] = $options['temperature'];
@@ -86,24 +86,24 @@ class OpenAI_Provider extends Abstract_LLM_Provider {
 			}
 		}
 
-		// Add max_completion_tokens if specified (newer OpenAI API parameter)
+		// Add max_completion_tokens if specified (newer OpenAI API parameter).
 		if ( isset( $options['max_tokens'] ) ) {
 			$body['max_completion_tokens'] = $options['max_tokens'];
 		} elseif ( $this->max_tokens ) {
 			$body['max_completion_tokens'] = $this->max_tokens;
 		}
 
-		// Add tools if provided
+		// Add tools if provided.
 		if ( ! empty( $tools ) ) {
 			$converted_tools = $this->convert_tools_format( $tools );
 			$body['tools']   = $converted_tools;
 
-			// Log the tools being sent to OpenAI API
+			// Log the tools being sent to OpenAI API.
 			Logger::debug( 'OpenAI: Sending ' . count( $converted_tools ) . ' tools to API' );
 			Logger::debug( 'OpenAI: First tool structure: ' . wp_json_encode( $converted_tools[0] ?? 'none' ) );
 		}
 
-		// Make API request
+		// Make API request.
 		$headers = array(
 			'Authorization' => 'Bearer ' . $this->api_key,
 			'Content-Type'  => 'application/json',
@@ -128,14 +128,14 @@ class OpenAI_Provider extends Abstract_LLM_Provider {
 	private function format_messages( $messages, $options = array() ) {
 		$formatted = array();
 
-		// Add system message if provided
+		// Add system message if provided.
 		if ( ! empty( $options['system'] ) ) {
 			$formatted[] = array(
 				'role'    => 'system',
 				'content' => $options['system'],
 			);
 		} else {
-			// Use default system message
+			// Use default system message.
 			$formatted[] = array(
 				'role'    => 'system',
 				'content' => $this->get_default_system_message(),
@@ -143,8 +143,8 @@ class OpenAI_Provider extends Abstract_LLM_Provider {
 		}
 
 		foreach ( $messages as $message ) {
-			// Handle tool results
-			if ( $message['role'] === 'tool' ) {
+			// Handle tool results.
+			if ( 'tool' === $message['role'] ) {
 				$formatted[] = array(
 					'role'         => 'tool',
 					'tool_call_id' => $message['tool_call_id'] ?? 'unknown',
@@ -153,26 +153,26 @@ class OpenAI_Provider extends Abstract_LLM_Provider {
 				continue;
 			}
 
-			// Format regular user/assistant messages
+			// Format regular user/assistant messages.
 			$formatted_message = array(
-				'role'    => $message['role'] === 'system' ? 'system' : $message['role'],
+				'role'    => 'system' === $message['role'] ? 'system' : $message['role'],
 				'content' => $message['content'],
 			);
 
-			// Add tool calls if present (for assistant messages)
+			// Add tool calls if present (for assistant messages).
 			if ( ! empty( $message['tool_calls'] ) ) {
 				$formatted_message['tool_calls'] = array();
 
 				foreach ( $message['tool_calls'] as $tool_call ) {
 					$arguments = $tool_call['arguments'] ?? $tool_call['input'] ?? array();
 
-					// Ensure arguments is a JSON string for OpenAI
+					// Ensure arguments is a JSON string for OpenAI.
 					if ( is_array( $arguments ) || is_object( $arguments ) ) {
 						$arguments = wp_json_encode( $arguments );
 					}
 
-					// Sanitize tool name: convert forward slashes to double underscores
-					// OpenAI requires function names to match ^[a-zA-Z0-9_-]+$
+					// Sanitize tool name: convert forward slashes to double underscores.
+					// OpenAI requires function names to match ^[a-zA-Z0-9_-]+$.
 					$sanitized_name = str_replace( '/', '__', $tool_call['name'] );
 
 					$formatted_message['tool_calls'][] = array(
@@ -202,14 +202,14 @@ class OpenAI_Provider extends Abstract_LLM_Provider {
 		$openai_tools = array();
 
 		foreach ( $mcp_tools as $tool ) {
-			// Skip tools without valid names
+			// Skip tools without valid names.
 			$name = $tool['name'] ?? '';
 			if ( empty( $name ) ) {
 				continue;
 			}
 
-			// OpenAI requires function names to match ^[a-zA-Z0-9_-]+$
-			// Convert forward slashes to double underscores (e.g., core/get-site-info -> core__get_site_info)
+			// OpenAI requires function names to match ^[a-zA-Z0-9_-]+$.
+			// Convert forward slashes to double underscores (e.g., core/get-site-info -> core__get_site_info).
 			$sanitized_name = str_replace( '/', '__', $name );
 
 			$openai_tools[] = array(
@@ -238,9 +238,9 @@ class OpenAI_Provider extends Abstract_LLM_Provider {
 		$choice  = $response['choices'][0] ?? array();
 		$message = $choice['message'] ?? array();
 
-		// Normalize OpenAI usage format to match Claude's format
-		// OpenAI: prompt_tokens, completion_tokens
-		// Claude: input_tokens, output_tokens
+		// Normalize OpenAI usage format to match Claude's format.
+		// OpenAI: prompt_tokens, completion_tokens.
+		// Claude: input_tokens, output_tokens.
 		$normalized_usage = array();
 		if ( ! empty( $response['usage'] ) ) {
 			$usage            = $response['usage'];
@@ -292,14 +292,14 @@ class OpenAI_Provider extends Abstract_LLM_Provider {
 		$tool_calls = array();
 
 		foreach ( $message['tool_calls'] as $tool_call ) {
-			// Parse arguments from JSON string
+			// Parse arguments from JSON string.
 			$arguments = $tool_call['function']['arguments'] ?? '{}';
 			if ( is_string( $arguments ) ) {
 				$arguments = json_decode( $arguments, true );
 			}
 
-			// Convert sanitized tool name back to MCP format
-			// (e.g., core__get_site_info -> core/get-site-info)
+			// Convert sanitized tool name back to MCP format.
+			// (e.g., core__get_site_info -> core/get-site-info).
 			$original_name = str_replace( '__', '/', $tool_call['function']['name'] );
 
 			$tool_calls[] = array(
@@ -318,7 +318,7 @@ class OpenAI_Provider extends Abstract_LLM_Provider {
 	 * @return string System message.
 	 */
 	private function get_default_system_message() {
-		return __( 'You are a helpful AI assistant with access to marketing analytics data from Google Analytics 4, Google Search Console, and Microsoft Clarity. Use the available tools to answer questions about website performance, user behavior, and marketing metrics. Provide clear, actionable insights based on the data.', 'marketing-analytics-chat' );
+		return __( 'You are a helpful AI assistant with access to marketing analytics data from Google Analytics 4, Google Search Console, and Microsoft Clarity. Use the available tools to answer questions about website performance, user behavior, and marketing metrics. Provide clear, actionable insights based on the data.', 'specflux-marketing-analytics-chat' );
 	}
 
 	/**
@@ -330,7 +330,7 @@ class OpenAI_Provider extends Abstract_LLM_Provider {
 	 * @return bool True if model supports temperature.
 	 */
 	private function model_supports_temperature( $model ) {
-		// Models that don't support custom temperature (reasoning models)
+		// Models that don't support custom temperature (reasoning models).
 		$no_temperature_models = array(
 			'o1',
 			'o1-mini',
@@ -339,7 +339,7 @@ class OpenAI_Provider extends Abstract_LLM_Provider {
 			'gpt-5-mini',
 		);
 
-		// Check if the model starts with any of the non-supporting prefixes
+		// Check if the model starts with any of the non-supporting prefixes.
 		foreach ( $no_temperature_models as $prefix ) {
 			if ( strpos( $model, $prefix ) === 0 ) {
 				return false;

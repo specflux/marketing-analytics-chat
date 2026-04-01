@@ -2,14 +2,14 @@
 /**
  * Google Analytics 4 Abilities
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Abilities;
+namespace Specflux_Marketing_Analytics\Abilities;
 
-use Marketing_Analytics_MCP\API_Clients\GA4_Client;
-use Marketing_Analytics_MCP\Credentials\Credential_Manager;
-use Marketing_Analytics_MCP\Utils\Permission_Manager;
+use Specflux_Marketing_Analytics\API_Clients\GA4_Client;
+use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -22,7 +22,7 @@ class GA4_Abilities {
 	 * Register GA4 abilities
 	 */
 	public function register() {
-		// Only register abilities if credentials are configured
+		// Only register abilities if credentials are configured.
 		$credential_manager = new Credential_Manager();
 		if ( ! $credential_manager->has_credentials( 'ga4' ) ) {
 			return;
@@ -42,8 +42,8 @@ class GA4_Abilities {
 		wp_register_ability(
 			'marketing-analytics/get-ga4-metrics',
 			array(
-				'label'               => __( 'Get GA4 Metrics', 'marketing-analytics-chat' ),
-				'description'         => __( 'Retrieve Google Analytics 4 metrics for a specified date range with optional dimensions.', 'marketing-analytics-chat' ),
+				'label'               => __( 'Get GA4 Metrics', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Retrieve Google Analytics 4 metrics for a specified date range with optional dimensions.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -106,8 +106,8 @@ class GA4_Abilities {
 		wp_register_ability(
 			'marketing-analytics/get-ga4-events',
 			array(
-				'label'               => __( 'Get GA4 Events', 'marketing-analytics-chat' ),
-				'description'         => __( 'Query custom event data from Google Analytics 4.', 'marketing-analytics-chat' ),
+				'label'               => __( 'Get GA4 Events', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Query custom event data from Google Analytics 4.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -153,8 +153,8 @@ class GA4_Abilities {
 		wp_register_ability(
 			'marketing-analytics/get-ga4-realtime',
 			array(
-				'label'               => __( 'Get GA4 Real-time Data', 'marketing-analytics-chat' ),
-				'description'         => __( 'Get real-time user activity from Google Analytics 4.', 'marketing-analytics-chat' ),
+				'label'               => __( 'Get GA4 Real-time Data', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Get real-time user activity from Google Analytics 4.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -190,8 +190,8 @@ class GA4_Abilities {
 		wp_register_ability(
 			'marketing-analytics/get-traffic-sources',
 			array(
-				'label'               => __( 'Get Traffic Sources', 'marketing-analytics-chat' ),
-				'description'         => __( 'Analyze traffic sources and acquisition channels from GA4.', 'marketing-analytics-chat' ),
+				'label'               => __( 'Get Traffic Sources', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Analyze traffic sources and acquisition channels from GA4.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -233,8 +233,8 @@ class GA4_Abilities {
 		wp_register_ability(
 			'marketing-analytics/ga4-overview',
 			array(
-				'label'               => __( 'GA4 Overview', 'marketing-analytics-chat' ),
-				'description'         => __( 'Get Google Analytics 4 property summary with key metrics snapshot.', 'marketing-analytics-chat' ),
+				'label'               => __( 'GA4 Overview', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Get Google Analytics 4 property summary with key metrics snapshot.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'output_schema'       => array(
@@ -408,7 +408,7 @@ class GA4_Abilities {
 		try {
 			$client = new GA4_Client();
 
-			// Get key metrics for last 7 days
+			// Get key metrics for last 7 days.
 			$metrics = array( 'activeUsers', 'sessions', 'screenPageViews', 'bounceRate' );
 			$data    = $client->run_report( $metrics, array(), '7daysAgo' );
 

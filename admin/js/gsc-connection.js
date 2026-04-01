@@ -10,7 +10,7 @@ jQuery(document).ready(function($) {
 			url: ajaxurl,
 			type: 'POST',
 			data: {
-				action: 'marketing_analytics_mcp_get_gsc_properties',
+				action: 'specflux_mac_get_gsc_properties',
 				nonce: macGSCConnection.nonce
 			},
 			success: function(response) {
@@ -51,7 +51,7 @@ jQuery(document).ready(function($) {
 			url: ajaxurl,
 			type: 'POST',
 			data: {
-				action: 'marketing_analytics_mcp_save_gsc_property',
+				action: 'specflux_mac_save_gsc_property',
 				nonce: macGSCConnection.nonce,
 				site_url: siteUrl
 			},

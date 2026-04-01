@@ -2,13 +2,13 @@
 /**
  * Integration tests for MCP Abilities registration.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Tests\integration;
+namespace Specflux_Marketing_Analytics\Tests\integration;
 
-use Marketing_Analytics_MCP\Abilities\Abilities_Registrar;
-use Marketing_Analytics_MCP\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Abilities\Abilities_Registrar;
+use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 use PHPUnit\Framework\TestCase;
 
 /**

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<ruleset name="Marketing Analytics Chat">
-	<description>PHP CodeSniffer ruleset for Marketing Analytics Chat plugin.</description>
+<ruleset name="Specflux Marketing Analytics Chat">
+	<description>PHP CodeSniffer ruleset for Specflux Marketing Analytics Chat plugin.</description>
 
 	<!-- What to scan -->
 	<file>.</file>
@@ -73,7 +73,7 @@
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<property name="text_domain" type="array">
-				<element value="marketing-analytics-chat"/>
+				<element value="specflux-marketing-analytics-chat"/>
 			</property>
 		</properties>
 	</rule>
@@ -85,8 +85,8 @@
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<property name="prefixes" type="array">
-				<element value="marketing_analytics_mcp"/>
-				<element value="Marketing_Analytics_MCP"/>
+				<element value="specflux_mac"/>
+				<element value="Specflux_Marketing_Analytics"/>
 				<element value="mcp_"/>
 			</property>
 		</properties>

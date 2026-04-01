@@ -4,10 +4,10 @@
  *
  * Interface for AI language model providers (Claude, OpenAI, etc.).
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Chat;
+namespace Specflux_Marketing_Analytics\Chat;
 
 use WP_Error;
 

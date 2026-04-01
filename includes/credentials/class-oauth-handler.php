@@ -4,12 +4,12 @@
  *
  * Handles OAuth 2.0 authentication flow for Google services (GA4 and GSC).
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Credentials;
+namespace Specflux_Marketing_Analytics\Credentials;
 
-use Marketing_Analytics_MCP\Utils\Logger;
+use Specflux_Marketing_Analytics\Utils\Logger;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -21,17 +21,17 @@ class OAuth_Handler {
 	/**
 	 * Google OAuth Client ID option name
 	 */
-	const OPTION_CLIENT_ID = 'marketing_analytics_mcp_google_client_id';
+	const OPTION_CLIENT_ID = 'specflux_mac_google_client_id';
 
 	/**
 	 * Google OAuth Client Secret option name
 	 */
-	const OPTION_CLIENT_SECRET = 'marketing_analytics_mcp_google_client_secret';
+	const OPTION_CLIENT_SECRET = 'specflux_mac_google_client_secret';
 
 	/**
 	 * OAuth state option name (for CSRF protection)
 	 */
-	const OPTION_OAUTH_STATE = 'marketing_analytics_mcp_oauth_state';
+	const OPTION_OAUTH_STATE = 'specflux_mac_oauth_state';
 
 	/**
 	 * OAuth scopes for Google Analytics 4
@@ -113,7 +113,7 @@ class OAuth_Handler {
 			return null;
 		}
 
-		// Generate and store state parameter for CSRF protection
+		// Generate and store state parameter for CSRF protection.
 		$state = wp_generate_password( 32, false );
 		update_option( self::OPTION_OAUTH_STATE, $state, false );
 
@@ -130,20 +130,20 @@ class OAuth_Handler {
 	 * @return array|false Array with success status and message, or false on failure.
 	 */
 	public function handle_callback( $code, $state ) {
-		// Validate state parameter
+		// Validate state parameter.
 		if ( ! $this->validate_state( $state ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Invalid state parameter. Possible CSRF attack.', 'marketing-analytics-chat' ),
+				'message' => __( 'Invalid state parameter. Possible CSRF attack.', 'specflux-marketing-analytics-chat' ),
 			);
 		}
 
-		// Extract service from state
+		// Extract service from state.
 		$state_parts = explode( '|', $state );
 		if ( count( $state_parts ) !== 2 ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Invalid state format.', 'marketing-analytics-chat' ),
+				'message' => __( 'Invalid state format.', 'specflux-marketing-analytics-chat' ),
 			);
 		}
 
@@ -153,17 +153,17 @@ class OAuth_Handler {
 		if ( empty( $scopes ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Invalid service identifier.', 'marketing-analytics-chat' ),
+				'message' => __( 'Invalid service identifier.', 'specflux-marketing-analytics-chat' ),
 			);
 		}
 
-		// Exchange code for tokens
+		// Exchange code for tokens.
 		$client = $this->init_google_client( $scopes );
 
 		if ( null === $client ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Failed to initialize Google Client.', 'marketing-analytics-chat' ),
+				'message' => __( 'Failed to initialize Google Client.', 'specflux-marketing-analytics-chat' ),
 			);
 		}
 
@@ -175,21 +175,21 @@ class OAuth_Handler {
 					'success' => false,
 					'message' => sprintf(
 						/* translators: %s: error message */
-						__( 'OAuth error: %s', 'marketing-analytics-chat' ),
+						__( 'OAuth error: %s', 'specflux-marketing-analytics-chat' ),
 						$token['error']
 					),
 				);
 			}
 
-			// Save tokens
+			// Save tokens.
 			$this->save_tokens( $service, $token );
 
-			// Clear state
+			// Clear state.
 			delete_option( self::OPTION_OAUTH_STATE );
 
 			return array(
 				'success' => true,
-				'message' => __( 'Successfully connected to Google services.', 'marketing-analytics-chat' ),
+				'message' => __( 'Successfully connected to Google services.', 'specflux-marketing-analytics-chat' ),
 				'service' => $service,
 			);
 		} catch ( \Exception $e ) {
@@ -197,7 +197,7 @@ class OAuth_Handler {
 				'success' => false,
 				'message' => sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to exchange authorization code: %s', 'marketing-analytics-chat' ),
+					__( 'Failed to exchange authorization code: %s', 'specflux-marketing-analytics-chat' ),
 					$e->getMessage()
 				),
 			);
@@ -217,9 +217,9 @@ class OAuth_Handler {
 			return null;
 		}
 
-		// Check if token is expired
+		// Check if token is expired.
 		if ( isset( $credentials['expires_at'] ) && time() >= $credentials['expires_at'] ) {
-			// Token expired, try to refresh
+			// Token expired, try to refresh.
 			if ( $this->refresh_token( $service ) ) {
 				$credentials = $this->credential_manager->get_credentials( $service );
 				return $credentials['access_token'] ?? null;
@@ -260,7 +260,7 @@ class OAuth_Handler {
 				return false;
 			}
 
-			// Merge new token with existing credentials (preserve refresh_token)
+			// Merge new token with existing credentials (preserve refresh_token).
 			$updated_credentials = array_merge( $credentials, $new_token );
 
 			$this->save_tokens( $service, $updated_credentials );
@@ -282,7 +282,7 @@ class OAuth_Handler {
 		$access_token = $this->get_access_token( $service );
 
 		if ( ! $access_token ) {
-			// No token to revoke, just delete credentials
+			// No token to revoke, just delete credentials.
 			return $this->credential_manager->delete_credentials( $service );
 		}
 
@@ -297,7 +297,7 @@ class OAuth_Handler {
 			}
 		}
 
-		// Delete stored credentials
+		// Delete stored credentials.
 		return $this->credential_manager->delete_credentials( $service );
 	}
 
@@ -309,7 +309,7 @@ class OAuth_Handler {
 	 * @return bool True on success.
 	 */
 	private function save_tokens( $service, $token ) {
-		// Calculate token expiration time
+		// Calculate token expiration time.
 		if ( isset( $token['expires_in'] ) ) {
 			$token['expires_at'] = time() + $token['expires_in'];
 		}
@@ -361,7 +361,7 @@ class OAuth_Handler {
 	 * @return string Redirect URI.
 	 */
 	public function get_redirect_uri() {
-		return admin_url( 'admin.php?page=marketing-analytics-chat-connections&oauth_callback=1' );
+		return admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections&oauth_callback=1' );
 	}
 
 	/**
@@ -372,14 +372,14 @@ class OAuth_Handler {
 	 * @return bool True on success.
 	 */
 	public function set_oauth_credentials( $client_id, $client_secret ) {
-		// Always update client ID if provided
+		// Always update client ID if provided.
 		$id_updated = update_option( self::OPTION_CLIENT_ID, sanitize_text_field( $client_id ), false );
 
-		// Only update secret if provided (allows keeping existing secret)
+		// Only update secret if provided (allows keeping existing secret).
 		if ( ! empty( $client_secret ) ) {
 			$secret_updated = update_option( self::OPTION_CLIENT_SECRET, sanitize_text_field( $client_secret ), false );
 		} else {
-			// Keep existing secret - check if one exists
+			// Keep existing secret - check if one exists.
 			$existing_secret = get_option( self::OPTION_CLIENT_SECRET );
 			$secret_updated  = ! empty( $existing_secret );
 		}

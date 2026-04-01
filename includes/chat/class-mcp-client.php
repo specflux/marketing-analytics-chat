@@ -5,13 +5,13 @@
  * Client for communicating with the local WordPress MCP server.
  * Provides methods to list and call MCP tools.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Chat;
+namespace Specflux_Marketing_Analytics\Chat;
 
 use WP_Error;
-use Marketing_Analytics_MCP\Utils\Logger;
+use Specflux_Marketing_Analytics\Utils\Logger;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -63,7 +63,7 @@ class MCP_Client {
 	 * @return array|WP_Error Array of tool definitions or WP_Error on failure.
 	 */
 	public function list_tools() {
-		// Try direct Abilities API first (bypasses HTTP authentication issues)
+		// Try direct Abilities API first (bypasses HTTP authentication issues).
 		if ( function_exists( 'wp_get_abilities' ) ) {
 			$abilities = wp_get_abilities();
 			$tools     = array();
@@ -71,18 +71,18 @@ class MCP_Client {
 			Logger::debug( 'MCP Client: list_tools: Found ' . count( $abilities ) . ' abilities' );
 
 			foreach ( $abilities as $ability_key => $ability ) {
-				// WP_Ability objects use getter methods for protected properties
+				// WP_Ability objects use getter methods for protected properties.
 				$name         = '';
 				$description  = '';
 				$input_schema = null;
 
 				if ( is_object( $ability ) && $ability instanceof \WP_Ability ) {
-					// Use getter methods for WP_Ability objects
+					// Use getter methods for WP_Ability objects.
 					$name         = $ability->get_name();
 					$description  = $ability->get_description();
 					$input_schema = $ability->get_input_schema();
 				} elseif ( is_object( $ability ) ) {
-					// Fallback for other object types - try getter methods first, then properties
+					// Fallback for other object types - try getter methods first, then properties.
 					if ( method_exists( $ability, 'get_name' ) ) {
 						$name = $ability->get_name();
 					} else {
@@ -106,18 +106,18 @@ class MCP_Client {
 					$input_schema = $ability['input_schema'] ?? null;
 				}
 
-				// If still empty, use the array key (which is often the ability ID)
+				// If still empty, use the array key (which is often the ability ID).
 				if ( empty( $name ) && is_string( $ability_key ) && ! is_numeric( $ability_key ) ) {
 					$name = $ability_key;
 				}
 
-				// Skip abilities without valid names
+				// Skip abilities without valid names.
 				if ( empty( $name ) ) {
 					Logger::debug( 'MCP Client: SKIPPING ability with empty name. Key: ' . $ability_key );
 					continue;
 				}
 
-				// Ensure input_schema has proper structure for empty schemas
+				// Ensure input_schema has proper structure for empty schemas.
 				if ( empty( $input_schema ) || ! is_array( $input_schema ) ) {
 					$input_schema = array(
 						'type'       => 'object',
@@ -139,12 +139,12 @@ class MCP_Client {
 			}
 		}
 
-		// Fallback to HTTP request
+		// Fallback to HTTP request.
 		$request_body = array(
 			'jsonrpc' => '2.0',
 			'id'      => $this->generate_request_id(),
 			'method'  => 'tools/list',
-			'params'  => new \stdClass(), // Empty object
+			'params'  => new \stdClass(), // Empty object.
 		);
 
 		$response = $this->make_request( $request_body );
@@ -159,7 +159,7 @@ class MCP_Client {
 
 		return new WP_Error(
 			'mcp_invalid_response',
-			__( 'Invalid response from MCP server', 'marketing-analytics-chat' )
+			__( 'Invalid response from MCP server', 'specflux-marketing-analytics-chat' )
 		);
 	}
 
@@ -173,19 +173,19 @@ class MCP_Client {
 	 * @return array|WP_Error Tool result or WP_Error on failure.
 	 */
 	public function call_tool( $tool_name, $arguments = array() ) {
-		// Try direct Abilities API first (bypasses HTTP authentication issues)
+		// Try direct Abilities API first (bypasses HTTP authentication issues).
 		if ( function_exists( 'wp_get_ability' ) ) {
 			$ability = wp_get_ability( $tool_name );
 
 			if ( $ability instanceof \WP_Ability ) {
-				// Execute the ability directly
+				// Execute the ability directly.
 				$result = $ability->execute( $arguments );
 
 				if ( is_wp_error( $result ) ) {
 					return $result;
 				}
 
-				// Format result to match MCP response structure
+				// Format result to match MCP response structure.
 				return array(
 					'content' => array(
 						array(
@@ -196,18 +196,18 @@ class MCP_Client {
 				);
 			}
 
-			// Ability not found, log and fall back to HTTP
+			// Ability not found, log and fall back to HTTP.
 			Logger::debug( 'MCP Client: Ability not found via wp_get_ability: ' . $tool_name );
 		}
 
-		// Fallback to HTTP request
+		// Fallback to HTTP request.
 		$request_body = array(
 			'jsonrpc' => '2.0',
 			'id'      => $this->generate_request_id(),
 			'method'  => 'tools/call',
 			'params'  => array(
 				'name'      => $tool_name,
-				'arguments' => (object) $arguments, // Convert to object for JSON
+				'arguments' => (object) $arguments, // Convert to object for JSON.
 			),
 		);
 
@@ -224,14 +224,14 @@ class MCP_Client {
 		if ( isset( $response['error'] ) ) {
 			return new WP_Error(
 				'mcp_tool_error',
-				$response['error']['message'] ?? __( 'Tool execution failed', 'marketing-analytics-chat' ),
+				$response['error']['message'] ?? __( 'Tool execution failed', 'specflux-marketing-analytics-chat' ),
 				$response['error']
 			);
 		}
 
 		return new WP_Error(
 			'mcp_invalid_response',
-			__( 'Invalid response from MCP server', 'marketing-analytics-chat' )
+			__( 'Invalid response from MCP server', 'specflux-marketing-analytics-chat' )
 		);
 	}
 
@@ -260,7 +260,7 @@ class MCP_Client {
 
 		return new WP_Error(
 			'mcp_invalid_response',
-			__( 'Invalid response from MCP server', 'marketing-analytics-chat' )
+			__( 'Invalid response from MCP server', 'specflux-marketing-analytics-chat' )
 		);
 	}
 
@@ -292,7 +292,7 @@ class MCP_Client {
 
 		return new WP_Error(
 			'mcp_invalid_response',
-			__( 'Invalid response from MCP server', 'marketing-analytics-chat' )
+			__( 'Invalid response from MCP server', 'specflux-marketing-analytics-chat' )
 		);
 	}
 
@@ -306,18 +306,18 @@ class MCP_Client {
 		$args = array(
 			'headers' => array(
 				'Content-Type' => 'application/json',
-				'X-WP-Nonce'   => wp_create_nonce( 'wp_rest' ), // Required for cookie auth
+				'X-WP-Nonce'   => wp_create_nonce( 'wp_rest' ), // Required for cookie auth.
 			),
 			'body'    => wp_json_encode( $request_body ),
 			'timeout' => 30,
 		);
 
-		// Add cookies to maintain user session for internal requests
-		// This ensures permission checks work correctly in the MCP adapter
+		// Add cookies to maintain user session for internal requests.
+		// This ensures permission checks work correctly in the MCP adapter.
 		if ( ! empty( $_COOKIE ) ) {
 			$cookies = array();
 			foreach ( $_COOKIE as $name => $value ) {
-				// Only include WordPress cookies for security
+				// Only include WordPress cookies for security.
 				if ( strpos( $name, 'wordpress_' ) === 0 || strpos( $name, 'wp-' ) === 0 ) {
 					$cookies[] = new \WP_Http_Cookie(
 						array(
@@ -332,7 +332,7 @@ class MCP_Client {
 			}
 		}
 
-		// Use internal WordPress HTTP API
+		// Use internal WordPress HTTP API.
 		$response = wp_remote_post( $this->get_server_url(), $args );
 
 		if ( is_wp_error( $response ) ) {
@@ -340,19 +340,19 @@ class MCP_Client {
 				'mcp_request_failed',
 				sprintf(
 					/* translators: %s: Error message */
-					__( 'MCP request failed: %s', 'marketing-analytics-chat' ),
+					__( 'MCP request failed: %s', 'specflux-marketing-analytics-chat' ),
 					$response->get_error_message()
 				)
 			);
 		}
 
 		$status_code = wp_remote_retrieve_response_code( $response );
-		if ( $status_code !== 200 ) {
+		if ( 200 !== $status_code ) {
 			return new WP_Error(
 				'mcp_request_failed',
 				sprintf(
 					/* translators: %d: HTTP status code */
-					__( 'MCP server returned status code: %d', 'marketing-analytics-chat' ),
+					__( 'MCP server returned status code: %d', 'specflux-marketing-analytics-chat' ),
 					$status_code
 				)
 			);
@@ -361,10 +361,10 @@ class MCP_Client {
 		$body = wp_remote_retrieve_body( $response );
 		$data = json_decode( $body, true );
 
-		if ( json_last_error() !== JSON_ERROR_NONE ) {
+		if ( JSON_ERROR_NONE !== json_last_error() ) {
 			return new WP_Error(
 				'mcp_invalid_json',
-				__( 'Invalid JSON response from MCP server', 'marketing-analytics-chat' )
+				__( 'Invalid JSON response from MCP server', 'specflux-marketing-analytics-chat' )
 			);
 		}
 
@@ -392,7 +392,7 @@ class MCP_Client {
 
 		if ( isset( $result['content'] ) && is_array( $result['content'] ) ) {
 			foreach ( $result['content'] as $content_item ) {
-				if ( isset( $content_item['type'] ) && $content_item['type'] === 'text' ) {
+				if ( isset( $content_item['type'] ) && 'text' === $content_item['type'] ) {
 					$formatted .= $content_item['text'] . "\n\n";
 				}
 			}

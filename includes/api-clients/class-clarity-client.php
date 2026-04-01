@@ -2,14 +2,14 @@
 /**
  * Microsoft Clarity API Client
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\API_Clients;
+namespace Specflux_Marketing_Analytics\API_Clients;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use Marketing_Analytics_MCP\Utils\Logger;
+use Specflux_Marketing_Analytics\Utils\Logger;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -86,7 +86,7 @@ class Clarity_Client {
 		Logger::debug( sprintf( 'Clarity: Note: Project ID is stored for reference but not used in API URL (token is project-specific)' ) );
 
 		try {
-			// Test connection by fetching 1 day of insights data
+			// Test connection by fetching 1 day of insights data.
 			$endpoint = 'project-live-insights';
 			$params   = array( 'numOfDays' => 1 );
 
@@ -105,10 +105,10 @@ class Clarity_Client {
 			Logger::debug( sprintf( 'Clarity: Response body length: %d bytes', strlen( $body ) ) );
 			Logger::debug( sprintf( 'Clarity: Response body preview: %s', substr( $body, 0, 500 ) ) );
 
-			if ( $status_code === 200 ) {
+			if ( 200 === $status_code ) {
 				$data = json_decode( $body, true );
 
-				if ( $data === null ) {
+				if ( null === $data ) {
 					Logger::debug( sprintf( 'Clarity: ERROR: Failed to decode JSON response. JSON error: %s', json_last_error_msg() ) );
 					Logger::debug( sprintf( 'Clarity: Full response body: %s', $body ) );
 
@@ -121,7 +121,7 @@ class Clarity_Client {
 				Logger::debug( 'Clarity: ===== CONNECTION TEST SUCCESSFUL =====' );
 				Logger::debug( sprintf( 'Clarity: Data summary: %s', wp_json_encode( array_keys( $data ) ) ) );
 
-				// Extract some basic info for the success message
+				// Extract some basic info for the success message.
 				$message = 'Connection successful! ';
 				if ( isset( $data['totalSessions'] ) ) {
 					$message .= sprintf( 'Retrieved data with %d sessions.', $data['totalSessions'] );
@@ -147,7 +147,7 @@ class Clarity_Client {
 			Logger::debug( sprintf( 'Clarity: Error message: %s', $e->getMessage() ) );
 			Logger::debug( sprintf( 'Clarity: Error code: %s', $e->getCode() ) );
 
-			// Check if there's a response (for HTTP errors)
+			// Check if there's a response (for HTTP errors).
 			if ( method_exists( $e, 'hasResponse' ) && $e->hasResponse() ) {
 				$response    = $e->getResponse();
 				$status_code = $response->getStatusCode();
@@ -156,7 +156,7 @@ class Clarity_Client {
 				Logger::debug( sprintf( 'Clarity: HTTP Status: %d', $status_code ) );
 				Logger::debug( sprintf( 'Clarity: Response body: %s', $body ) );
 
-				// Parse error message from response
+				// Parse error message from response.
 				$data = json_decode( $body, true );
 				if ( $data && isset( $data['error'] ) ) {
 					$error_msg = is_string( $data['error'] ) ? $data['error'] : ( $data['error']['message'] ?? 'Unknown error' );
@@ -174,7 +174,7 @@ class Clarity_Client {
 				);
 			}
 
-			// Network or other error without response
+			// Network or other error without response.
 			Logger::debug( sprintf( 'Clarity: Full exception trace: %s', $e->getTraceAsString() ) );
 
 			return array(
@@ -224,7 +224,7 @@ class Clarity_Client {
 	public function get_insights( $num_of_days = 1, $dimensions = array() ) {
 		Logger::debug( sprintf( 'Clarity: Getting insights for %d days', $num_of_days ) );
 
-		// Validate numOfDays (Clarity only supports 1, 2, or 3)
+		// Validate numOfDays (Clarity only supports 1, 2, or 3).
 		if ( ! in_array( $num_of_days, array( 1, 2, 3 ), true ) ) {
 			Logger::debug( sprintf( 'Clarity: ERROR: Invalid numOfDays value: %d (must be 1, 2, or 3)', $num_of_days ) );
 			return false;
@@ -234,7 +234,7 @@ class Clarity_Client {
 			$endpoint = 'project-live-insights';
 			$params   = array( 'numOfDays' => $num_of_days );
 
-			// Add dimensions if provided (dimension1, dimension2, dimension3)
+			// Add dimensions if provided (dimension1, dimension2, dimension3).
 			$dimension_keys = array( 'dimension1', 'dimension2', 'dimension3' );
 			foreach ( $dimensions as $index => $dimension ) {
 				if ( isset( $dimension_keys[ $index ] ) && ! empty( $dimension ) ) {
@@ -274,14 +274,14 @@ class Clarity_Client {
 		Logger::debug( sprintf( 'Clarity: Getting session recordings (limit: %d, sort: %s)', $limit, $sort_by ) );
 
 		try {
-			// The Clarity Data Export API endpoint for recordings
+			// The Clarity Data Export API endpoint for recordings.
 			$endpoint = 'project-recordings';
 			$params   = array(
 				'limit'  => min( $limit, 100 ),
 				'sortBy' => $sort_by,
 			);
 
-			// Add filters if provided
+			// Add filters if provided.
 			if ( ! empty( $filters['device'] ) ) {
 				$params['device'] = $filters['device'];
 			}
@@ -311,7 +311,7 @@ class Clarity_Client {
 			$error_message = $e->getMessage();
 			Logger::debug( sprintf( 'Clarity: Failed to get session recordings: %s', $error_message ) );
 
-			// If the endpoint doesn't exist, return helpful message
+			// If the endpoint doesn't exist, return helpful message.
 			if ( strpos( $error_message, '404' ) !== false || strpos( $error_message, 'Not Found' ) !== false ) {
 				return array(
 					'error'   => true,

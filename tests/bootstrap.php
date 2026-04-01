@@ -1,8 +1,8 @@
 <?php
 /**
- * PHPUnit bootstrap file for Marketing Analytics Chat plugin tests.
+ * PHPUnit bootstrap file for Specflux Marketing Analytics Chat plugin tests.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
 // Define WordPress constants for testing.
@@ -77,13 +77,90 @@ if ( ! defined( 'YEAR_IN_SECONDS' ) ) {
 }
 
 // Define plugin constants.
-define( 'MARKETING_ANALYTICS_MCP_VERSION', '1.0.0' );
-define( 'MARKETING_ANALYTICS_MCP_PATH', dirname( __DIR__ ) . '/' );
-define( 'MARKETING_ANALYTICS_MCP_URL', 'http://localhost/wp-content/plugins/marketing-analytics-chat/' );
-define( 'MARKETING_ANALYTICS_MCP_BASENAME', 'marketing-analytics-chat/marketing-analytics-chat.php' );
+define( 'SPECFLUX_MAC_VERSION', '1.0.0' );
+define( 'SPECFLUX_MAC_PATH', dirname( __DIR__ ) . '/' );
+define( 'SPECFLUX_MAC_URL', 'http://localhost/wp-content/plugins/specflux-marketing-analytics-chat/' );
+define( 'SPECFLUX_MAC_BASENAME', 'specflux-marketing-analytics-chat/specflux-marketing-analytics-chat.php' );
 
 // Load Composer autoloader.
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
+
+// Mock WP_Error class
+if ( ! class_exists( 'WP_Error' ) ) {
+	class WP_Error {
+		public $errors    = array();
+		public $error_data = array();
+
+		public function __construct( $code = '', $message = '', $data = '' ) {
+			if ( empty( $code ) ) {
+				return;
+			}
+			$this->errors[ $code ][] = $message;
+			if ( ! empty( $data ) ) {
+				$this->error_data[ $code ] = $data;
+			}
+		}
+
+		public function get_error_codes() {
+			return array_keys( $this->errors );
+		}
+
+		public function get_error_code() {
+			$codes = $this->get_error_codes();
+			return ! empty( $codes ) ? $codes[0] : '';
+		}
+
+		public function get_error_messages( $code = '' ) {
+			if ( empty( $code ) ) {
+				$all = array();
+				foreach ( $this->errors as $messages ) {
+					$all = array_merge( $all, $messages );
+				}
+				return $all;
+			}
+			return isset( $this->errors[ $code ] ) ? $this->errors[ $code ] : array();
+		}
+
+		public function get_error_message( $code = '' ) {
+			if ( empty( $code ) ) {
+				$code = $this->get_error_code();
+			}
+			$messages = $this->get_error_messages( $code );
+			return ! empty( $messages ) ? $messages[0] : '';
+		}
+
+		public function get_error_data( $code = '' ) {
+			if ( empty( $code ) ) {
+				$code = $this->get_error_code();
+			}
+			return isset( $this->error_data[ $code ] ) ? $this->error_data[ $code ] : null;
+		}
+
+		public function add( $code, $message, $data = '' ) {
+			$this->errors[ $code ][] = $message;
+			if ( ! empty( $data ) ) {
+				$this->error_data[ $code ] = $data;
+			}
+		}
+
+		public function has_errors() {
+			return ! empty( $this->errors );
+		}
+	}
+}
+
+// Mock WP_Http_Cookie class
+if ( ! class_exists( 'WP_Http_Cookie' ) ) {
+	class WP_Http_Cookie {
+		public $name;
+		public $value;
+
+		public function __construct( $data = array() ) {
+			$this->name  = $data['name'] ?? '';
+			$this->value = $data['value'] ?? '';
+		}
+	}
+}
 
 // Mock WordPress role classes
 if ( ! class_exists( 'WP_Role' ) ) {
@@ -677,6 +754,7 @@ if ( ! isset( $wpdb ) ) {
     $wpdb = new class {
         public $prefix = 'wp_';
         public $options = 'wp_options';
+        public $insert_id = 0;
 
         public function query( $query ) {
             return true;
@@ -810,6 +888,205 @@ if ( ! function_exists( 'esc_sql' ) ) {
 	}
 }
 
+if ( ! function_exists( 'add_action' ) ) {
+	function add_action( $hook_name, $callback, $priority = 10, $accepted_args = 1 ) {
+		// In tests, track registered hooks but don't execute them.
+		global $mock_actions;
+		if ( ! isset( $mock_actions ) ) {
+			$mock_actions = array();
+		}
+		$mock_actions[] = array(
+			'hook'     => $hook_name,
+			'callback' => $callback,
+			'priority' => $priority,
+		);
+		return true;
+	}
+}
+
+if ( ! function_exists( 'add_filter' ) ) {
+	function add_filter( $hook_name, $callback, $priority = 10, $accepted_args = 1 ) {
+		global $mock_filters;
+		if ( ! isset( $mock_filters ) ) {
+			$mock_filters = array();
+		}
+		$mock_filters[] = array(
+			'hook'     => $hook_name,
+			'callback' => $callback,
+			'priority' => $priority,
+		);
+		return true;
+	}
+}
+
+if ( ! function_exists( 'add_menu_page' ) ) {
+	function add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $callback = '', $icon_url = '', $position = null ) {
+		return $menu_slug;
+	}
+}
+
+if ( ! function_exists( 'add_submenu_page' ) ) {
+	function add_submenu_page( $parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback = '', $position = null ) {
+		return $menu_slug;
+	}
+}
+
+if ( ! function_exists( 'register_activation_hook' ) ) {
+	function register_activation_hook( $file, $callback ) {
+		// In tests, do nothing.
+	}
+}
+
+if ( ! function_exists( 'register_deactivation_hook' ) ) {
+	function register_deactivation_hook( $file, $callback ) {
+		// In tests, do nothing.
+	}
+}
+
+if ( ! function_exists( 'is_admin' ) ) {
+	function is_admin() {
+		return true;
+	}
+}
+
+if ( ! function_exists( 'is_plugin_active' ) ) {
+	function is_plugin_active( $plugin ) {
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_trim_words' ) ) {
+	function wp_trim_words( $text, $num_words = 55, $more = '&hellip;' ) {
+		$words = explode( ' ', $text );
+		if ( count( $words ) > $num_words ) {
+			$words = array_slice( $words, 0, $num_words );
+			$text  = implode( ' ', $words ) . $more;
+		}
+		return $text;
+	}
+}
+
+if ( ! function_exists( '_n' ) ) {
+	function _n( $single, $plural, $number, $domain = 'default' ) {
+		return ( 1 === (int) $number ) ? $single : $plural;
+	}
+}
+
+if ( ! function_exists( 'wp_unslash' ) ) {
+	function wp_unslash( $value ) {
+		return is_string( $value ) ? stripslashes( $value ) : $value;
+	}
+}
+
+if ( ! function_exists( 'wp_create_nonce' ) ) {
+	function wp_create_nonce( $action = -1 ) {
+		return 'mock_nonce_' . $action;
+	}
+}
+
+if ( ! function_exists( 'rest_url' ) ) {
+	function rest_url( $path = '' ) {
+		return 'http://localhost/wp-json/' . ltrim( $path, '/' );
+	}
+}
+
+if ( ! function_exists( 'wp_rand' ) ) {
+	function wp_rand( $min = 0, $max = 0 ) {
+		return random_int( $min, $max );
+	}
+}
+
+if ( ! function_exists( 'wp_remote_post' ) ) {
+	function wp_remote_post( $url, $args = array() ) {
+		return new \WP_Error( 'http_request_not_executed', 'Mock: HTTP requests not available in tests' );
+	}
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_response_code' ) ) {
+	function wp_remote_retrieve_response_code( $response ) {
+		if ( is_wp_error( $response ) ) {
+			return '';
+		}
+		return 200;
+	}
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_body' ) ) {
+	function wp_remote_retrieve_body( $response ) {
+		if ( is_wp_error( $response ) ) {
+			return '';
+		}
+		return '';
+	}
+}
+
+if ( ! function_exists( 'wp_send_json_success' ) ) {
+	function wp_send_json_success( $data = null, $status_code = null ) {
+		// In tests, do nothing (would normally exit).
+	}
+}
+
+if ( ! function_exists( 'wp_send_json_error' ) ) {
+	function wp_send_json_error( $data = null, $status_code = null ) {
+		// In tests, do nothing (would normally exit).
+	}
+}
+
+if ( ! function_exists( 'wp_enqueue_script' ) ) {
+	function wp_enqueue_script( $handle, $src = '', $deps = array(), $ver = false, $args = array() ) {
+		// In tests, do nothing.
+	}
+}
+
+if ( ! function_exists( 'wp_enqueue_style' ) ) {
+	function wp_enqueue_style( $handle, $src = '', $deps = array(), $ver = false, $media = 'all' ) {
+		// In tests, do nothing.
+	}
+}
+
+if ( ! function_exists( 'wp_register_script' ) ) {
+	function wp_register_script( $handle, $src, $deps = array(), $ver = false, $args = array() ) {
+		// In tests, do nothing.
+	}
+}
+
+if ( ! function_exists( 'wp_register_style' ) ) {
+	function wp_register_style( $handle, $src, $deps = array(), $ver = false, $media = 'all' ) {
+		// In tests, do nothing.
+	}
+}
+
+if ( ! function_exists( 'wp_localize_script' ) ) {
+	function wp_localize_script( $handle, $object_name, $l10n ) {
+		return true;
+	}
+}
+
+if ( ! function_exists( 'plugin_dir_path' ) ) {
+	function plugin_dir_path( $file ) {
+		return trailingslashit( dirname( $file ) );
+	}
+}
+
+if ( ! function_exists( 'plugin_dir_url' ) ) {
+	function plugin_dir_url( $file ) {
+		return 'http://localhost/wp-content/plugins/' . basename( dirname( $file ) ) . '/';
+	}
+}
+
+if ( ! function_exists( 'plugin_basename' ) ) {
+	function plugin_basename( $file ) {
+		$dir = basename( dirname( $file ) );
+		return $dir . '/' . basename( $file );
+	}
+}
+
+if ( ! function_exists( 'trailingslashit' ) ) {
+	function trailingslashit( $string ) {
+		return rtrim( $string, '/\\' ) . '/';
+	}
+}
+
 if ( ! function_exists( 'wp_register_ability' ) ) {
 	/**
 	 * Mock wp_register_ability function.
@@ -821,7 +1098,7 @@ if ( ! function_exists( 'wp_register_ability' ) ) {
 	 * @return bool
 	 */
 	function wp_register_ability( $name, $config = array() ) {
-		\Marketing_Analytics_MCP\Abilities\Abilities_Registrar::track_ability( $name, $config );
+		\Specflux_Marketing_Analytics\Abilities\Abilities_Registrar::track_ability( $name, $config );
 		return true;
 	}
 }
@@ -856,3 +1133,8 @@ if ( ! function_exists( 'wp_add_dashboard_widget' ) ) {
 		// In tests, do nothing
 	}
 }
+
+// Define the plugin namespace functions that live in the main plugin file.
+// We can't require the main file because it re-defines constants without
+// if-defined guards. Instead, we define the namespaced functions here.
+require_once __DIR__ . '/bootstrap-functions.php';

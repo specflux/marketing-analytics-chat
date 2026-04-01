@@ -1,8 +1,8 @@
 (function() {
 	'use strict';
 
-	var filterButtons = document.querySelectorAll('.mac-abilities-filter-btn');
-	var cards = document.querySelectorAll('.mac-ability-card');
+	var filterButtons = document.querySelectorAll('.smac-abilities-filter-btn');
+	var cards = document.querySelectorAll('.smac-ability-card');
 
 	filterButtons.forEach(function(btn) {
 		btn.addEventListener('click', function() {

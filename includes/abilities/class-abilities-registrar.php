@@ -2,12 +2,12 @@
 /**
  * Abilities Registrar
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Abilities;
+namespace Specflux_Marketing_Analytics\Abilities;
 
-use Marketing_Analytics_MCP\Utils\Logger;
+use Specflux_Marketing_Analytics\Utils\Logger;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -106,8 +106,8 @@ class Abilities_Registrar {
 			wp_register_ability_category(
 				'marketing-analytics',
 				array(
-					'label'       => __( 'Marketing Analytics', 'marketing-analytics-chat' ),
-					'description' => __( 'Tools for accessing marketing analytics data from Microsoft Clarity, Google Analytics 4, and Google Search Console.', 'marketing-analytics-chat' ),
+					'label'       => __( 'Marketing Analytics', 'specflux-marketing-analytics-chat' ),
+					'description' => __( 'Tools for accessing marketing analytics data from Microsoft Clarity, Google Analytics 4, and Google Search Console.', 'specflux-marketing-analytics-chat' ),
 				)
 			);
 		}
@@ -151,6 +151,6 @@ class Abilities_Registrar {
 		 *
 		 * @param Abilities_Registrar $this The abilities registrar instance.
 		 */
-		do_action( 'marketing_analytics_mcp_register_pro_abilities', $this );
+		do_action( 'specflux_mac_register_pro_abilities', $this );
 	}
 }

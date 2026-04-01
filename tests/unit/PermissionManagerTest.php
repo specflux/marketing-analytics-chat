@@ -2,12 +2,12 @@
 /**
  * Tests for the Permission_Manager class.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Tests\unit;
+namespace Specflux_Marketing_Analytics\Tests\unit;
 
-use Marketing_Analytics_MCP\Utils\Permission_Manager;
+use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 use PHPUnit\Framework\TestCase;
 
 /**

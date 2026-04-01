@@ -4,14 +4,14 @@
  *
  * Handles interactions with Google Search Console API.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\API_Clients;
+namespace Specflux_Marketing_Analytics\API_Clients;
 
-use Marketing_Analytics_MCP\Credentials\OAuth_Handler;
-use Marketing_Analytics_MCP\Cache\Cache_Manager;
-use Marketing_Analytics_MCP\Utils\Logger;
+use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
+use Specflux_Marketing_Analytics\Cache\Cache_Manager;
+use Specflux_Marketing_Analytics\Utils\Logger;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -48,8 +48,8 @@ class GSC_Client {
 		$this->oauth_handler = new OAuth_Handler();
 		$this->cache_manager = new Cache_Manager();
 
-		// Get configured site URL from options
-		$this->site_url = get_option( 'marketing_analytics_mcp_gsc_site_url' );
+		// Get configured site URL from options.
+		$this->site_url = get_option( 'specflux_mac_gsc_site_url' );
 	}
 
 	/**
@@ -89,7 +89,7 @@ class GSC_Client {
 			throw new \Exception( 'GSC site URL not configured' );
 		}
 
-		// Check cache first
+		// Check cache first.
 		$cache_key = $this->cache_manager->generate_key(
 			'gsc',
 			'search_analytics',
@@ -113,43 +113,43 @@ class GSC_Client {
 		}
 
 		try {
-			// Parse date range
+			// Parse date range.
 			list( $start_date, $end_date ) = $this->parse_date_range( $date_range );
 
-			// Build request
+			// Build request.
 			$request = new \Google\Service\SearchConsole\SearchAnalyticsQueryRequest();
 			$request->setStartDate( $start_date );
 			$request->setEndDate( $end_date );
 
-			// Set dimensions
+			// Set dimensions.
 			if ( ! empty( $dimensions ) ) {
 				$request->setDimensions( $dimensions );
 			}
 
-			// Set filters
+			// Set filters.
 			if ( ! empty( $filters ) ) {
 				$request->setDimensionFilterGroups( $this->build_filters( $filters ) );
 			}
 
-			// Set row limit
+			// Set row limit.
 			if ( isset( $options['row_limit'] ) ) {
 				$request->setRowLimit( absint( $options['row_limit'] ) );
 			} else {
-				$request->setRowLimit( 100 ); // Default limit
+				$request->setRowLimit( 100 ); // Default limit.
 			}
 
-			// Set start row
+			// Set start row.
 			if ( isset( $options['start_row'] ) ) {
 				$request->setStartRow( absint( $options['start_row'] ) );
 			}
 
-			// Execute query
+			// Execute query.
 			$response = $search_console->searchanalytics->query( $this->site_url, $request );
 
-			// Parse response
+			// Parse response.
 			$data = $this->parse_search_analytics_response( $response );
 
-			// Cache for 24 hours (GSC data has 2-3 day delay)
+			// Cache for 24 hours (GSC data has 2-3 day delay).
 			$this->cache_manager->set( $cache_key, $data, $this->cache_manager->get_default_ttl( 'gsc' ) );
 
 			return $data;
@@ -176,7 +176,7 @@ class GSC_Client {
 			return $data;
 		}
 
-		// Filter by minimum impressions
+		// Filter by minimum impressions.
 		if ( $min_impressions > 0 ) {
 			$data['rows'] = array_filter(
 				$data['rows'],
@@ -185,7 +185,7 @@ class GSC_Client {
 				}
 			);
 
-			// Re-index array
+			// Re-index array.
 			$data['rows'] = array_values( $data['rows'] );
 		}
 
@@ -315,15 +315,15 @@ class GSC_Client {
 	public function set_site_url( $site_url ) {
 		$this->site_url = $site_url;
 
-		// Check if the value is already the same
-		$current_value = get_option( 'marketing_analytics_mcp_gsc_site_url' );
+		// Check if the value is already the same.
+		$current_value = get_option( 'specflux_mac_gsc_site_url' );
 		if ( $current_value === $site_url ) {
-			// Value unchanged, consider this a success
+			// Value unchanged, consider this a success.
 			Logger::debug( sprintf( 'GSC site URL already set to: %s', $site_url ) );
 			return true;
 		}
 
-		$result = update_option( 'marketing_analytics_mcp_gsc_site_url', $site_url, false );
+		$result = update_option( 'specflux_mac_gsc_site_url', $site_url, false );
 		if ( $result ) {
 			Logger::debug( sprintf( 'GSC site URL updated to: %s', $site_url ) );
 		} else {
@@ -349,16 +349,16 @@ class GSC_Client {
 	 * @return array Array with start_date and end_date.
 	 */
 	private function parse_date_range( $date_range ) {
-		// If it's already a comma-separated date range
-		if ( strpos( $date_range, ',' ) !== false ) {
+		// If it's already a comma-separated date range.
+		if ( false !== strpos( $date_range, ',' ) ) {
 			list( $start, $end ) = explode( ',', $date_range );
 			return array( trim( $start ), trim( $end ) );
 		}
 
-		// Handle relative dates
-		$end_date = gmdate( 'Y-m-d', strtotime( '-3 days' ) ); // GSC has 2-3 day delay
+		// Handle relative dates.
+		$end_date = gmdate( 'Y-m-d', strtotime( '-3 days' ) ); // GSC has 2-3 day delay.
 
-		// Parse start date
+		// Parse start date.
 		if ( preg_match( '/^(\d+)daysAgo$/', $date_range, $matches ) ) {
 			$days       = absint( $matches[1] );
 			$start_date = gmdate( 'Y-m-d', strtotime( '-' . ( $days + 3 ) . ' days' ) );
@@ -366,11 +366,11 @@ class GSC_Client {
 			$start_date = gmdate( 'Y-m-d', strtotime( '-4 days' ) );
 			$end_date   = gmdate( 'Y-m-d', strtotime( '-3 days' ) );
 		} elseif ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_range ) ) {
-			// Specific date
+			// Specific date.
 			$start_date = $date_range;
 			$end_date   = $date_range;
 		} else {
-			// Default to last 7 days
+			// Default to last 7 days.
 			$start_date = gmdate( 'Y-m-d', strtotime( '-10 days' ) );
 		}
 
@@ -436,21 +436,21 @@ class GSC_Client {
 					'position'    => $row->getPosition(),
 				);
 
-				// Add dimensions
+				// Add dimensions.
 				if ( $row->getKeys() ) {
 					$keys       = $row->getKeys();
 					$dimensions = array();
 
-					// Map keys to dimension names
-					// Note: Order matters and depends on requested dimensions
+					// Map keys to dimension names.
+					// Note: Order matters and depends on requested dimensions.
 					foreach ( $keys as $key ) {
 						$dimensions[] = $key;
 					}
 
 					$row_data['keys'] = $dimensions;
 
-					// For convenience, if only one dimension, add it directly
-					if ( count( $dimensions ) === 1 ) {
+					// For convenience, if only one dimension, add it directly.
+					if ( 1 === count( $dimensions ) ) {
 						$row_data['key'] = $dimensions[0];
 					}
 				}
@@ -459,7 +459,7 @@ class GSC_Client {
 			}
 		}
 
-		// Add total row count
+		// Add total row count.
 		$data['row_count'] = count( $data['rows'] );
 
 		return $data;

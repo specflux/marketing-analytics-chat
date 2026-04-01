@@ -2,12 +2,12 @@
 /**
  * Main Plugin Class
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP;
+namespace Specflux_Marketing_Analytics;
 
-use Marketing_Analytics_MCP\Utils\Permission_Manager;
+use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -78,10 +78,10 @@ class Plugin {
 	private function define_abilities_hooks() {
 		$abilities_registrar = new Abilities\Abilities_Registrar();
 
-		// Register category when categories are initialized
+		// Register category when categories are initialized.
 		$this->loader->add_action( 'wp_abilities_api_categories_init', $abilities_registrar, 'register_category' );
 
-		// Register abilities when the Abilities API is ready
+		// Register abilities when the Abilities API is ready.
 		$this->loader->add_action( 'wp_abilities_api_init', $abilities_registrar, 'register_all_abilities' );
 	}
 
@@ -98,6 +98,6 @@ class Plugin {
 		 *
 		 * @param Plugin $this The main plugin instance.
 		 */
-		do_action( 'marketing_analytics_mcp_loaded', $this );
+		do_action( 'specflux_mac_loaded', $this );
 	}
 }

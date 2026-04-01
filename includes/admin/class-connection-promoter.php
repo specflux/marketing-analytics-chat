@@ -5,12 +5,12 @@
  * After connecting one platform, suggests connecting others to unlock
  * cross-platform features.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Admin;
+namespace Specflux_Marketing_Analytics\Admin;
 
-use Marketing_Analytics_MCP\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -55,17 +55,17 @@ class Connection_Promoter {
 	 * }
 	 */
 	public function get_connection_prompt() {
-		$connected   = $this->get_connected_platforms();
-		$count       = count( $connected );
-		$total       = count( self::PLATFORMS );
-		$next        = $this->get_next_recommendation( $connected );
+		$connected = $this->get_connected_platforms();
+		$count     = count( $connected );
+		$total     = count( self::PLATFORMS );
+		$next      = $this->get_next_recommendation( $connected );
 
 		if ( 0 === $count ) {
 			return array(
 				'connected_count' => 0,
-				'message'         => __( 'Connect your first platform to get started with marketing analytics.', 'marketing-analytics-chat' ),
+				'message'         => __( 'Connect your first platform to get started with marketing analytics.', 'specflux-marketing-analytics-chat' ),
 				'next'            => $next,
-				'cta'             => __( 'Connect Clarity', 'marketing-analytics-chat' ),
+				'cta'             => __( 'Connect Clarity', 'specflux-marketing-analytics-chat' ),
 			);
 		}
 
@@ -75,14 +75,14 @@ class Connection_Promoter {
 					'connected_count' => 1,
 					'message'         => sprintf(
 						/* translators: 1: next platform name, 2: benefit description */
-						__( 'Connect %1$s to unlock cross-platform insights with %2$s.', 'marketing-analytics-chat' ),
+						__( 'Connect %1$s to unlock cross-platform insights with %2$s.', 'specflux-marketing-analytics-chat' ),
 						$next['name'],
 						$next['benefit']
 					),
 					'next'            => $next,
 					'cta'             => sprintf(
 						/* translators: %s: platform name */
-						__( 'Connect %s', 'marketing-analytics-chat' ),
+						__( 'Connect %s', 'specflux-marketing-analytics-chat' ),
 						$next['name']
 					),
 				);
@@ -92,13 +92,13 @@ class Connection_Promoter {
 				'connected_count' => $count,
 				'message'         => sprintf(
 					/* translators: %s: last platform name */
-					__( 'Add %s for the complete picture across all your marketing data.', 'marketing-analytics-chat' ),
+					__( 'Add %s for the complete picture across all your marketing data.', 'specflux-marketing-analytics-chat' ),
 					$next['name']
 				),
 				'next'            => $next,
 				'cta'             => sprintf(
 					/* translators: %s: platform name */
-					__( 'Connect %s', 'marketing-analytics-chat' ),
+					__( 'Connect %s', 'specflux-marketing-analytics-chat' ),
 					$next['name']
 				),
 			);
@@ -107,7 +107,7 @@ class Connection_Promoter {
 		// All connected.
 		return array(
 			'connected_count' => $total,
-			'message'         => __( 'All platforms connected! You have full cross-platform analytics.', 'marketing-analytics-chat' ),
+			'message'         => __( 'All platforms connected! You have full cross-platform analytics.', 'specflux-marketing-analytics-chat' ),
 			'next'            => array(),
 			'cta'             => '',
 		);
@@ -177,25 +177,25 @@ class Connection_Promoter {
 			 *
 			 * Premium add-on can hook here to suggest Meta + DataForSEO.
 			 */
-			do_action( 'marketing_analytics_mcp_all_platforms_connected' );
+			do_action( 'specflux_mac_all_platforms_connected' );
 			return;
 		}
 		?>
-		<div class="mac-connection-prompt">
-			<div class="mac-connection-prompt-header">
+		<div class="smac-connection-prompt">
+			<div class="smac-connection-prompt-header">
 				<span class="dashicons dashicons-admin-links"></span>
-				<h3><?php esc_html_e( 'Expand Your Analytics', 'marketing-analytics-chat' ); ?></h3>
+				<h3><?php esc_html_e( 'Expand Your Analytics', 'specflux-marketing-analytics-chat' ); ?></h3>
 			</div>
 
-			<div class="mac-connection-prompt-progress">
-				<div class="mac-connection-prompt-bar">
-					<div class="mac-connection-prompt-fill" style="width: <?php echo esc_attr( ( count( $connected ) / $total ) * 100 ); ?>%"></div>
+			<div class="smac-connection-prompt-progress">
+				<div class="smac-connection-prompt-bar">
+					<div class="smac-connection-prompt-fill" style="width: <?php echo esc_attr( ( count( $connected ) / $total ) * 100 ); ?>%"></div>
 				</div>
-				<span class="mac-connection-prompt-count">
+				<span class="smac-connection-prompt-count">
 					<?php
 					printf(
 						/* translators: 1: connected count, 2: total platforms */
-						esc_html__( '%1$d of %2$d platforms connected', 'marketing-analytics-chat' ),
+						esc_html__( '%1$d of %2$d platforms connected', 'specflux-marketing-analytics-chat' ),
 						count( $connected ),
 						intval( $total )
 					);
@@ -203,10 +203,10 @@ class Connection_Promoter {
 				</span>
 			</div>
 
-			<p class="mac-connection-prompt-message"><?php echo esc_html( $prompt['message'] ); ?></p>
+			<p class="smac-connection-prompt-message"><?php echo esc_html( $prompt['message'] ); ?></p>
 
 			<?php if ( ! empty( $prompt['next'] ) && ! empty( $prompt['cta'] ) ) : ?>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=marketing-analytics-chat-connections&tab=' . $prompt['next']['tab'] ) ); ?>" class="button button-primary">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections&tab=' . $prompt['next']['tab'] ) ); ?>" class="button button-primary">
 					<span class="dashicons dashicons-<?php echo esc_attr( $prompt['next']['icon'] ); ?>"></span>
 					<?php echo esc_html( $prompt['cta'] ); ?>
 				</a>

@@ -4,12 +4,12 @@
  *
  * Tests API connections for all analytics platforms.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Credentials;
+namespace Specflux_Marketing_Analytics\Credentials;
 
-use Marketing_Analytics_MCP\API_Clients\Clarity_Client;
+use Specflux_Marketing_Analytics\API_Clients\Clarity_Client;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -51,27 +51,27 @@ class Connection_Tester {
 		if ( empty( $credentials ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'No Clarity credentials found.', 'marketing-analytics-chat' ),
+				'message' => __( 'No Clarity credentials found.', 'specflux-marketing-analytics-chat' ),
 			);
 		}
 
 		if ( empty( $credentials['api_token'] ) || empty( $credentials['project_id'] ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Clarity API token or project ID is missing.', 'marketing-analytics-chat' ),
+				'message' => __( 'Clarity API token or project ID is missing.', 'specflux-marketing-analytics-chat' ),
 			);
 		}
 
 		try {
 			$client = new Clarity_Client( $credentials['api_token'], $credentials['project_id'] );
 
-			// Try to fetch insights for 1 day (minimal request)
+			// Try to fetch insights for 1 day (minimal request).
 			$result = $client->get_insights( 1 );
 
 			if ( ! empty( $result ) ) {
 				return array(
 					'success' => true,
-					'message' => __( 'Successfully connected to Microsoft Clarity.', 'marketing-analytics-chat' ),
+					'message' => __( 'Successfully connected to Microsoft Clarity.', 'specflux-marketing-analytics-chat' ),
 					'data'    => array(
 						'project_id' => $credentials['project_id'],
 					),
@@ -80,14 +80,14 @@ class Connection_Tester {
 
 			return array(
 				'success' => false,
-				'message' => __( 'Clarity API returned empty response.', 'marketing-analytics-chat' ),
+				'message' => __( 'Clarity API returned empty response.', 'specflux-marketing-analytics-chat' ),
 			);
 		} catch ( \Exception $e ) {
 			return array(
 				'success' => false,
 				'message' => sprintf(
 					/* translators: %s: error message */
-					__( 'Clarity connection failed: %s', 'marketing-analytics-chat' ),
+					__( 'Clarity connection failed: %s', 'specflux-marketing-analytics-chat' ),
 					$e->getMessage()
 				),
 			);
@@ -105,7 +105,7 @@ class Connection_Tester {
 		if ( empty( $access_token ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'No GA4 access token found. Please authorize Google Analytics.', 'marketing-analytics-chat' ),
+				'message' => __( 'No GA4 access token found. Please authorize Google Analytics.', 'specflux-marketing-analytics-chat' ),
 			);
 		}
 
@@ -113,10 +113,10 @@ class Connection_Tester {
 			$client = new \Google\Client();
 			$client->setAccessToken( $access_token );
 
-			// Initialize Analytics Admin API to list properties
+			// Initialize Analytics Admin API to list properties.
 			$analytics = new \Google\Service\GoogleAnalyticsAdmin( $client );
 
-			// Try to list account summaries (lightweight test)
+			// Try to list account summaries (lightweight test).
 			// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- SDK property name.
 			$account_summaries = $analytics->accountSummaries->listAccountSummaries();
 
@@ -141,7 +141,7 @@ class Connection_Tester {
 							'Successfully connected to Google Analytics. Found %d property.',
 							'Successfully connected to Google Analytics. Found %d properties.',
 							$property_count,
-							'marketing-analytics-chat'
+							'specflux-marketing-analytics-chat'
 						),
 						$property_count
 					),
@@ -153,14 +153,14 @@ class Connection_Tester {
 
 			return array(
 				'success' => false,
-				'message' => __( 'GA4 API returned empty response.', 'marketing-analytics-chat' ),
+				'message' => __( 'GA4 API returned empty response.', 'specflux-marketing-analytics-chat' ),
 			);
 		} catch ( \Exception $e ) {
-			// Check if token expired
-			if ( strpos( $e->getMessage(), 'Invalid Credentials' ) !== false ) {
-				// Try to refresh token
+			// Check if token expired.
+			if ( false !== strpos( $e->getMessage(), 'Invalid Credentials' ) ) {
+				// Try to refresh token.
 				if ( $this->oauth_handler->refresh_token( 'ga4' ) ) {
-					return $this->test_ga4_connection(); // Retry once
+					return $this->test_ga4_connection(); // Retry once.
 				}
 			}
 
@@ -168,7 +168,7 @@ class Connection_Tester {
 				'success' => false,
 				'message' => sprintf(
 					/* translators: %s: error message */
-					__( 'GA4 connection failed: %s', 'marketing-analytics-chat' ),
+					__( 'GA4 connection failed: %s', 'specflux-marketing-analytics-chat' ),
 					$e->getMessage()
 				),
 			);
@@ -186,7 +186,7 @@ class Connection_Tester {
 		if ( empty( $access_token ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'No GSC access token found. Please authorize Google Search Console.', 'marketing-analytics-chat' ),
+				'message' => __( 'No GSC access token found. Please authorize Google Search Console.', 'specflux-marketing-analytics-chat' ),
 			);
 		}
 
@@ -194,10 +194,10 @@ class Connection_Tester {
 			$client = new \Google\Client();
 			$client->setAccessToken( $access_token );
 
-			// Initialize Search Console API
+			// Initialize Search Console API.
 			$search_console = new \Google\Service\SearchConsole( $client );
 
-			// Try to list sites (lightweight test)
+			// Try to list sites (lightweight test).
 			$sites_list = $search_console->sites->listSites();
 
 			if ( ! empty( $sites_list ) ) {
@@ -212,7 +212,7 @@ class Connection_Tester {
 							'Successfully connected to Google Search Console. Found %d site.',
 							'Successfully connected to Google Search Console. Found %d sites.',
 							$site_count,
-							'marketing-analytics-chat'
+							'specflux-marketing-analytics-chat'
 						),
 						$site_count
 					),
@@ -224,14 +224,14 @@ class Connection_Tester {
 
 			return array(
 				'success' => false,
-				'message' => __( 'GSC API returned empty response.', 'marketing-analytics-chat' ),
+				'message' => __( 'GSC API returned empty response.', 'specflux-marketing-analytics-chat' ),
 			);
 		} catch ( \Exception $e ) {
-			// Check if token expired
-			if ( strpos( $e->getMessage(), 'Invalid Credentials' ) !== false ) {
-				// Try to refresh token
+			// Check if token expired.
+			if ( false !== strpos( $e->getMessage(), 'Invalid Credentials' ) ) {
+				// Try to refresh token.
 				if ( $this->oauth_handler->refresh_token( 'gsc' ) ) {
-					return $this->test_gsc_connection(); // Retry once
+					return $this->test_gsc_connection(); // Retry once.
 				}
 			}
 
@@ -239,7 +239,7 @@ class Connection_Tester {
 				'success' => false,
 				'message' => sprintf(
 					/* translators: %s: error message */
-					__( 'GSC connection failed: %s', 'marketing-analytics-chat' ),
+					__( 'GSC connection failed: %s', 'specflux-marketing-analytics-chat' ),
 					$e->getMessage()
 				),
 			);

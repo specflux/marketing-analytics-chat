@@ -2,8 +2,8 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Marketing Analytics Chat 1.0.0\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/marketing-analytics-chat\n"
+"Project-Id-Version: Specflux Marketing Analytics Chat 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/specflux-marketing-analytics-chat\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -12,30 +12,30 @@ msgstr ""
 "POT-Creation-Date: 2025-11-27T07:50:08+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
-"X-Domain: marketing-analytics-chat\n"
+"X-Domain: specflux-marketing-analytics-chat\n"
 
 #. Plugin Name of the plugin
-#: marketing-analytics-chat.php
-msgid "Marketing Analytics Chat"
+#: specflux-marketing-analytics-chat.php
+msgid "Specflux Marketing Analytics Chat"
 msgstr ""
 
 #. Plugin URI of the plugin
-#: marketing-analytics-chat.php
-msgid "https://github.com/specflux/marketing-analytics-chat"
+#: specflux-marketing-analytics-chat.php
+msgid "https://github.com/specflux/specflux-marketing-analytics-chat"
 msgstr ""
 
 #. Description of the plugin
-#: marketing-analytics-chat.php
+#: specflux-marketing-analytics-chat.php
 msgid "Exposes marketing analytics data (Microsoft Clarity, Google Analytics 4, Google Search Console) via Model Context Protocol for AI assistants."
 msgstr ""
 
 #. Author of the plugin
-#: marketing-analytics-chat.php
+#: specflux-marketing-analytics-chat.php
 msgid "Stephen Paul Samynathan"
 msgstr ""
 
 #. Author URI of the plugin
-#: marketing-analytics-chat.php
+#: specflux-marketing-analytics-chat.php
 msgid "https://www.specflux.com/author/stephen/"
 msgstr ""
 
@@ -965,7 +965,7 @@ msgid "Are you sure you want to disconnect Meta Business Suite?"
 msgstr ""
 
 #: admin/views/dashboard.php:29
-msgid "Welcome to Marketing Analytics Chat"
+msgid "Welcome to Specflux Marketing Analytics Chat"
 msgstr ""
 
 #: admin/views/dashboard.php:30
@@ -2639,7 +2639,7 @@ msgid "Invalid JSON response from MCP server"
 msgstr ""
 
 #: includes/class-activator.php:27
-msgid "Marketing Analytics Chat requires WordPress 6.9 or higher."
+msgid "Specflux Marketing Analytics Chat requires WordPress 6.9 or higher."
 msgstr ""
 
 #: includes/class-activator.php:28
@@ -2649,13 +2649,13 @@ msgid "Plugin Activation Error"
 msgstr ""
 
 #: includes/class-activator.php:36
-msgid "Marketing Analytics Chat requires PHP 8.3 or higher."
+msgid "Specflux Marketing Analytics Chat requires PHP 8.3 or higher."
 msgstr ""
 
 #. translators: %s: comma-separated list of PHP extensions
 #: includes/class-activator.php:56
 #, php-format
-msgid "Marketing Analytics Chat requires the following PHP extensions: %s"
+msgid "Specflux Marketing Analytics Chat requires the following PHP extensions: %s"
 msgstr ""
 
 #: includes/credentials/class-connection-tester.php:52
@@ -2848,7 +2848,7 @@ msgstr ""
 
 #: includes/notifications/class-notification-manager.php:639
 #, php-format
-msgid "Test notification from Marketing Analytics Chat - %s"
+msgid "Test notification from Specflux Marketing Analytics Chat - %s"
 msgstr ""
 
 #: includes/notifications/class-slack-notifier.php:65
@@ -2893,18 +2893,18 @@ msgstr ""
 msgid "Template messaging requires WhatsApp Business API"
 msgstr ""
 
-#: marketing-analytics-chat.php:43
+#: specflux-marketing-analytics-chat.php:43
 msgid "Dependencies are missing. Please run \"composer install\" in the plugin directory."
 msgstr ""
 
-#: marketing-analytics-chat.php:68
-msgid "Marketing Analytics Chat:"
+#: specflux-marketing-analytics-chat.php:68
+msgid "Specflux Marketing Analytics Chat:"
 msgstr ""
 
-#: marketing-analytics-chat.php:69
+#: specflux-marketing-analytics-chat.php:69
 msgid "This plugin requires the MCP Adapter plugin to be installed and activated."
 msgstr ""
 
-#: marketing-analytics-chat.php:72
+#: specflux-marketing-analytics-chat.php:72
 msgid "Get MCP Adapter from WordPress.org"
 msgstr ""

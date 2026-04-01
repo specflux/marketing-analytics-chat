@@ -1,4 +1,4 @@
-# Marketing Analytics Chat
+# Specflux Marketing Analytics Chat
 
 > Expose Google Analytics 4, Search Console, and Microsoft Clarity data to AI assistants via the Model Context Protocol.
 
@@ -53,7 +53,7 @@ Chat with your analytics data directly in WordPress using Claude (Anthropic), Op
 ### From WordPress.org
 
 1. Install and activate the **MCP Adapter** plugin from WordPress.org
-2. Upload `marketing-analytics-chat` to `/wp-content/plugins/`
+2. Upload `specflux-marketing-analytics-chat` to `/wp-content/plugins/`
 3. Activate through the Plugins menu
 4. Go to **Marketing Analytics > Settings > Google API** to configure OAuth
 5. Connect your platforms from the **Connections** page
@@ -62,10 +62,10 @@ Chat with your analytics data directly in WordPress using Claude (Anthropic), Op
 
 ```bash
 cd wp-content/plugins/
-git clone https://github.com/specflux/marketing-analytics-chat.git
-cd marketing-analytics-chat
+git clone https://github.com/specflux/specflux-marketing-analytics-chat.git
+cd specflux-marketing-analytics-chat
 composer install --no-dev
-wp plugin activate marketing-analytics-chat
+wp plugin activate specflux-marketing-analytics-chat
 ```
 
 ## Configuration
@@ -138,5 +138,5 @@ Built with:
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/specflux/marketing-analytics-chat/issues)
+- **Issues**: [GitHub Issues](https://github.com/specflux/specflux-marketing-analytics-chat/issues)
 - **Website**: [specflux.com](https://www.specflux.com/)

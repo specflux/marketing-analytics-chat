@@ -4,10 +4,10 @@
  *
  * Manages caching of API responses using WordPress Transients API.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Cache;
+namespace Specflux_Marketing_Analytics\Cache;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -19,7 +19,7 @@ class Cache_Manager {
 	/**
 	 * Cache key prefix
 	 */
-	const CACHE_PREFIX = 'marketing_mcp_';
+	const CACHE_PREFIX = 'specflux_mac_';
 
 	/**
 	 * Default TTL values for each platform (in seconds)
@@ -52,7 +52,7 @@ class Cache_Manager {
 	public function set( $key, $data, $ttl = null ) {
 		$cache_key = $this->build_cache_key( $key );
 
-		// If no TTL provided, use default
+		// If no TTL provided, use default.
 		if ( null === $ttl ) {
 			$ttl = HOUR_IN_SECONDS;
 		}
@@ -82,7 +82,7 @@ class Cache_Manager {
 
 		$pattern = self::CACHE_PREFIX . $platform . '_%';
 
-		// Delete transients
+		// Delete transients.
 		$deleted = $wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$wpdb->options}
@@ -106,7 +106,7 @@ class Cache_Manager {
 
 		$pattern = self::CACHE_PREFIX . '%';
 
-		// Delete all plugin transients
+		// Delete all plugin transients.
 		$deleted = $wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$wpdb->options}
@@ -129,13 +129,13 @@ class Cache_Manager {
 	 * @return string Generated cache key.
 	 */
 	public function generate_key( $platform, $endpoint, $params = array() ) {
-		// Sort params for consistent keys
+		// Sort params for consistent keys.
 		ksort( $params );
 
-		// Create hash of params
+		// Create hash of params.
 		$params_hash = md5( wp_json_encode( $params ) );
 
-		// Format: platform_endpoint_paramshash
+		// Format: platform_endpoint_paramshash.
 		return sprintf(
 			'%s_%s_%s',
 			sanitize_key( $platform ),
@@ -151,9 +151,9 @@ class Cache_Manager {
 	 * @return int TTL in seconds.
 	 */
 	public function get_default_ttl( $platform ) {
-		// Apply filter to allow customization
+		// Apply filter to allow customization.
 		$ttl = apply_filters(
-			'marketing_analytics_mcp_cache_ttl',
+			'specflux_mac_cache_ttl',
 			self::DEFAULT_TTL[ $platform ] ?? HOUR_IN_SECONDS,
 			$platform
 		);
@@ -181,7 +181,7 @@ class Cache_Manager {
 
 		$pattern = self::CACHE_PREFIX . '%';
 
-		// Count total cached items
+		// Count total cached items.
 		$total_count = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$wpdb->options}
@@ -192,7 +192,7 @@ class Cache_Manager {
 			)
 		);
 
-		// Get cache size (approximate)
+		// Get cache size (approximate).
 		$cache_size = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT SUM(LENGTH(option_value)) FROM {$wpdb->options}
@@ -203,7 +203,7 @@ class Cache_Manager {
 			)
 		);
 
-		// Count by platform
+		// Count by platform.
 		$by_platform = array();
 		foreach ( array( 'clarity', 'ga4', 'gsc' ) as $platform ) {
 			$platform_pattern         = self::CACHE_PREFIX . $platform . '_%';
@@ -251,10 +251,10 @@ class Cache_Manager {
 			return $data;
 		}
 
-		// Generate fresh data
+		// Generate fresh data.
 		$data = call_user_func( $callback );
 
-		// Cache it
+		// Cache it.
 		if ( false !== $data && null !== $data ) {
 			$this->set( $key, $data, $ttl );
 		}

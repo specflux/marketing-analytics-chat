@@ -1,6 +1,6 @@
 # CLAUDE.md — Free Plugin
 
-This is the **free WordPress.org plugin** for Marketing Analytics Chat. It exposes Clarity, GA4, and Google Search Console data via MCP.
+This is the **free WordPress.org plugin** for Specflux Marketing Analytics Chat. It exposes Clarity, GA4, and Google Search Console data via MCP.
 
 ## Scope
 
@@ -10,7 +10,7 @@ This folder is a standalone WordPress plugin distributed on WordPress.org. It mu
 
 ```
 free/
-├── marketing-analytics-chat.php       # Main plugin file
+├── specflux-marketing-analytics-chat.php       # Main plugin file
 ├── composer.json
 ├── includes/
 │   ├── class-plugin.php               # Core orchestrator, fires extensibility hooks
@@ -30,9 +30,9 @@ free/
 
 ## Namespace & Text Domain
 
-- Namespace: `Marketing_Analytics_MCP\`
-- Text domain: `marketing-analytics-chat`
-- All strings: `esc_html_e( 'String', 'marketing-analytics-chat' )`
+- Namespace: `Specflux_Marketing_Analytics\`
+- Text domain: `specflux-marketing-analytics-chat`
+- All strings: `esc_html_e( 'String', 'specflux-marketing-analytics-chat' )`
 
 ## Development Commands
 
@@ -49,14 +49,14 @@ vendor/bin/phpstan analyse            # Static analysis
 The free plugin fires these hooks — the premium add-on hooks into them. Do NOT remove these:
 
 ```php
-do_action( 'marketing_analytics_mcp_loaded' );                       // class-plugin.php
-do_action( 'marketing_analytics_mcp_register_pro_abilities' );        // class-abilities-registrar.php
-do_action( 'marketing_analytics_mcp_admin_menu' );                    // class-admin.php
-do_action( 'marketing_analytics_mcp_connections_tabs' );              // connections.php
-do_action( 'marketing_analytics_mcp_connections_tab_content', $tab ); // connections.php
-do_action( 'marketing_analytics_mcp_settings_tabs', $tab );          // settings.php
-do_action( 'marketing_analytics_mcp_settings_tab_content', $tab );   // settings.php
-do_action( 'marketing_analytics_mcp_register_ajax_handlers' );       // class-ajax-handler.php
+do_action( 'specflux_mac_loaded' );                       // class-plugin.php
+do_action( 'specflux_mac_register_pro_abilities' );        // class-abilities-registrar.php
+do_action( 'specflux_mac_admin_menu' );                    // class-admin.php
+do_action( 'specflux_mac_connections_tabs' );              // connections.php
+do_action( 'specflux_mac_connections_tab_content', $tab ); // connections.php
+do_action( 'specflux_mac_settings_tabs', $tab );          // settings.php
+do_action( 'specflux_mac_settings_tab_content', $tab );   // settings.php
+do_action( 'specflux_mac_register_ajax_handlers' );       // class-ajax-handler.php
 ```
 
 ## Key Rules
@@ -78,7 +78,7 @@ do_action( 'marketing_analytics_mcp_register_ajax_handlers' );       // class-aj
 
 ## CSS Design Tokens
 
-All styles use `--mac-*` custom properties in `admin/css/admin-styles.css`. Never hardcode colors. Use `.status-badge.connected` / `.disconnected` for status indicators.
+All styles use `--smac-*` custom properties in `admin/css/admin-styles.css`. Never hardcode colors. Use `.status-badge.connected` / `.disconnected` for status indicators.
 
 ## WordPress Coding Standards
 

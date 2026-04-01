@@ -2,10 +2,10 @@
 /**
  * Hook Loader Class
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP;
+namespace Specflux_Marketing_Analytics;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;

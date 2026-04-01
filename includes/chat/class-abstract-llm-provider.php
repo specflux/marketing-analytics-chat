@@ -4,13 +4,13 @@
  *
  * Base class for AI language model providers with common functionality.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Chat;
+namespace Specflux_Marketing_Analytics\Chat;
 
 use WP_Error;
-use Marketing_Analytics_MCP\Utils\Logger;
+use Specflux_Marketing_Analytics\Utils\Logger;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -83,7 +83,7 @@ abstract class Abstract_LLM_Provider implements LLM_Provider_Interface {
 
 		$json_body = wp_json_encode( $body );
 
-		// Log the request being sent
+		// Log the request being sent.
 		Logger::debug( 'LLM Provider: API Request to: ' . $endpoint );
 		Logger::debug( 'LLM Provider: Request body (first 2000 chars): ' . substr( $json_body, 0, 2000 ) );
 
@@ -100,7 +100,7 @@ abstract class Abstract_LLM_Provider implements LLM_Provider_Interface {
 				'api_request_failed',
 				sprintf(
 					/* translators: %s: Error message */
-					__( 'API request failed: %s', 'marketing-analytics-chat' ),
+					__( 'API request failed: %s', 'specflux-marketing-analytics-chat' ),
 					$response->get_error_message()
 				)
 			);
@@ -110,19 +110,19 @@ abstract class Abstract_LLM_Provider implements LLM_Provider_Interface {
 		$body_data   = wp_remote_retrieve_body( $response );
 		$decoded     = json_decode( $body_data, true );
 
-		// Log the response
+		// Log the response.
 		Logger::debug( 'LLM Provider: API Response status: ' . $status_code );
-		if ( $status_code !== 200 ) {
+		if ( 200 !== $status_code ) {
 			Logger::debug( 'LLM Provider: API Error response: ' . $body_data );
 		}
 
-		if ( $status_code !== 200 ) {
-			$error_message = $decoded['error']['message'] ?? $decoded['message'] ?? __( 'Unknown error', 'marketing-analytics-chat' );
+		if ( 200 !== $status_code ) {
+			$error_message = $decoded['error']['message'] ?? $decoded['message'] ?? __( 'Unknown error', 'specflux-marketing-analytics-chat' );
 			return new WP_Error(
 				'api_error',
 				sprintf(
 					/* translators: 1: HTTP status code, 2: Error message */
-					__( 'API returned status %1$d: %2$s', 'marketing-analytics-chat' ),
+					__( 'API returned status %1$d: %2$s', 'specflux-marketing-analytics-chat' ),
 					$status_code,
 					$error_message
 				),
@@ -133,10 +133,10 @@ abstract class Abstract_LLM_Provider implements LLM_Provider_Interface {
 			);
 		}
 
-		if ( json_last_error() !== JSON_ERROR_NONE ) {
+		if ( JSON_ERROR_NONE !== json_last_error() ) {
 			return new WP_Error(
 				'invalid_json',
-				__( 'Invalid JSON response from API', 'marketing-analytics-chat' )
+				__( 'Invalid JSON response from API', 'specflux-marketing-analytics-chat' )
 			);
 		}
 
@@ -163,7 +163,7 @@ abstract class Abstract_LLM_Provider implements LLM_Provider_Interface {
 		if ( empty( $this->api_key ) ) {
 			$errors[] = sprintf(
 				/* translators: %s: Provider name */
-				__( '%s API key is not configured', 'marketing-analytics-chat' ),
+				__( '%s API key is not configured', 'specflux-marketing-analytics-chat' ),
 				$this->get_display_name()
 			);
 		}

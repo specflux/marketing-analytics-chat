@@ -1,5 +1,5 @@
 /**
- * Admin JavaScript for Marketing Analytics Chat
+ * Admin JavaScript for Specflux Marketing Analytics Chat
  *
  * @package Marketing_Analytics_MCP
  */
@@ -80,7 +80,7 @@
 
 			// Get form data based on platform
 			var data = {
-				action: 'marketing_analytics_mcp_test_connection',
+				action: 'specflux_mac_test_connection',
 				platform: platform,
 				nonce: marketingAnalyticsMCP.nonce
 			};
@@ -134,7 +134,7 @@
 				url: marketingAnalyticsMCP.ajaxUrl,
 				type: 'POST',
 				data: {
-					action: 'marketing_analytics_mcp_clear_caches',
+					action: 'specflux_mac_clear_caches',
 					nonce: marketingAnalyticsMCP.nonce
 				},
 				success: function(response) {
@@ -197,7 +197,7 @@
 				url: marketingAnalyticsMCP.ajaxUrl,
 				type: 'POST',
 				data: {
-					action: 'marketing_analytics_mcp_list_ga4_properties',
+					action: 'specflux_mac_list_ga4_properties',
 					nonce: marketingAnalyticsMCP.nonce
 				},
 				success: function(response) {
@@ -259,7 +259,7 @@
 				url: marketingAnalyticsMCP.ajaxUrl,
 				type: 'POST',
 				data: {
-					action: 'marketing_analytics_mcp_save_ga4_property',
+					action: 'specflux_mac_save_ga4_property',
 					property_id: propertyId,
 					nonce: marketingAnalyticsMCP.nonce
 				},
@@ -310,7 +310,7 @@
 				url: marketingAnalyticsMCP.ajaxUrl,
 				type: 'POST',
 				data: {
-					action: 'marketing_analytics_mcp_list_gsc_sites',
+					action: 'specflux_mac_list_gsc_sites',
 					nonce: marketingAnalyticsMCP.nonce
 				},
 				success: function(response) {
@@ -372,7 +372,7 @@
 				url: marketingAnalyticsMCP.ajaxUrl,
 				type: 'POST',
 				data: {
-					action: 'marketing_analytics_mcp_save_gsc_site',
+					action: 'specflux_mac_save_gsc_site',
 					site_url: siteUrl,
 					nonce: marketingAnalyticsMCP.nonce
 				},

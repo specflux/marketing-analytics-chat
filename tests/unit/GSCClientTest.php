@@ -2,14 +2,14 @@
 /**
  * Tests for the GSC_Client class.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Tests\unit;
+namespace Specflux_Marketing_Analytics\Tests\unit;
 
-use Marketing_Analytics_MCP\API_Clients\GSC_Client;
-use Marketing_Analytics_MCP\Credentials\OAuth_Handler;
-use Marketing_Analytics_MCP\Cache\Cache_Manager;
+use Specflux_Marketing_Analytics\API_Clients\GSC_Client;
+use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
+use Specflux_Marketing_Analytics\Cache\Cache_Manager;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -32,7 +32,7 @@ class GSCClientTest extends TestCase {
 		parent::setUp();
 		global $mock_options;
 		$mock_options = array(
-			'marketing_analytics_mcp_gsc_site_url' => 'https://example.com',
+			'specflux_mac_gsc_site_url' => 'https://example.com',
 		);
 
 		$this->client = new GSC_Client();
@@ -79,7 +79,7 @@ class GSCClientTest extends TestCase {
 	 */
 	public function test_query_search_analytics_throws_exception_without_site_url(): void {
 		global $mock_options;
-		$mock_options['marketing_analytics_mcp_gsc_site_url'] = '';
+		$mock_options['specflux_mac_gsc_site_url'] = '';
 
 		$client = new GSC_Client();
 
@@ -94,7 +94,7 @@ class GSCClientTest extends TestCase {
 	 */
 	public function test_get_url_inspection_throws_exception_without_site_url(): void {
 		global $mock_options;
-		$mock_options['marketing_analytics_mcp_gsc_site_url'] = '';
+		$mock_options['specflux_mac_gsc_site_url'] = '';
 
 		$client = new GSC_Client();
 
@@ -109,7 +109,7 @@ class GSCClientTest extends TestCase {
 	 */
 	public function test_get_sitemap_status_throws_exception_without_site_url(): void {
 		global $mock_options;
-		$mock_options['marketing_analytics_mcp_gsc_site_url'] = '';
+		$mock_options['specflux_mac_gsc_site_url'] = '';
 
 		$client = new GSC_Client();
 

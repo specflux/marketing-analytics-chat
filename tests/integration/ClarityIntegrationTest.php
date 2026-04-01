@@ -4,14 +4,14 @@
  *
  * These tests require actual API credentials and are typically run in CI/CD.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Tests\integration;
+namespace Specflux_Marketing_Analytics\Tests\integration;
 
-use Marketing_Analytics_MCP\API_Clients\Clarity_Client;
-use Marketing_Analytics_MCP\Credentials\Credential_Manager;
-use Marketing_Analytics_MCP\Cache\Cache_Manager;
+use Specflux_Marketing_Analytics\API_Clients\Clarity_Client;
+use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Cache\Cache_Manager;
 use PHPUnit\Framework\TestCase;
 
 /**

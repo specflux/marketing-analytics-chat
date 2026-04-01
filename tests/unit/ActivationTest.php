@@ -2,13 +2,13 @@
 /**
  * Tests for plugin activation and deactivation.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Tests\unit;
+namespace Specflux_Marketing_Analytics\Tests\unit;
 
-use Marketing_Analytics_MCP\Activator;
-use Marketing_Analytics_MCP\Deactivator;
+use Specflux_Marketing_Analytics\Activator;
+use Specflux_Marketing_Analytics\Deactivator;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -29,14 +29,14 @@ class ActivationTest extends TestCase {
 	 * Test activator class exists.
 	 */
 	public function test_activator_class_exists(): void {
-		$this->assertTrue( class_exists( 'Marketing_Analytics_MCP\Activator' ) );
+		$this->assertTrue( class_exists( 'Specflux_Marketing_Analytics\Activator' ) );
 	}
 
 	/**
 	 * Test deactivator class exists.
 	 */
 	public function test_deactivator_class_exists(): void {
-		$this->assertTrue( class_exists( 'Marketing_Analytics_MCP\Deactivator' ) );
+		$this->assertTrue( class_exists( 'Specflux_Marketing_Analytics\Deactivator' ) );
 	}
 
 	/**
@@ -46,11 +46,11 @@ class ActivationTest extends TestCase {
 		Activator::activate();
 
 		// Check if activation sets settings option
-		$settings = get_option( 'marketing_analytics_mcp_settings' );
+		$settings = get_option( 'specflux_mac_settings' );
 		$this->assertNotFalse( $settings );
 		$this->assertIsArray( $settings );
 		$this->assertArrayHasKey( 'version', $settings );
-		$this->assertEquals( MARKETING_ANALYTICS_MCP_VERSION, $settings['version'] );
+		$this->assertEquals( SPECFLUX_MAC_VERSION, $settings['version'] );
 	}
 
 	/**
@@ -68,13 +68,13 @@ class ActivationTest extends TestCase {
 	 */
 	public function test_deactivation_preserves_data(): void {
 		// Save some test data
-		update_option( 'marketing_analytics_mcp_test_data', 'test_value' );
+		update_option( 'specflux_mac_test_data', 'test_value' );
 
 		// Deactivate
 		Deactivator::deactivate();
 
 		// Data should still exist (not deleted on deactivation)
-		$value = get_option( 'marketing_analytics_mcp_test_data' );
+		$value = get_option( 'specflux_mac_test_data' );
 		$this->assertEquals( 'test_value', $value );
 	}
 
@@ -85,7 +85,7 @@ class ActivationTest extends TestCase {
 		Activator::activate();
 
 		// Check for default settings
-		$settings = get_option( 'marketing_analytics_mcp_settings' );
+		$settings = get_option( 'specflux_mac_settings' );
 
 		// Default settings should be created
 		$this->assertTrue( is_array( $settings ) || false === $settings );
@@ -96,7 +96,7 @@ class ActivationTest extends TestCase {
 	 */
 	public function test_multisite_activation(): void {
 		// If plugin supports multisite, test network activation
-		if ( method_exists( 'Marketing_Analytics_MCP\Activator', 'network_activate' ) ) {
+		if ( method_exists( 'Specflux_Marketing_Analytics\Activator', 'network_activate' ) ) {
 			$this->expectNotToPerformAssertions();
 			// Would call network_activate() method
 		} else {
@@ -119,7 +119,7 @@ class ActivationTest extends TestCase {
 		Activator::activate();
 
 		// Should create a unique encryption key
-		$key = get_option( 'marketing_analytics_mcp_encryption_key' );
+		$key = get_option( 'specflux_mac_encryption_key' );
 		$this->assertTrue( is_string( $key ) || false === $key );
 	}
 
@@ -128,12 +128,12 @@ class ActivationTest extends TestCase {
 	 */
 	public function test_deactivation_cleans_transients(): void {
 		// Set some transients
-		set_transient( 'marketing_analytics_mcp_test', 'value', 3600 );
+		set_transient( 'specflux_mac_test', 'value', 3600 );
 
 		Deactivator::deactivate();
 
 		// Transients should be cleaned up
-		$transient = get_transient( 'marketing_analytics_mcp_test' );
+		$transient = get_transient( 'specflux_mac_test' );
 		// WordPress behavior: may or may not clean transients on deactivation
 		$this->assertTrue( false === $transient || 'value' === $transient );
 	}

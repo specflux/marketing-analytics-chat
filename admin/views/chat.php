@@ -2,38 +2,38 @@
 /**
  * AI Chat Interface Template
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-// Exit if accessed directly
+// Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Marketing_Analytics_MCP\Chat\Chat_Manager;
+use Specflux_Marketing_Analytics\Chat\Chat_Manager;
 
 $chat_manager = new Chat_Manager();
 $user_id      = get_current_user_id();
 
-// Get conversations
+// Get conversations.
 $conversations = $chat_manager->get_conversations( $user_id, 20 );
 
-// Get active conversation
+// Get active conversation.
 $conversation_nonce     = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
 $active_conversation_id = null;
-if ( isset( $_GET['conversation_id'] ) && $conversation_nonce && wp_verify_nonce( $conversation_nonce, 'marketing_analytics_chat_conversation' ) ) {
+if ( isset( $_GET['conversation_id'] ) && $conversation_nonce && wp_verify_nonce( $conversation_nonce, 'specflux_mac_conversation' ) ) {
 	$active_conversation_id = absint( wp_unslash( $_GET['conversation_id'] ) );
 }
-$active_conversation    = $active_conversation_id ? $chat_manager->get_conversation( $active_conversation_id ) : null;
-$messages               = $active_conversation_id ? $chat_manager->get_messages( $active_conversation_id ) : array();
-$conversation_link_nonce = wp_create_nonce( 'marketing_analytics_chat_conversation' );
+$active_conversation     = $active_conversation_id ? $chat_manager->get_conversation( $active_conversation_id ) : null;
+$messages                = $active_conversation_id ? $chat_manager->get_messages( $active_conversation_id ) : array();
+$conversation_link_nonce = wp_create_nonce( 'specflux_mac_conversation' );
 
 ?>
 
-<div class="wrap marketing-analytics-chat">
-	<h1 class="wp-heading-inline"><?php esc_html_e( 'AI Assistant', 'marketing-analytics-chat' ); ?></h1>
+<div class="wrap specflux-marketing-analytics-chat">
+	<h1 class="wp-heading-inline"><?php esc_html_e( 'AI Assistant', 'specflux-marketing-analytics-chat' ); ?></h1>
 	<p class="description">
-		<?php esc_html_e( 'Chat with an AI assistant about your marketing analytics data. The assistant can access Clarity, Google Analytics, and Search Console data.', 'marketing-analytics-chat' ); ?>
+		<?php esc_html_e( 'Chat with an AI assistant about your marketing analytics data. The assistant can access Clarity, Google Analytics, and Search Console data.', 'specflux-marketing-analytics-chat' ); ?>
 	</p>
 
 	<div class="chat-container">
@@ -42,14 +42,14 @@ $conversation_link_nonce = wp_create_nonce( 'marketing_analytics_chat_conversati
 			<div class="sidebar-header">
 				<button type="button" id="new-conversation" class="button button-primary button-block">
 					<span class="dashicons dashicons-plus-alt2"></span>
-					<?php esc_html_e( 'New Conversation', 'marketing-analytics-chat' ); ?>
+					<?php esc_html_e( 'New Conversation', 'specflux-marketing-analytics-chat' ); ?>
 				</button>
 			</div>
 
 			<div class="conversation-list">
 				<?php if ( empty( $conversations ) ) : ?>
 					<div class="no-conversations">
-						<p><?php esc_html_e( 'No conversations yet. Start a new conversation!', 'marketing-analytics-chat' ); ?></p>
+						<p><?php esc_html_e( 'No conversations yet. Start a new conversation!', 'specflux-marketing-analytics-chat' ); ?></p>
 					</div>
 				<?php else : ?>
 					<?php foreach ( $conversations as $conversation ) : ?>
@@ -58,7 +58,7 @@ $conversation_link_nonce = wp_create_nonce( 'marketing_analytics_chat_conversati
 						$class     = $is_active ? 'conversation-item active' : 'conversation-item';
 						?>
 						<div class="<?php echo esc_attr( $class ); ?>">
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=marketing-analytics-chat-ai-assistant&conversation_id=' . $conversation->id . '&_wpnonce=' . $conversation_link_nonce ) ); ?>" class="conversation-link">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-ai-assistant&conversation_id=' . $conversation->id . '&_wpnonce=' . $conversation_link_nonce ) ); ?>" class="conversation-link">
 								<div class="conversation-title"><?php echo esc_html( $conversation->title ); ?></div>
 								<div class="conversation-date"><?php echo esc_html( human_time_diff( strtotime( $conversation->updated_at ), time() ) . ' ago' ); ?></div>
 							</a>
@@ -67,7 +67,7 @@ $conversation_link_nonce = wp_create_nonce( 'marketing_analytics_chat_conversati
 								class="delete-conversation"
 								data-conversation-id="<?php echo esc_attr( $conversation->id ); ?>"
 								data-conversation-title="<?php echo esc_attr( $conversation->title ); ?>"
-								title="<?php esc_attr_e( 'Delete conversation', 'marketing-analytics-chat' ); ?>"
+								title="<?php esc_attr_e( 'Delete conversation', 'specflux-marketing-analytics-chat' ); ?>"
 							>
 								<span class="dashicons dashicons-trash"></span>
 							</button>
@@ -84,43 +84,43 @@ $conversation_link_nonce = wp_create_nonce( 'marketing_analytics_chat_conversati
 				<div class="chat-messages" id="chat-messages">
 					<?php if ( empty( $messages ) ) : ?>
 						<div class="welcome-message">
-							<h2><?php esc_html_e( 'Welcome to your AI Analytics Assistant!', 'marketing-analytics-chat' ); ?></h2>
-							<p><?php esc_html_e( 'Ask me anything about your marketing analytics data. I can help with:', 'marketing-analytics-chat' ); ?></p>
+							<h2><?php esc_html_e( 'Welcome to your AI Analytics Assistant!', 'specflux-marketing-analytics-chat' ); ?></h2>
+							<p><?php esc_html_e( 'Ask me anything about your marketing analytics data. I can help with:', 'specflux-marketing-analytics-chat' ); ?></p>
 							<ul>
-								<li><?php esc_html_e( 'Traffic trends and performance metrics', 'marketing-analytics-chat' ); ?></li>
-								<li><?php esc_html_e( 'Search Console rankings and queries', 'marketing-analytics-chat' ); ?></li>
-								<li><?php esc_html_e( 'User behavior insights from Clarity', 'marketing-analytics-chat' ); ?></li>
-								<li><?php esc_html_e( 'Period comparisons and analysis', 'marketing-analytics-chat' ); ?></li>
+								<li><?php esc_html_e( 'Traffic trends and performance metrics', 'specflux-marketing-analytics-chat' ); ?></li>
+								<li><?php esc_html_e( 'Search Console rankings and queries', 'specflux-marketing-analytics-chat' ); ?></li>
+								<li><?php esc_html_e( 'User behavior insights from Clarity', 'specflux-marketing-analytics-chat' ); ?></li>
+								<li><?php esc_html_e( 'Period comparisons and analysis', 'specflux-marketing-analytics-chat' ); ?></li>
 							</ul>
 						</div>
 					<?php else : ?>
 						<?php foreach ( $messages as $message ) : ?>
 							<div class="message message-<?php echo esc_attr( $message->role ); ?>">
 								<div class="message-avatar">
-									<?php if ( $message->role === 'user' ) : ?>
+									<?php if ( 'user' === $message->role ) : ?>
 										<span class="dashicons dashicons-admin-users"></span>
-									<?php elseif ( $message->role === 'assistant' ) : ?>
+									<?php elseif ( 'assistant' === $message->role ) : ?>
 										<span class="dashicons dashicons-superhero"></span>
-									<?php elseif ( $message->role === 'tool' ) : ?>
+									<?php elseif ( 'tool' === $message->role ) : ?>
 										<span class="dashicons dashicons-admin-tools"></span>
 									<?php endif; ?>
 								</div>
 								<div class="message-content">
 									<div class="message-role">
 										<?php
-										if ( $message->role === 'user' ) {
-											esc_html_e( 'You', 'marketing-analytics-chat' );
-										} elseif ( $message->role === 'assistant' ) {
-											esc_html_e( 'AI Assistant', 'marketing-analytics-chat' );
-										} elseif ( $message->role === 'tool' ) {
+										if ( 'user' === $message->role ) {
+											esc_html_e( 'You', 'specflux-marketing-analytics-chat' );
+										} elseif ( 'assistant' === $message->role ) {
+											esc_html_e( 'AI Assistant', 'specflux-marketing-analytics-chat' );
+										} elseif ( 'tool' === $message->role ) {
 											/* translators: %s: Tool name */
-											echo esc_html( sprintf( __( 'Tool: %s', 'marketing-analytics-chat' ), $message->tool_name ) );
+											echo esc_html( sprintf( __( 'Tool: %s', 'specflux-marketing-analytics-chat' ), $message->tool_name ) );
 										}
 										?>
 									</div>
 									<div class="message-text">
 										<?php
-										if ( $message->role === 'tool' ) {
+										if ( 'tool' === $message->role ) {
 											echo '<pre>' . esc_html( $message->content ) . '</pre>';
 										} else {
 											echo wp_kses_post( wpautop( $message->content ) );
@@ -129,7 +129,7 @@ $conversation_link_nonce = wp_create_nonce( 'marketing_analytics_chat_conversati
 									</div>
 									<?php if ( ! empty( $message->tool_calls ) ) : ?>
 										<div class="tool-calls">
-											<strong><?php esc_html_e( 'Using tools:', 'marketing-analytics-chat' ); ?></strong>
+											<strong><?php esc_html_e( 'Using tools:', 'specflux-marketing-analytics-chat' ); ?></strong>
 											<ul>
 												<?php foreach ( $message->tool_calls as $tool_call ) : ?>
 													<li>
@@ -152,18 +152,18 @@ $conversation_link_nonce = wp_create_nonce( 'marketing_analytics_chat_conversati
 				<!-- Message Input -->
 				<div class="chat-input-container">
 					<form id="chat-form" method="post">
-						<?php wp_nonce_field( 'marketing-analytics-chat-admin', 'chat_nonce' ); ?>
+						<?php wp_nonce_field( 'specflux-marketing-analytics-chat-admin', 'chat_nonce' ); ?>
 						<input type="hidden" name="conversation_id" value="<?php echo esc_attr( $active_conversation_id ); ?>">
 
 						<div class="suggested-prompts" id="suggested-prompts">
-							<button type="button" class="suggested-prompt" data-prompt="<?php esc_attr_e( 'Show me traffic trends for the last 30 days', 'marketing-analytics-chat' ); ?>">
-								<?php esc_html_e( 'Show me traffic trends for the last 30 days', 'marketing-analytics-chat' ); ?>
+							<button type="button" class="suggested-prompt" data-prompt="<?php esc_attr_e( 'Show me traffic trends for the last 30 days', 'specflux-marketing-analytics-chat' ); ?>">
+								<?php esc_html_e( 'Show me traffic trends for the last 30 days', 'specflux-marketing-analytics-chat' ); ?>
 							</button>
-							<button type="button" class="suggested-prompt" data-prompt="<?php esc_attr_e( 'What are my top performing pages?', 'marketing-analytics-chat' ); ?>">
-								<?php esc_html_e( 'What are my top performing pages?', 'marketing-analytics-chat' ); ?>
+							<button type="button" class="suggested-prompt" data-prompt="<?php esc_attr_e( 'What are my top performing pages?', 'specflux-marketing-analytics-chat' ); ?>">
+								<?php esc_html_e( 'What are my top performing pages?', 'specflux-marketing-analytics-chat' ); ?>
 							</button>
-							<button type="button" class="suggested-prompt" data-prompt="<?php esc_attr_e( 'Compare this week vs last week', 'marketing-analytics-chat' ); ?>">
-								<?php esc_html_e( 'Compare this week vs last week', 'marketing-analytics-chat' ); ?>
+							<button type="button" class="suggested-prompt" data-prompt="<?php esc_attr_e( 'Compare this week vs last week', 'specflux-marketing-analytics-chat' ); ?>">
+								<?php esc_html_e( 'Compare this week vs last week', 'specflux-marketing-analytics-chat' ); ?>
 							</button>
 						</div>
 
@@ -171,13 +171,13 @@ $conversation_link_nonce = wp_create_nonce( 'marketing_analytics_chat_conversati
 							<textarea
 								id="message-input"
 								name="message"
-								placeholder="<?php esc_attr_e( 'Ask about your analytics data...', 'marketing-analytics-chat' ); ?>"
+								placeholder="<?php esc_attr_e( 'Ask about your analytics data...', 'specflux-marketing-analytics-chat' ); ?>"
 								rows="3"
 								required
 							></textarea>
 							<button type="submit" id="send-button" class="button button-primary">
 								<span class="dashicons dashicons-arrow-up-alt2"></span>
-								<?php esc_html_e( 'Send', 'marketing-analytics-chat' ); ?>
+								<?php esc_html_e( 'Send', 'specflux-marketing-analytics-chat' ); ?>
 							</button>
 						</div>
 					</form>
@@ -187,11 +187,11 @@ $conversation_link_nonce = wp_create_nonce( 'marketing_analytics_chat_conversati
 				<div class="no-conversation-selected">
 					<div class="empty-state">
 						<span class="dashicons dashicons-format-chat"></span>
-						<h2><?php esc_html_e( 'No Conversation Selected', 'marketing-analytics-chat' ); ?></h2>
-						<p><?php esc_html_e( 'Select a conversation from the sidebar or start a new one.', 'marketing-analytics-chat' ); ?></p>
+						<h2><?php esc_html_e( 'No Conversation Selected', 'specflux-marketing-analytics-chat' ); ?></h2>
+						<p><?php esc_html_e( 'Select a conversation from the sidebar or start a new one.', 'specflux-marketing-analytics-chat' ); ?></p>
 						<button type="button" id="new-conversation-main" class="button button-primary button-large">
 							<span class="dashicons dashicons-plus-alt2"></span>
-							<?php esc_html_e( 'Start New Conversation', 'marketing-analytics-chat' ); ?>
+							<?php esc_html_e( 'Start New Conversation', 'specflux-marketing-analytics-chat' ); ?>
 						</button>
 					</div>
 				</div>

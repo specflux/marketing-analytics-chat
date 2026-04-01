@@ -4,10 +4,10 @@
  *
  * Manages plugin access permissions based on WordPress roles.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Utils;
+namespace Specflux_Marketing_Analytics\Utils;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -23,14 +23,14 @@ class Permission_Manager {
 	 *
 	 * @var string
 	 */
-	private static $option_key = 'marketing_analytics_mcp_allowed_roles';
+	private static $option_key = 'specflux_mac_allowed_roles';
 
 	/**
 	 * Custom capability name
 	 *
 	 * @var string
 	 */
-	private static $capability = 'access_marketing_analytics';
+	private static $capability = 'access_specflux_mac';
 
 	/**
 	 * Check if current user can access plugin
@@ -39,7 +39,7 @@ class Permission_Manager {
 	 * @return bool True if user has access, false otherwise.
 	 */
 	public static function can_access_plugin( $user_id = null ) {
-		if ( $user_id === null ) {
+		if ( null === $user_id ) {
 			$user_id = get_current_user_id();
 		}
 
@@ -60,7 +60,7 @@ class Permission_Manager {
 	public static function get_allowed_roles() {
 		$roles = get_option( self::$option_key, array() );
 
-		// Default to administrator if not configured
+		// Default to administrator if not configured.
 		if ( empty( $roles ) || ! is_array( $roles ) ) {
 			return array( 'administrator' );
 		}
@@ -81,18 +81,18 @@ class Permission_Manager {
 			$roles = array( 'administrator' );
 		}
 
-		// Validate roles exist in WordPress
+		// Validate roles exist in WordPress.
 		$valid_roles = array_keys( wp_roles()->roles );
 		$roles       = array_intersect( $roles, $valid_roles );
 
-		// Fallback to administrator if no valid roles
+		// Fallback to administrator if no valid roles.
 		if ( empty( $roles ) ) {
 			$roles = array( 'administrator' );
 		}
 
 		$result = update_option( self::$option_key, $roles );
 
-		// Re-sync capabilities after saving
+		// Re-sync capabilities after saving.
 		if ( $result ) {
 			self::sync_capabilities();
 		}
@@ -169,12 +169,12 @@ class Permission_Manager {
 			}
 
 			if ( in_array( $role_slug, $allowed_roles, true ) ) {
-				// Add capability if not present
+				// Add capability if not present.
 				if ( ! $role->has_cap( self::$capability ) ) {
 					$role->add_cap( self::$capability );
 				}
 			} else {
-				// Remove capability if present
+				// Remove capability if present.
 				if ( $role->has_cap( self::$capability ) ) {
 					$role->remove_cap( self::$capability );
 				}

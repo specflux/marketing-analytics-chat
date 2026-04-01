@@ -2,12 +2,12 @@
 /**
  * Tests for the GA4_Client class.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Tests\unit;
+namespace Specflux_Marketing_Analytics\Tests\unit;
 
-use Marketing_Analytics_MCP\API_Clients\GA4_Client;
+use Specflux_Marketing_Analytics\API_Clients\GA4_Client;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -22,7 +22,7 @@ class GA4ClientTest extends TestCase {
 		parent::setUp();
 		global $mock_options;
 		$mock_options = array(
-			'marketing_analytics_mcp_ga4_property_id' => '12345678', // Mock property ID
+			'specflux_mac_ga4_property_id' => '12345678', // Mock property ID
 		);
 	}
 

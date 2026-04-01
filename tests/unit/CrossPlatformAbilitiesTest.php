@@ -2,12 +2,12 @@
 /**
  * Tests for the Cross_Platform_Abilities class.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Tests\unit;
+namespace Specflux_Marketing_Analytics\Tests\unit;
 
-use Marketing_Analytics_MCP\Abilities\Cross_Platform_Abilities;
+use Specflux_Marketing_Analytics\Abilities\Cross_Platform_Abilities;
 use PHPUnit\Framework\TestCase;
 
 /**

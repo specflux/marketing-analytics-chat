@@ -2,12 +2,12 @@
 /**
  * Tests for the Clarity_Client class.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Tests\unit;
+namespace Specflux_Marketing_Analytics\Tests\unit;
 
-use Marketing_Analytics_MCP\API_Clients\Clarity_Client;
+use Specflux_Marketing_Analytics\API_Clients\Clarity_Client;
 use PHPUnit\Framework\TestCase;
 
 /**

@@ -2,13 +2,13 @@
 /**
  * Plugin Activation Handler
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP;
+namespace Specflux_Marketing_Analytics;
 
-use Marketing_Analytics_MCP\Prompts\Prompt_Manager;
-use Marketing_Analytics_MCP\Utils\Permission_Manager;
+use Specflux_Marketing_Analytics\Prompts\Prompt_Manager;
+use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -26,25 +26,25 @@ class Activator {
 	 * - Generate encryption key
 	 */
 	public static function activate() {
-		// Check minimum WordPress version
+		// Check minimum WordPress version.
 		if ( version_compare( get_bloginfo( 'version' ), '6.9', '<' ) ) {
 			wp_die(
-				esc_html__( 'Marketing Analytics Chat requires WordPress 6.9 or higher.', 'marketing-analytics-chat' ),
-				esc_html__( 'Plugin Activation Error', 'marketing-analytics-chat' ),
+				esc_html__( 'Specflux Marketing Analytics Chat requires WordPress 6.9 or higher.', 'specflux-marketing-analytics-chat' ),
+				esc_html__( 'Plugin Activation Error', 'specflux-marketing-analytics-chat' ),
 				array( 'back_link' => true )
 			);
 		}
 
-		// Check minimum PHP version
+		// Check minimum PHP version.
 		if ( version_compare( PHP_VERSION, '8.1', '<' ) ) {
 			wp_die(
-				esc_html__( 'Marketing Analytics Chat requires PHP 8.1 or higher.', 'marketing-analytics-chat' ),
-				esc_html__( 'Plugin Activation Error', 'marketing-analytics-chat' ),
+				esc_html__( 'Specflux Marketing Analytics Chat requires PHP 8.1 or higher.', 'specflux-marketing-analytics-chat' ),
+				esc_html__( 'Plugin Activation Error', 'specflux-marketing-analytics-chat' ),
 				array( 'back_link' => true )
 			);
 		}
 
-		// Check for required PHP extensions
+		// Check for required PHP extensions.
 		$required_extensions = array( 'json', 'curl', 'openssl', 'sodium' );
 		$missing_extensions  = array();
 
@@ -58,30 +58,30 @@ class Activator {
 			wp_die(
 				sprintf(
 					/* translators: %s: comma-separated list of PHP extensions */
-					esc_html__( 'Marketing Analytics Chat requires the following PHP extensions: %s', 'marketing-analytics-chat' ),
+					esc_html__( 'Specflux Marketing Analytics Chat requires the following PHP extensions: %s', 'specflux-marketing-analytics-chat' ),
 					esc_html( implode( ', ', $missing_extensions ) )
 				),
-				esc_html__( 'Plugin Activation Error', 'marketing-analytics-chat' ),
+				esc_html__( 'Plugin Activation Error', 'specflux-marketing-analytics-chat' ),
 				array( 'back_link' => true )
 			);
 		}
 
-		// Set default options
+		// Set default options.
 		self::set_default_options();
 
-		// Create chat tables
+		// Create chat tables.
 		self::create_chat_tables();
 
-		// Generate encryption key if it doesn't exist
+		// Generate encryption key if it doesn't exist.
 		self::generate_encryption_key();
 
-		// Register custom capabilities for role-based access control
+		// Register custom capabilities for role-based access control.
 		Permission_Manager::register_capabilities();
 
-		// Install default smart prompts on first activation
+		// Install default smart prompts on first activation.
 		self::install_default_prompts();
 
-		// Flush rewrite rules
+		// Flush rewrite rules.
 		flush_rewrite_rules();
 	}
 
@@ -90,7 +90,7 @@ class Activator {
 	 */
 	private static function set_default_options() {
 		$defaults = array(
-			'version'           => MARKETING_ANALYTICS_MCP_VERSION,
+			'version'           => SPECFLUX_MAC_VERSION,
 			'cache_ttl_clarity' => HOUR_IN_SECONDS,
 			'cache_ttl_ga4'     => 30 * MINUTE_IN_SECONDS,
 			'cache_ttl_gsc'     => DAY_IN_SECONDS,
@@ -111,8 +111,8 @@ class Activator {
 			),
 		);
 
-		// Only add if option doesn't exist
-		add_option( 'marketing_analytics_mcp_settings', $defaults );
+		// Only add if option doesn't exist.
+		add_option( 'specflux_mac_settings', $defaults );
 	}
 
 	/**
@@ -148,8 +148,8 @@ class Activator {
 
 		$charset_collate = $wpdb->get_charset_collate();
 
-		$conversations_table = $wpdb->prefix . 'marketing_analytics_mcp_conversations';
-		$messages_table      = $wpdb->prefix . 'marketing_analytics_mcp_messages';
+		$conversations_table = $wpdb->prefix . 'specflux_mac_conversations';
+		$messages_table      = $wpdb->prefix . 'specflux_mac_messages';
 
 		$sql = "CREATE TABLE {$conversations_table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -190,12 +190,12 @@ class Activator {
 	 * Generate encryption key for credentials
 	 */
 	private static function generate_encryption_key() {
-		$key_option = 'marketing_analytics_mcp_encryption_key';
+		$key_option = 'specflux_mac_encryption_key';
 
-		// Only generate if key doesn't exist
+		// Only generate if key doesn't exist.
 		if ( ! get_option( $key_option ) ) {
 			$key = base64_encode( random_bytes( SODIUM_CRYPTO_SECRETBOX_KEYBYTES ) );
-			add_option( $key_option, $key, '', false ); // Don't autoload
+			add_option( $key_option, $key, '', false ); // Don't autoload.
 		}
 	}
 }

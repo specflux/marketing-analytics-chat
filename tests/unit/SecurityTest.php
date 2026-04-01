@@ -4,10 +4,10 @@
  *
  * Critical for WordPress.org submission.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Tests\unit;
+namespace Specflux_Marketing_Analytics\Tests\unit;
 
 use PHPUnit\Framework\TestCase;
 
@@ -232,7 +232,7 @@ class SecurityTest extends TestCase {
 	 */
 	public function test_direct_file_access_prevention(): void {
 		// All PHP files should check for ABSPATH or die
-		$plugin_files = glob( MARKETING_ANALYTICS_MCP_PATH . 'includes/**/*.php' );
+		$plugin_files = glob( SPECFLUX_MAC_PATH . 'includes/**/*.php' );
 
 		foreach ( $plugin_files as $file ) {
 			$content = file_get_contents( $file );

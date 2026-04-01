@@ -4,12 +4,12 @@
  *
  * Handles secure storage and retrieval of API credentials for analytics platforms.
  *
- * @package Marketing_Analytics_MCP
+ * @package Specflux_Marketing_Analytics
  */
 
-namespace Marketing_Analytics_MCP\Credentials;
+namespace Specflux_Marketing_Analytics\Credentials;
 
-use Marketing_Analytics_MCP\Utils\Logger;
+use Specflux_Marketing_Analytics\Utils\Logger;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -21,7 +21,7 @@ class Credential_Manager {
 	/**
 	 * Option name prefix for storing credentials
 	 */
-	const OPTION_PREFIX = 'marketing_analytics_mcp_credentials_';
+	const OPTION_PREFIX = 'specflux_mac_credentials_';
 
 	/**
 	 * Supported platforms
@@ -44,10 +44,10 @@ class Credential_Manager {
 			return false;
 		}
 
-		// Apply filter to allow modification before encryption
-		$credentials = apply_filters( 'marketing_analytics_mcp_encrypt_credentials', $credentials, $platform );
+		// Apply filter to allow modification before encryption.
+		$credentials = apply_filters( 'specflux_mac_encrypt_credentials', $credentials, $platform );
 
-		// Encrypt the credentials
+		// Encrypt the credentials.
 		try {
 			$encrypted = Encryption::encrypt( $credentials, $platform );
 		} catch ( \Exception $e ) {
@@ -55,9 +55,9 @@ class Credential_Manager {
 			return false;
 		}
 
-		// Store encrypted credentials
+		// Store encrypted credentials.
 		$option_name = $this->get_option_name( $platform );
-		return update_option( $option_name, $encrypted, false ); // Don't autoload
+		return update_option( $option_name, $encrypted, false ); // Don't autoload.
 	}
 
 	/**
@@ -78,11 +78,11 @@ class Credential_Manager {
 			return null;
 		}
 
-		// Decrypt the credentials (returns array directly)
+		// Decrypt the credentials (returns array directly).
 		try {
 			$credentials = Encryption::decrypt( $encrypted, $platform );
 
-			if ( $credentials === false || ! is_array( $credentials ) ) {
+			if ( false === $credentials || ! is_array( $credentials ) ) {
 				Logger::debug( 'Failed to decrypt credentials for ' . $platform );
 				return null;
 			}
