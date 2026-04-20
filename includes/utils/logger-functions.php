@@ -9,13 +9,14 @@ namespace Specflux_Marketing_Analytics\Utils;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
+
 /**
  * Global helper function for debug logging.
  *
  * @param string $message The message to log.
  * @return void
  */
-function mcp_log_debug( $message ) {
+function specflux_mac_log_debug( $message ) {
 	Logger::debug( $message );
 }
 
@@ -25,7 +26,7 @@ function mcp_log_debug( $message ) {
  * @param string $message The error message to log.
  * @return void
  */
-function mcp_log_error( $message ) {
+function specflux_mac_log_error( $message ) {
 	Logger::error( $message );
 }
 
@@ -36,7 +37,7 @@ function mcp_log_error( $message ) {
  * @param string $message The message to log.
  * @return void
  */
-function mcp_debug_log( $message ) {
+function specflux_mac_debug_log( $message ) {
 	if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
 		return;
 	}

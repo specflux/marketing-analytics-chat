@@ -21,7 +21,6 @@ phpcs.xml.dist
 phpstan.neon
 phpunit.xml
 phpunit.xml.dist
-composer.json
 composer.lock
 package.json
 package-lock.json

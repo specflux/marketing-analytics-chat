@@ -1,18 +1,19 @@
 <?php
 /**
  * Plugin Name: Specflux Marketing Analytics Chat
- * Plugin URI: https://github.com/specflux/specflux-marketing-analytics-chat
+ * Plugin URI: https://github.com/specflux/marketing-analytics-chat
  * Description: Chat with your marketing analytics data using AI. Connects Google Analytics 4, Search Console, Microsoft Clarity, and more.
  * Version: 0.1.3
  * Requires at least: 6.9
  * Requires PHP: 8.1
- * Requires Plugins: mcp-adapter
  * Author: Stephen Paul Samynathan
  * Author URI: https://www.specflux.com/author/stephen/
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: specflux-marketing-analytics-chat
  * Domain Path: /languages
+ *
+ * @package Specflux_Marketing_Analytics
  */
 
 namespace Specflux_Marketing_Analytics;
@@ -50,32 +51,39 @@ if ( file_exists( SPECFLUX_MAC_PATH . 'vendor/autoload.php' ) ) {
 }
 
 /**
- * Check for required MCP Adapter plugin
+ * Check for recommended MCP Adapter plugin
+ *
+ * MCP Adapter is optional but recommended for external AI client access.
+ * The built-in chat and Abilities API work without it.
  */
 function check_plugin_dependencies() {
 	if ( ! function_exists( 'is_plugin_active' ) ) {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 	}
 
-	// Check if MCP Adapter plugin is active.
+	// Show recommendation if MCP Adapter is not active.
 	if ( ! is_plugin_active( 'mcp-adapter/mcp-adapter.php' ) ) {
 		add_action(
 			'admin_notices',
 			function () {
+				// Only show on plugin pages, not everywhere.
+				$screen = get_current_screen();
+				if ( ! $screen || 'plugins' !== $screen->id ) {
+					return;
+				}
 				?>
-			<div class="notice notice-error">
+			<div class="notice notice-info is-dismissible">
 				<p>
 					<strong><?php esc_html_e( 'Specflux Marketing Analytics Chat:', 'specflux-marketing-analytics-chat' ); ?></strong>
-					<?php esc_html_e( 'This plugin requires the MCP Adapter plugin to be installed and activated.', 'specflux-marketing-analytics-chat' ); ?>
+					<?php esc_html_e( 'For external AI client access (Claude Desktop, Cursor, etc.), install the MCP Adapter plugin.', 'specflux-marketing-analytics-chat' ); ?>
 				</p>
 				<p>
-					<a href="https://wordpress.org/plugins/mcp-adapter/" target="_blank"><?php esc_html_e( 'Get MCP Adapter from WordPress.org', 'specflux-marketing-analytics-chat' ); ?></a>
+					<a href="https://github.com/WordPress/mcp-adapter" target="_blank"><?php esc_html_e( 'Get MCP Adapter from GitHub', 'specflux-marketing-analytics-chat' ); ?></a>
 				</p>
 			</div>
 				<?php
 			}
 		);
-		return false;
 	}
 	return true;
 }

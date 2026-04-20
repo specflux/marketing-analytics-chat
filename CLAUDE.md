@@ -87,3 +87,15 @@ All styles use `--smac-*` custom properties in `admin/css/admin-styles.css`. Nev
 - Escape all output: `esc_html_e()`, `esc_attr_e()`, `esc_url()`
 - Translators comments directly before `__()`, not before `sprintf()`
 - Never use reserved globals: `$cat`, `$post`, `$id`, `$page`, `$tag`
+- WPCS requires `class-` prefix on all class files, including abstract classes (`class-abstract-llm-provider.php`, not `abstract-llm-provider.php`)
+
+## Insights & Learnings
+
+### NamingConsistencyTest
+`tests/unit/NamingConsistencyTest.php` scans all PHP files for text domain, option prefix, hook prefix, AJAX action, menu slug, nonce action, transient prefix, and DB table naming consistency. Run it after any naming changes — it caught 5 pre-existing bugs during the Specflux rename.
+
+### MCP Ability Names Are Protocol Identifiers
+The `marketing-analytics/` prefix in ability names (e.g., `marketing-analytics/get-clarity-insights`) and the `marketing-analytics` category are MCP protocol identifiers, not plugin branding. Do NOT rename these when changing the plugin slug or display name.
+
+### Repository Structure: free/ Is the GitHub Repo
+`free/` is a standalone git repo with its own remote (`github.com/specflux/marketing-analytics-chat`). The root directory is a local-only wrapper with no remote. GitHub Actions workflows must live in `free/.github/workflows/` — the root `.github/workflows/` files are stale copies GitHub never sees. All workflow file paths are relative to `free/` as repo root (no `free/` prefix needed).
