@@ -133,6 +133,13 @@ WordPress 6.9 and higher is required. The plugin uses the Abilities API (include
 
 == Changelog ==
 
+= 0.1.4 - 2026-04-20 =
+* Fixed WordPress.org review issues
+* Removed mcp-adapter from Requires Plugins (now optional recommendation)
+* Fixed Plugin URI to correct repository URL
+* Included composer.json in distribution
+* Improved function prefixing for consistency
+
 = 0.1.2 - 2025-12-13 =
 * Added interactive onboarding wizard with guided setup
 * Added Analytics at a Glance dashboard widget with sparkline trends
