@@ -4,7 +4,7 @@ Donate link: https://www.specflux.com/
 Tags: marketing analytics, ai, chat, mcp
 Requires at least: 6.9
 Tested up to: 6.9
-Stable tag: 0.1.4
+Stable tag: 0.1.5
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -132,6 +132,13 @@ WordPress 6.9 and higher is required. The plugin uses the Abilities API (include
 4. Settings page with API configuration
 
 == Changelog ==
+
+= 0.1.5 - 2026-05-09 =
+* Fixed: Upgraded jetpack-autoloader (5.0.16 → 5.0.17) and google/apiclient (2.19.0 → 2.19.3)
+* Fixed: Removed inline &lt;style&gt; tag, replaced with wp_add_inline_style()
+* Fixed: Sanitized $_COOKIE name/value before passing to WP_Http_Cookie
+* Fixed: Added sanitize_text_field() before json_decode() in AJAX handler and prompts view
+* Fixed: Prefixed all JS globals with specfluxMac to prevent naming conflicts
 
 = 0.1.4 - 2026-04-20 =
 * Fixed WordPress.org review issues
