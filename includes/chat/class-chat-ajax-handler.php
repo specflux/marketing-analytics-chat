@@ -516,8 +516,7 @@ class Chat_Ajax_Handler {
 		$conversation_id = isset( $_POST['conversation_id'] ) ? absint( $_POST['conversation_id'] ) : 0;
 		$tool_name       = isset( $_POST['tool_name'] ) ? sanitize_text_field( wp_unslash( $_POST['tool_name'] ) ) : '';
 		$tool_arguments  = array();
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON payload sanitized after decoding.
-		$tool_arguments_raw = isset( $_POST['tool_arguments'] ) ? wp_unslash( $_POST['tool_arguments'] ) : '';
+		$tool_arguments_raw = isset( $_POST['tool_arguments'] ) ? sanitize_textarea_field( wp_unslash( $_POST['tool_arguments'] ) ) : '';
 		if ( '' !== $tool_arguments_raw ) {
 			$decoded_arguments = json_decode( $tool_arguments_raw, true );
 			if ( is_array( $decoded_arguments ) ) {

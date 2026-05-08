@@ -31,8 +31,7 @@ if ( $prompts_nonce && wp_verify_nonce( $prompts_nonce, 'specflux_mac_prompts' )
 				$prompt_description  = isset( $_POST['prompt_description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['prompt_description'] ) ) : '';
 				$prompt_instructions = isset( $_POST['prompt_instructions'] ) ? wp_kses_post( wp_unslash( $_POST['prompt_instructions'] ) ) : '';
 				$prompt_category     = isset( $_POST['prompt_category'] ) ? sanitize_text_field( wp_unslash( $_POST['prompt_category'] ) ) : 'marketing-analytics';
-				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON payload sanitized after decoding.
-				$arguments_raw = isset( $_POST['prompt_arguments'] ) ? wp_unslash( $_POST['prompt_arguments'] ) : '';
+				$arguments_raw = isset( $_POST['prompt_arguments'] ) ? sanitize_textarea_field( wp_unslash( $_POST['prompt_arguments'] ) ) : '';
 
 				if ( '' === $prompt_name || '' === $prompt_label || '' === $prompt_description || '' === $prompt_instructions ) {
 					echo '<div class="notice notice-error"><p>' . esc_html__( 'Please fill in all required fields.', 'specflux-marketing-analytics-chat' ) . '</p></div>';

@@ -321,8 +321,8 @@ class MCP_Client {
 				if ( strpos( $name, 'wordpress_' ) === 0 || strpos( $name, 'wp-' ) === 0 ) {
 					$cookies[] = new \WP_Http_Cookie(
 						array(
-							'name'  => $name,
-							'value' => $value,
+							'name'  => sanitize_key( $name ),
+							'value' => sanitize_text_field( wp_unslash( $value ) ),
 						)
 					);
 				}
