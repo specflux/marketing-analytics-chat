@@ -99,3 +99,9 @@ The `marketing-analytics/` prefix in ability names (e.g., `marketing-analytics/g
 
 ### Repository Structure: free/ Is the GitHub Repo
 `free/` is a standalone git repo with its own remote (`github.com/specflux/marketing-analytics-chat`). The root directory is a local-only wrapper with no remote. GitHub Actions workflows must live in `free/.github/workflows/` — the root `.github/workflows/` files are stale copies GitHub never sees. All workflow file paths are relative to `free/` as repo root (no `free/` prefix needed).
+
+### WordPress 6.9 Abilities API vs MCP Adapter
+WordPress 6.9 includes the Abilities API in core (`wp_register_ability`, `wp_get_ability`), but MCP Adapter is a separate plugin that bridges abilities to the Model Context Protocol. This plugin works standalone for built-in chat (uses direct Abilities API calls in `class-mcp-client.php`), but external MCP clients (Claude Desktop, Cursor) need MCP Adapter. MCP Adapter is not yet on WordPress.org — preserved code with hard dependency is on branch `feature/mcp-adapter-dependency` for when it's available.
+
+### Soft Dependency Pattern for WordPress.org
+For optional plugin dependencies not on WordPress.org, use a soft check: call `is_plugin_active()`, show dismissible `notice-info` (not `notice-error`), limit display to relevant admin pages via `get_current_screen()`, and always return `true` so the plugin runs regardless. See `check_plugin_dependencies()` in main plugin file.

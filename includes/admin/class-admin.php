@@ -552,16 +552,14 @@ class Admin {
 	}
 
 	/**
-	 * Output inline CSS for admin bar analytics pulse
-	 *
-	 * Outputs styles early since the admin bar loads before plugin stylesheets.
+	 * Enqueue inline CSS for admin bar analytics pulse
 	 */
-	public function admin_bar_styles() {
-		if ( ! is_admin() || ! Permission_Manager::can_access_plugin() ) {
+	public function enqueue_admin_bar_styles() {
+		if ( ! Permission_Manager::can_access_plugin() ) {
 			return;
 		}
-		?>
-		<style>
+
+		$css = '
 			#wp-admin-bar-specflux-mac-pulse .smac-pulse-dot {
 				display: inline-block;
 				width: 10px;
@@ -623,8 +621,11 @@ class Admin {
 				line-height: 1.4 !important;
 				padding: 6px 10px !important;
 			}
-		</style>
-		<?php
+		';
+
+		wp_register_style( 'specflux-mac-admin-bar', false, array(), SPECFLUX_MAC_VERSION );
+		wp_enqueue_style( 'specflux-mac-admin-bar' );
+		wp_add_inline_style( 'specflux-mac-admin-bar', $css );
 	}
 
 	/**

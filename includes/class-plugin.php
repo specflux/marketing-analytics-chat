@@ -57,7 +57,7 @@ class Plugin {
 		$this->loader->add_action( 'admin_enqueue_scripts', $admin, 'enqueue_scripts' );
 		$this->loader->add_action( 'wp_dashboard_setup', $admin, 'register_dashboard_widget' );
 		$this->loader->add_action( 'admin_bar_menu', $admin, 'add_admin_bar_item', 100 );
-		$this->loader->add_action( 'admin_head', $admin, 'admin_bar_styles' );
+		$this->loader->add_action( 'admin_enqueue_scripts', $admin, 'enqueue_admin_bar_styles' );
 	}
 
 	/**
