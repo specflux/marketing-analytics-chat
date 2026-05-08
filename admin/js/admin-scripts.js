@@ -74,7 +74,7 @@
 			var platform = $button.data('platform');
 			var originalText = $button.text();
 
-			$button.text(marketingAnalyticsMCP.strings.testing)
+			$button.text(specfluxMacAdmin.strings.testing)
 				.prop('disabled', true)
 				.addClass('testing-connection');
 
@@ -82,7 +82,7 @@
 			var data = {
 				action: 'specflux_mac_test_connection',
 				platform: platform,
-				nonce: marketingAnalyticsMCP.nonce
+				nonce: specfluxMacAdmin.nonce
 			};
 
 			if (platform === 'clarity') {
@@ -92,18 +92,18 @@
 
 			// Send AJAX request
 			$.ajax({
-				url: marketingAnalyticsMCP.ajaxUrl,
+				url: specfluxMacAdmin.ajaxUrl,
 				type: 'POST',
 				data: data,
 				success: function(response) {
 					if (response.success) {
-						showNotice('success', marketingAnalyticsMCP.strings.success);
+						showNotice('success', specfluxMacAdmin.strings.success);
 					} else {
-						showNotice('error', response.data.message || marketingAnalyticsMCP.strings.error);
+						showNotice('error', response.data.message || specfluxMacAdmin.strings.error);
 					}
 				},
 				error: function() {
-					showNotice('error', marketingAnalyticsMCP.strings.error);
+					showNotice('error', specfluxMacAdmin.strings.error);
 				},
 				complete: function() {
 					$button.text(originalText)
@@ -131,11 +131,11 @@
 			$button.text('Clearing...').prop('disabled', true);
 
 			$.ajax({
-				url: marketingAnalyticsMCP.ajaxUrl,
+				url: specfluxMacAdmin.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'specflux_mac_clear_caches',
-					nonce: marketingAnalyticsMCP.nonce
+					nonce: specfluxMacAdmin.nonce
 				},
 				success: function(response) {
 					if (response.success) {
@@ -194,11 +194,11 @@
 
 			// Fetch properties via AJAX
 			$.ajax({
-				url: marketingAnalyticsMCP.ajaxUrl,
+				url: specfluxMacAdmin.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'specflux_mac_list_ga4_properties',
-					nonce: marketingAnalyticsMCP.nonce
+					nonce: specfluxMacAdmin.nonce
 				},
 				success: function(response) {
 					if (response.success) {
@@ -256,12 +256,12 @@
 
 			// Save property via AJAX
 			$.ajax({
-				url: marketingAnalyticsMCP.ajaxUrl,
+				url: specfluxMacAdmin.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'specflux_mac_save_ga4_property',
 					property_id: propertyId,
-					nonce: marketingAnalyticsMCP.nonce
+					nonce: specfluxMacAdmin.nonce
 				},
 				success: function(response) {
 					if (response.success) {
@@ -307,11 +307,11 @@
 
 			// Fetch sites via AJAX
 			$.ajax({
-				url: marketingAnalyticsMCP.ajaxUrl,
+				url: specfluxMacAdmin.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'specflux_mac_list_gsc_sites',
-					nonce: marketingAnalyticsMCP.nonce
+					nonce: specfluxMacAdmin.nonce
 				},
 				success: function(response) {
 					if (response.success) {
@@ -369,12 +369,12 @@
 
 			// Save site via AJAX
 			$.ajax({
-				url: marketingAnalyticsMCP.ajaxUrl,
+				url: specfluxMacAdmin.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'specflux_mac_save_gsc_site',
 					site_url: siteUrl,
-					nonce: marketingAnalyticsMCP.nonce
+					nonce: specfluxMacAdmin.nonce
 				},
 				success: function(response) {
 					if (response.success) {

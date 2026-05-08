@@ -6,7 +6,7 @@
  * @package Marketing_Analytics_MCP
  */
 
-/* global jQuery, macOnboardingWizard */
+/* global jQuery, specfluxMacOnboardingWizard */
 ( function( $ ) {
 	'use strict';
 
@@ -91,11 +91,11 @@
 			var $wizard = $( '#smac-onboarding-wizard' );
 
 			$.ajax( {
-				url: macOnboardingWizard.ajaxUrl,
+				url: specfluxMacOnboardingWizard.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'specflux_mac_dismiss_wizard',
-					nonce: macOnboardingWizard.nonce
+					nonce: specfluxMacOnboardingWizard.nonce
 				},
 				success: function() {
 					$wizard.slideUp( 300, function() {

@@ -10,7 +10,7 @@ jQuery(document).ready(function($) {
 			type: 'POST',
 			data: {
 				action: 'specflux_mac_refresh_widget',
-				nonce: macDashboardWidget.nonce
+				nonce: specfluxMacDashboardWidget.nonce
 			},
 			success: function() {
 				location.reload();

@@ -62,17 +62,17 @@
 
 			// Create conversation via AJAX
 			$.ajax({
-				url: marketingAnalyticsMCPChat.ajaxUrl,
+				url: specfluxMacChat.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'specflux_mac_create_conversation',
-					nonce: marketingAnalyticsMCPChat.nonce,
-					user_id: marketingAnalyticsMCPChat.userId
+					nonce: specfluxMacChat.nonce,
+					user_id: specfluxMacChat.userId
 				},
 				success: function(response) {
 					if (response.success && response.data.conversation_id) {
 						// Redirect to new conversation
-						window.location.href = marketingAnalyticsMCPChat.chatPageUrl + '&conversation_id=' + response.data.conversation_id + '&_wpnonce=' + marketingAnalyticsMCPChat.conversationNonce;
+						window.location.href = specfluxMacChat.chatPageUrl + '&conversation_id=' + response.data.conversation_id + '&_wpnonce=' + specfluxMacChat.conversationNonce;
 					} else {
 						alert('Failed to create conversation. Please try again.');
 						$button.prop('disabled', false).html(originalText);
@@ -107,18 +107,18 @@
 
 		// Delete conversation via AJAX
 		$.ajax({
-			url: marketingAnalyticsMCPChat.ajaxUrl,
+			url: specfluxMacChat.ajaxUrl,
 			type: 'POST',
 			data: {
 				action: 'specflux_mac_delete_conversation',
-				nonce: marketingAnalyticsMCPChat.nonce,
+				nonce: specfluxMacChat.nonce,
 				conversation_id: conversationId
 			},
 			success: function(response) {
 				if (response.success) {
 					// If this was the active conversation, redirect to chat page without conversation
-					if (parseInt(marketingAnalyticsMCPChat.conversationId) === parseInt(conversationId)) {
-						window.location.href = marketingAnalyticsMCPChat.chatPageUrl;
+					if (parseInt(specfluxMacChat.conversationId) === parseInt(conversationId)) {
+						window.location.href = specfluxMacChat.chatPageUrl;
 					} else {
 						// Just remove from sidebar
 						$button.closest('.conversation-item').fadeOut(300, function() {
@@ -176,12 +176,12 @@
 
 			// Send message via AJAX
 			$.ajax({
-				url: marketingAnalyticsMCPChat.ajaxUrl,
+				url: specfluxMacChat.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'specflux_mac_send_message',
-					nonce: marketingAnalyticsMCPChat.nonce,
-					conversation_id: marketingAnalyticsMCPChat.conversationId,
+					nonce: specfluxMacChat.nonce,
+					conversation_id: specfluxMacChat.conversationId,
 					message: message
 				},
 				success: function(response) {
@@ -350,12 +350,12 @@
 			$button.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> Retrying...');
 
 			$.ajax({
-				url: marketingAnalyticsMCPChat.ajaxUrl,
+				url: specfluxMacChat.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'specflux_mac_retry_tool',
-					nonce: marketingAnalyticsMCPChat.nonce,
-					conversation_id: marketingAnalyticsMCPChat.conversationId,
+					nonce: specfluxMacChat.nonce,
+					conversation_id: specfluxMacChat.conversationId,
 					tool_name: toolName,
 					tool_arguments: JSON.stringify(toolArgs)
 				},

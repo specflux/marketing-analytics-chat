@@ -10,7 +10,7 @@ jQuery(document).ready(function($) {
 	// View prompt modal
 	$('.view-prompt').on('click', function() {
 		var promptId = $(this).data('prompt-id');
-		var prompts = macPrompts.customPrompts;
+		var prompts = specfluxMacPrompts.customPrompts;
 		var prompt = prompts[promptId];
 
 		if (prompt) {
@@ -56,7 +56,7 @@ jQuery(document).ready(function($) {
 				JSON.parse(argsJson);
 			} catch (error) {
 				e.preventDefault();
-				alert(macPrompts.strings.invalidJson);
+				alert(specfluxMacPrompts.strings.invalidJson);
 				$('#prompt_arguments').focus();
 				return false;
 			}

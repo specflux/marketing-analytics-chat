@@ -3,7 +3,7 @@ jQuery(document).ready(function($) {
 
 	// Load GA4 properties
 	function loadGA4Properties() {
-		$('#ga4_property').html('<option value="">' + macGA4Connection.strings.loading + '</option>');
+		$('#ga4_property').html('<option value="">' + specfluxMacGA4Connection.strings.loading + '</option>');
 		$('#ga4-property-error').hide();
 
 		$.ajax({
@@ -11,24 +11,24 @@ jQuery(document).ready(function($) {
 			type: 'POST',
 			data: {
 				action: 'specflux_mac_get_ga4_properties',
-				nonce: macGA4Connection.nonce
+				nonce: specfluxMacGA4Connection.nonce
 			},
 			success: function(response) {
 				if (response.success && response.data.properties) {
-					var html = '<option value="">' + macGA4Connection.strings.selectProperty + '</option>';
+					var html = '<option value="">' + specfluxMacGA4Connection.strings.selectProperty + '</option>';
 					$.each(response.data.properties, function(i, prop) {
-						var selected = prop.name === macGA4Connection.savedPropertyId ? ' selected' : '';
+						var selected = prop.name === specfluxMacGA4Connection.savedPropertyId ? ' selected' : '';
 						html += '<option value="' + prop.name + '"' + selected + '>' + prop.displayName + ' (' + prop.name + ')</option>';
 					});
 					$('#ga4_property').html(html);
 				} else {
-					$('#ga4_property').html('<option value="">' + macGA4Connection.strings.loadFailed + '</option>');
-					$('#ga4-property-error').text(response.data && response.data.message ? response.data.message : macGA4Connection.strings.loadFailed).show();
+					$('#ga4_property').html('<option value="">' + specfluxMacGA4Connection.strings.loadFailed + '</option>');
+					$('#ga4-property-error').text(response.data && response.data.message ? response.data.message : specfluxMacGA4Connection.strings.loadFailed).show();
 				}
 			},
 			error: function() {
-				$('#ga4_property').html('<option value="">' + macGA4Connection.strings.loadError + '</option>');
-				$('#ga4-property-error').text(macGA4Connection.strings.networkError).show();
+				$('#ga4_property').html('<option value="">' + specfluxMacGA4Connection.strings.loadError + '</option>');
+				$('#ga4-property-error').text(specfluxMacGA4Connection.strings.networkError).show();
 			}
 		});
 	}
@@ -40,19 +40,19 @@ jQuery(document).ready(function($) {
 	$('#save-ga4-property').on('click', function() {
 		var propertyId = $('#ga4_property').val();
 		if (!propertyId) {
-			alert(macGA4Connection.strings.selectFirst);
+			alert(specfluxMacGA4Connection.strings.selectFirst);
 			return;
 		}
 
 		var $btn = $(this);
-		$btn.prop('disabled', true).text(macGA4Connection.strings.saving);
+		$btn.prop('disabled', true).text(specfluxMacGA4Connection.strings.saving);
 
 		$.ajax({
 			url: ajaxurl,
 			type: 'POST',
 			data: {
 				action: 'specflux_mac_save_ga4_property',
-				nonce: macGA4Connection.nonce,
+				nonce: specfluxMacGA4Connection.nonce,
 				property_id: propertyId
 			},
 			success: function(response) {
@@ -60,12 +60,12 @@ jQuery(document).ready(function($) {
 					location.reload();
 				} else {
 					alert(response.data && response.data.message ? response.data.message : 'Failed to save property');
-					$btn.prop('disabled', false).text(macGA4Connection.strings.saveButton);
+					$btn.prop('disabled', false).text(specfluxMacGA4Connection.strings.saveButton);
 				}
 			},
 			error: function() {
-				alert(macGA4Connection.strings.networkError);
-				$btn.prop('disabled', false).text(macGA4Connection.strings.saveButton);
+				alert(specfluxMacGA4Connection.strings.networkError);
+				$btn.prop('disabled', false).text(specfluxMacGA4Connection.strings.saveButton);
 			}
 		});
 	});

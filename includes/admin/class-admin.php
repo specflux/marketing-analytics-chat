@@ -154,7 +154,7 @@ class Admin {
 
 			wp_localize_script(
 				'specflux-mac-dashboard-widget',
-				'macDashboardWidget',
+				'specfluxMacDashboardWidget',
 				array(
 					'nonce' => wp_create_nonce( 'specflux-marketing-analytics-chat-admin' ),
 				)
@@ -177,7 +177,7 @@ class Admin {
 		// Localize script with data.
 		wp_localize_script(
 			'specflux-marketing-analytics-chat-admin',
-			'marketingAnalyticsMCP',
+			'specfluxMacAdmin',
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'specflux-marketing-analytics-chat-admin' ),
@@ -221,7 +221,7 @@ class Admin {
 
 			wp_localize_script(
 				'specflux-mac-sparklines',
-				'macDashboardInsights',
+				'specfluxMacDashboardInsights',
 				array(
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'specflux-marketing-analytics-chat-dashboard-insights' ),
@@ -241,7 +241,7 @@ class Admin {
 
 			wp_localize_script(
 				'specflux-mac-onboarding-wizard',
-				'macOnboardingWizard',
+				'specfluxMacOnboardingWizard',
 				array(
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'specflux_mac_dismiss_wizard' ),
@@ -264,7 +264,7 @@ class Admin {
 
 			wp_localize_script(
 				'specflux-marketing-analytics-chat-interface',
-				'marketingAnalyticsMCPChat',
+				'specfluxMacChat',
 				array(
 					'ajaxUrl'           => admin_url( 'admin-ajax.php' ),
 					'nonce'             => wp_create_nonce( 'specflux-marketing-analytics-chat-admin' ),
@@ -301,7 +301,7 @@ class Admin {
 
 			wp_localize_script(
 				'specflux-mac-prompts',
-				'macPrompts',
+				'specfluxMacPrompts',
 				array(
 					'customPrompts' => $custom_prompts,
 					'strings'       => array(
@@ -339,7 +339,7 @@ class Admin {
 
 			wp_localize_script(
 				'specflux-mac-ga4-connection',
-				'macGA4Connection',
+				'specfluxMacGA4Connection',
 				array(
 					'nonce'           => $nonce,
 					'savedPropertyId' => isset( $ga4_credentials['property_id'] ) ? $ga4_credentials['property_id'] : '',
@@ -372,7 +372,7 @@ class Admin {
 
 			wp_localize_script(
 				'specflux-mac-gsc-connection',
-				'macGSCConnection',
+				'specfluxMacGSCConnection',
 				array(
 					'nonce'        => $nonce,
 					'savedSiteUrl' => isset( $gsc_credentials['site_url'] ) ? $gsc_credentials['site_url'] : '',

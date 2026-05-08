@@ -9,7 +9,7 @@
 (function( $ ) {
 	'use strict';
 
-	window.MacSparkline = {
+	window.specfluxMacSparkline = {
 
 		/**
 		 * Default options.
@@ -98,7 +98,7 @@
 				return;
 			}
 
-			MacSparkline.render( this, data, { color: color } );
+			specfluxMacSparkline.render( this, data, { color: color } );
 		} );
 	} );
 
@@ -121,9 +121,9 @@
 
 			$btn.addClass( 'updating-message' ).prop( 'disabled', true );
 
-			$.post( macDashboardInsights.ajaxUrl, {
+			$.post( specfluxMacDashboardInsights.ajaxUrl, {
 				action: 'specflux_mac_refresh_dashboard_metrics',
-				nonce: macDashboardInsights.nonce
+				nonce: specfluxMacDashboardInsights.nonce
 			}, function( response ) {
 				$btn.removeClass( 'updating-message' ).prop( 'disabled', false );
 
@@ -161,7 +161,7 @@
 					var $sparkline = $card.find( '.smac-sparkline' );
 					if ( $sparkline.length && metric.sparkline && metric.sparkline.length > 1 ) {
 						var color = 'positive' === metric.direction ? '#00a32a' : ( 'negative' === metric.direction ? '#d63638' : '#2271b1' );
-						MacSparkline.render( $sparkline[0], metric.sparkline, { color: color } );
+						specfluxMacSparkline.render( $sparkline[0], metric.sparkline, { color: color } );
 					}
 				} );
 			} );
