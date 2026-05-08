@@ -9,6 +9,7 @@
 
 namespace Specflux_Marketing_Analytics\Tests\integration;
 
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -34,8 +35,8 @@ class WordPressOrgValidationTest extends TestCase {
 	/**
 	 * Test plugin has valid header.
 	 *
-	 * @group wporg
 	 */
+	#[Group('wporg')]
 	public function test_plugin_has_valid_header(): void {
 		$main_file = $this->plugin_dir . 'specflux-marketing-analytics-chat.php';
 		$this->assertFileExists( $main_file );
@@ -64,8 +65,8 @@ class WordPressOrgValidationTest extends TestCase {
 	/**
 	 * Test plugin uses GPL-compatible license.
 	 *
-	 * @group wporg
 	 */
+	#[Group('wporg')]
 	public function test_plugin_uses_gpl_license(): void {
 		$main_file = $this->plugin_dir . 'specflux-marketing-analytics-chat.php';
 		$content   = file_get_contents( $main_file );
@@ -81,8 +82,8 @@ class WordPressOrgValidationTest extends TestCase {
 	/**
 	 * Test readme.txt exists and is valid.
 	 *
-	 * @group wporg
 	 */
+	#[Group('wporg')]
 	public function test_readme_txt_exists(): void {
 		$readme = $this->plugin_dir . 'readme.txt';
 		$this->assertFileExists( $readme, 'readme.txt is required for WordPress.org' );
@@ -114,8 +115,8 @@ class WordPressOrgValidationTest extends TestCase {
 	/**
 	 * Test plugin doesn't include blocked files in distributable directories.
 	 *
-	 * @group wporg
 	 */
+	#[Group('wporg')]
 	public function test_no_blocked_files(): void {
 		// WordPress.org blocks certain file types in the plugin source directories.
 		$blocked_extensions = array( 'zip', 'tar', 'gz', 'rar', 'exe' );
@@ -152,8 +153,8 @@ class WordPressOrgValidationTest extends TestCase {
 	/**
 	 * Test plugin distributable size is reasonable.
 	 *
-	 * @group wporg
 	 */
+	#[Group('wporg')]
 	public function test_plugin_size_reasonable(): void {
 		// WordPress.org prefers plugins under 10MB (excluding dev dependencies).
 		$max_size = 10 * 1024 * 1024; // 10MB in bytes
@@ -201,8 +202,8 @@ class WordPressOrgValidationTest extends TestCase {
 	/**
 	 * Test no external CDN dependencies in plugin source code.
 	 *
-	 * @group wporg
 	 */
+	#[Group('wporg')]
 	public function test_no_external_dependencies(): void {
 		// Plugin should not load external scripts/styles from CDN.
 		// Only scan production code (includes/ and admin/), not tests.
@@ -234,8 +235,8 @@ class WordPressOrgValidationTest extends TestCase {
 	/**
 	 * Test proper text domain usage.
 	 *
-	 * @group wporg
 	 */
+	#[Group('wporg')]
 	public function test_proper_text_domain(): void {
 		$main_file = $this->plugin_dir . 'specflux-marketing-analytics-chat.php';
 		$content   = file_get_contents( $main_file );
@@ -254,8 +255,8 @@ class WordPressOrgValidationTest extends TestCase {
 	/**
 	 * Test all strings are translatable.
 	 *
-	 * @group wporg
 	 */
+	#[Group('wporg')]
 	public function test_translatable_strings(): void {
 		$php_files = $this->get_php_files( $this->plugin_dir . 'includes/' );
 
@@ -285,8 +286,8 @@ class WordPressOrgValidationTest extends TestCase {
 	/**
 	 * Test no PHP short tags in production code.
 	 *
-	 * @group wporg
 	 */
+	#[Group('wporg')]
 	public function test_no_php_short_tags(): void {
 		$php_files = array_merge(
 			$this->get_php_files( $this->plugin_dir . 'includes/' ),
@@ -313,8 +314,8 @@ class WordPressOrgValidationTest extends TestCase {
 	/**
 	 * Test proper namespacing.
 	 *
-	 * @group wporg
 	 */
+	#[Group('wporg')]
 	public function test_proper_namespacing(): void {
 		$php_files = $this->get_php_files( $this->plugin_dir . 'includes/' );
 
@@ -336,8 +337,8 @@ class WordPressOrgValidationTest extends TestCase {
 	/**
 	 * Test no dangerous function usage in production code.
 	 *
-	 * @group wporg
 	 */
+	#[Group('wporg')]
 	public function test_no_eval_usage(): void {
 		// Only scan production code, not tests (which may reference these strings).
 		$php_files = array_merge(
@@ -364,8 +365,8 @@ class WordPressOrgValidationTest extends TestCase {
 	/**
 	 * Test proper escaping of output.
 	 *
-	 * @group wporg
 	 */
+	#[Group('wporg')]
 	public function test_proper_output_escaping(): void {
 		$admin_files = $this->get_php_files( $this->plugin_dir . 'admin/views/' );
 

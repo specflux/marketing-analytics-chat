@@ -8,6 +8,7 @@
 namespace Specflux_Marketing_Analytics\Tests\unit;
 
 use Specflux_Marketing_Analytics\API_Clients\GA4_Client;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -36,9 +37,8 @@ class GA4ClientTest extends TestCase {
 
 	/**
 	 * Test run_report validates date range.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_run_report_validates_date_range(): void {
 		try {
 			$client = new GA4_Client();
@@ -59,9 +59,8 @@ class GA4ClientTest extends TestCase {
 
 	/**
 	 * Test metric name validation.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_validates_metric_names(): void {
 		try {
 			$client = new GA4_Client();
@@ -87,9 +86,8 @@ class GA4ClientTest extends TestCase {
 
 	/**
 	 * Test dimension validation.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_validates_dimensions(): void {
 		try {
 			$client = new GA4_Client();
@@ -149,9 +147,8 @@ class GA4ClientTest extends TestCase {
 
 	/**
 	 * Test API error handling.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_handles_api_errors_gracefully(): void {
 		try {
 			$client = new GA4_Client();

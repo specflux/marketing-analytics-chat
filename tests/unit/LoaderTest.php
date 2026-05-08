@@ -141,9 +141,10 @@ class LoaderTest extends TestCase {
 	 * Test run method calls add_action and add_filter for all registered hooks.
 	 */
 	public function test_run_registers_all_hooks(): void {
-		$component = $this->getMockBuilder( \stdClass::class )
-			->addMethods( array( 'action_callback', 'filter_callback' ) )
-			->getMock();
+		$component = new class() {
+			public function action_callback() {}
+			public function filter_callback() {}
+		};
 
 		$this->loader->add_action( 'init', $component, 'action_callback' );
 		$this->loader->add_filter( 'the_content', $component, 'filter_callback' );

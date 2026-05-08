@@ -8,6 +8,7 @@
 namespace Specflux_Marketing_Analytics\Tests\unit;
 
 use Specflux_Marketing_Analytics\Cache\Cache_Manager;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -98,9 +99,8 @@ class CacheManagerTest extends TestCase {
 
 	/**
 	 * Test cache flush operation.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_cache_flush_by_platform(): void {
 		$cache_manager = new Cache_Manager();
 

@@ -9,6 +9,7 @@ namespace Specflux_Marketing_Analytics\Tests\integration;
 
 use Specflux_Marketing_Analytics\Abilities\Abilities_Registrar;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -47,9 +48,8 @@ class AbilitiesIntegrationTest extends TestCase {
 
 	/**
 	 * Test abilities are registered correctly.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_abilities_registration(): void {
 		$registrar = new Abilities_Registrar();
 		$registrar->register_all_abilities();
@@ -60,9 +60,8 @@ class AbilitiesIntegrationTest extends TestCase {
 
 	/**
 	 * Test tool abilities count.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_tool_abilities_count(): void {
 		$registrar = new Abilities_Registrar();
 		$registrar->register_all_abilities();
@@ -76,9 +75,8 @@ class AbilitiesIntegrationTest extends TestCase {
 
 	/**
 	 * Test resource abilities count.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_resource_abilities_count(): void {
 		$registrar = new Abilities_Registrar();
 		$registrar->register_all_abilities();
@@ -89,9 +87,8 @@ class AbilitiesIntegrationTest extends TestCase {
 
 	/**
 	 * Test prompt abilities count.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_prompt_abilities_count(): void {
 		$registrar = new Abilities_Registrar();
 		$registrar->register_all_abilities();
@@ -102,9 +99,8 @@ class AbilitiesIntegrationTest extends TestCase {
 
 	/**
 	 * Test ability naming conventions.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_ability_naming_conventions(): void {
 		$registrar = new Abilities_Registrar();
 		$registrar->register_all_abilities();
@@ -124,9 +120,8 @@ class AbilitiesIntegrationTest extends TestCase {
 
 	/**
 	 * Test abilities have required properties.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_abilities_have_required_properties(): void {
 		$registrar = new Abilities_Registrar();
 		$registrar->register_all_abilities();
@@ -146,9 +141,8 @@ class AbilitiesIntegrationTest extends TestCase {
 
 	/**
 	 * Test abilities have a category.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_abilities_have_category(): void {
 		$registrar = new Abilities_Registrar();
 		$registrar->register_all_abilities();
@@ -168,9 +162,8 @@ class AbilitiesIntegrationTest extends TestCase {
 
 	/**
 	 * Test reset clears all tracked abilities.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_reset_clears_abilities(): void {
 		$registrar = new Abilities_Registrar();
 		$registrar->register_all_abilities();
@@ -186,9 +179,8 @@ class AbilitiesIntegrationTest extends TestCase {
 
 	/**
 	 * Test WordPress hooks are properly registered.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_wordpress_hooks_registered(): void {
 		// Verify the registrar can register category without error.
 		$registrar = new Abilities_Registrar();

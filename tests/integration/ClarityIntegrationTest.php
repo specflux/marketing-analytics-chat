@@ -12,6 +12,7 @@ namespace Specflux_Marketing_Analytics\Tests\integration;
 use Specflux_Marketing_Analytics\API_Clients\Clarity_Client;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 use Specflux_Marketing_Analytics\Cache\Cache_Manager;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -45,10 +46,9 @@ class ClarityIntegrationTest extends TestCase {
 
 	/**
 	 * Test actual API call to Clarity.
-	 *
-	 * @group integration
-	 * @group external-api
 	 */
+	#[Group('integration')]
+	#[Group('external-api')]
 	public function test_get_insights_real_api_call(): void {
 		$result = $this->client->get_insights( array(
 			'num_of_days' => 7,
@@ -66,9 +66,8 @@ class ClarityIntegrationTest extends TestCase {
 
 	/**
 	 * Test caching works with real API.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_caching_with_real_api(): void {
 		$args = array(
 			'num_of_days' => 3,
@@ -92,10 +91,9 @@ class ClarityIntegrationTest extends TestCase {
 
 	/**
 	 * Test rate limiting awareness.
-	 *
-	 * @group integration
-	 * @group slow
 	 */
+	#[Group('integration')]
+	#[Group('slow')]
 	public function test_rate_limiting(): void {
 		// Clarity allows 10 requests per day
 		// This test should not exceed the limit in a single run
@@ -116,9 +114,8 @@ class ClarityIntegrationTest extends TestCase {
 
 	/**
 	 * Test error handling with real API.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_error_handling_with_invalid_parameters(): void {
 		$result = $this->client->get_insights( array(
 			'num_of_days' => 999, // Invalid: exceeds 90 days
@@ -133,7 +130,7 @@ class ClarityIntegrationTest extends TestCase {
 	 */
 	protected function tearDown(): void {
 		// Clear cache
-		Cache_Manager::flush_platform( 'clarity' );
+		( new Cache_Manager() )->clear_platform_cache( 'clarity' );
 
 		parent::tearDown();
 	}

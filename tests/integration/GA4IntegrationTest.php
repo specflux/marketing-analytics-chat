@@ -9,6 +9,7 @@ namespace Specflux_Marketing_Analytics\Tests\integration;
 
 use Specflux_Marketing_Analytics\API_Clients\GA4_Client;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -44,10 +45,9 @@ class GA4IntegrationTest extends TestCase {
 
 	/**
 	 * Test real GA4 API call.
-	 *
-	 * @group integration
-	 * @group external-api
 	 */
+	#[Group('integration')]
+	#[Group('external-api')]
 	public function test_get_metrics_real_api_call(): void {
 		$property_id = getenv( 'GA4_PROPERTY_ID' );
 
@@ -67,9 +67,8 @@ class GA4IntegrationTest extends TestCase {
 
 	/**
 	 * Test OAuth token refresh.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_oauth_token_refresh(): void {
 		// Client should automatically refresh expired tokens
 		// This is handled by the Google API client library
@@ -79,9 +78,8 @@ class GA4IntegrationTest extends TestCase {
 
 	/**
 	 * Test multiple metrics in single request.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_multiple_metrics(): void {
 		$property_id = getenv( 'GA4_PROPERTY_ID' );
 
@@ -110,9 +108,8 @@ class GA4IntegrationTest extends TestCase {
 
 	/**
 	 * Test dimension grouping.
-	 *
-	 * @group integration
 	 */
+	#[Group('integration')]
 	public function test_dimension_grouping(): void {
 		$property_id = getenv( 'GA4_PROPERTY_ID' );
 
