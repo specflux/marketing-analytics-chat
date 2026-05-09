@@ -47,7 +47,7 @@ $gsc_connected      = $credential_manager->has_credentials( 'gsc' );
 			<div class="quick-action-content">
 				<h3><?php esc_html_e( 'AI Assistant', 'specflux-marketing-analytics-chat' ); ?></h3>
 				<p><?php esc_html_e( 'Start chatting with your analytics data right now', 'specflux-marketing-analytics-chat' ); ?></p>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-ai-assistant' ) ); ?>" class="button button-primary">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-ai-assistant' ) ); ?>" class="button button-primary">
 					<?php esc_html_e( 'Open AI Chat', 'specflux-marketing-analytics-chat' ); ?>
 				</a>
 			</div>
@@ -59,7 +59,7 @@ $gsc_connected      = $credential_manager->has_credentials( 'gsc' );
 			<div class="quick-action-content">
 				<h3><?php esc_html_e( 'Custom Prompts', 'specflux-marketing-analytics-chat' ); ?></h3>
 				<p><?php esc_html_e( 'Create reusable prompt templates for common analyses', 'specflux-marketing-analytics-chat' ); ?></p>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-prompts' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-prompts' ) ); ?>" class="button">
 					<?php esc_html_e( 'Manage Prompts', 'specflux-marketing-analytics-chat' ); ?>
 				</a>
 			</div>
@@ -72,10 +72,10 @@ $gsc_connected      = $credential_manager->has_credentials( 'gsc' );
 				<h3><?php esc_html_e( 'Quick Analysis', 'specflux-marketing-analytics-chat' ); ?></h3>
 				<p><?php esc_html_e( 'Run a pre-built analysis with one click', 'specflux-marketing-analytics-chat' ); ?></p>
 				<div class="smac-quick-analysis-buttons">
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-ai-assistant&prompt=weekly-report' ) ); ?>" class="button">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-ai-assistant&prompt=weekly-report' ) ); ?>" class="button">
 						<?php esc_html_e( 'Weekly Report', 'specflux-marketing-analytics-chat' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-ai-assistant&prompt=seo-health-check' ) ); ?>" class="button">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-ai-assistant&prompt=seo-health-check' ) ); ?>" class="button">
 						<?php esc_html_e( 'SEO Health', 'specflux-marketing-analytics-chat' ); ?>
 					</a>
 				</div>
@@ -288,7 +288,7 @@ $gsc_connected      = $credential_manager->has_credentials( 'gsc' );
 					?>
 				</p>
 				<p class="status-description"><?php esc_html_e( 'Session recordings and heatmaps', 'specflux-marketing-analytics-chat' ); ?></p>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections&tab=clarity' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=clarity' ) ); ?>" class="button">
 					<?php esc_html_e( 'Configure', 'specflux-marketing-analytics-chat' ); ?>
 				</a>
 			</div>
@@ -309,7 +309,7 @@ $gsc_connected      = $credential_manager->has_credentials( 'gsc' );
 					?>
 				</p>
 				<p class="status-description"><?php esc_html_e( 'Traffic and user behavior metrics', 'specflux-marketing-analytics-chat' ); ?></p>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections&tab=ga4' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=ga4' ) ); ?>" class="button">
 					<?php esc_html_e( 'Configure', 'specflux-marketing-analytics-chat' ); ?>
 				</a>
 			</div>
@@ -330,7 +330,7 @@ $gsc_connected      = $credential_manager->has_credentials( 'gsc' );
 					?>
 				</p>
 				<p class="status-description"><?php esc_html_e( 'Search performance and indexing', 'specflux-marketing-analytics-chat' ); ?></p>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections&tab=gsc' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=gsc' ) ); ?>" class="button">
 					<?php esc_html_e( 'Configure', 'specflux-marketing-analytics-chat' ); ?>
 				</a>
 			</div>
@@ -354,20 +354,20 @@ $gsc_connected      = $credential_manager->has_credentials( 'gsc' );
 				<strong><?php esc_html_e( 'Connect Your Analytics', 'specflux-marketing-analytics-chat' ); ?></strong>
 				<br>
 				<?php esc_html_e( 'Connect at least one analytics platform using the ', 'specflux-marketing-analytics-chat' ); ?>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections' ) ); ?>"><?php esc_html_e( 'Connections page', 'specflux-marketing-analytics-chat' ); ?></a>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-connections' ) ); ?>"><?php esc_html_e( 'Connections page', 'specflux-marketing-analytics-chat' ); ?></a>
 			</li>
 			<li>
 				<strong><?php esc_html_e( 'Start Chatting', 'specflux-marketing-analytics-chat' ); ?></strong>
 				<br>
 				<?php esc_html_e( 'Open the ', 'specflux-marketing-analytics-chat' ); ?>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-ai-assistant' ) ); ?>"><?php esc_html_e( 'AI Assistant', 'specflux-marketing-analytics-chat' ); ?></a>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-ai-assistant' ) ); ?>"><?php esc_html_e( 'AI Assistant', 'specflux-marketing-analytics-chat' ); ?></a>
 				<?php esc_html_e( ' and ask questions about your marketing data', 'specflux-marketing-analytics-chat' ); ?>
 			</li>
 			<li>
 				<strong><?php esc_html_e( 'Save Common Prompts', 'specflux-marketing-analytics-chat' ); ?></strong>
 				<br>
 				<?php esc_html_e( 'Create ', 'specflux-marketing-analytics-chat' ); ?>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-prompts' ) ); ?>"><?php esc_html_e( 'custom prompts', 'specflux-marketing-analytics-chat' ); ?></a>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-prompts' ) ); ?>"><?php esc_html_e( 'custom prompts', 'specflux-marketing-analytics-chat' ); ?></a>
 				<?php esc_html_e( ' for analyses you run frequently', 'specflux-marketing-analytics-chat' ); ?>
 			</li>
 		</ol>

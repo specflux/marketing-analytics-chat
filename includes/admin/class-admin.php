@@ -25,7 +25,7 @@ class Admin {
 			__( 'Marketing Analytics', 'specflux-marketing-analytics-chat' ),
 			__( 'Marketing Analytics', 'specflux-marketing-analytics-chat' ),
 			'access_specflux_mac', // phpcs:ignore WordPress.WP.Capabilities.Unknown -- Custom capability registered on activation.
-			'specflux-marketing-analytics-chat',
+			'specflux-mac',
 			array( $this, 'render_dashboard_page' ),
 			'dashicons-chart-line',
 			30
@@ -33,61 +33,61 @@ class Admin {
 
 		// Dashboard submenu (same as main).
 		add_submenu_page(
-			'specflux-marketing-analytics-chat',
+			'specflux-mac',
 			__( 'Dashboard', 'specflux-marketing-analytics-chat' ),
 			__( 'Dashboard', 'specflux-marketing-analytics-chat' ),
 			'access_specflux_mac', // phpcs:ignore WordPress.WP.Capabilities.Unknown -- Custom capability registered on activation.
-			'specflux-marketing-analytics-chat',
+			'specflux-mac',
 			array( $this, 'render_dashboard_page' )
 		);
 
 		// Connections page.
 		add_submenu_page(
-			'specflux-marketing-analytics-chat',
+			'specflux-mac',
 			__( 'Connections', 'specflux-marketing-analytics-chat' ),
 			__( 'Connections', 'specflux-marketing-analytics-chat' ),
 			'access_specflux_mac', // phpcs:ignore WordPress.WP.Capabilities.Unknown -- Custom capability registered on activation.
-			'specflux-marketing-analytics-chat-connections',
+			'specflux-mac-connections',
 			array( $this, 'render_connections_page' )
 		);
 
 		// Custom Prompts page.
 		add_submenu_page(
-			'specflux-marketing-analytics-chat',
+			'specflux-mac',
 			__( 'Custom Prompts', 'specflux-marketing-analytics-chat' ),
 			__( 'Custom Prompts', 'specflux-marketing-analytics-chat' ),
 			'access_specflux_mac', // phpcs:ignore WordPress.WP.Capabilities.Unknown -- Custom capability registered on activation.
-			'specflux-marketing-analytics-chat-prompts',
+			'specflux-mac-prompts',
 			array( $this, 'render_prompts_page' )
 		);
 
 		// Abilities Catalog page.
 		add_submenu_page(
-			'specflux-marketing-analytics-chat',
+			'specflux-mac',
 			__( 'Abilities Catalog', 'specflux-marketing-analytics-chat' ),
 			__( 'Abilities', 'specflux-marketing-analytics-chat' ),
 			'access_specflux_mac', // phpcs:ignore WordPress.WP.Capabilities.Unknown -- Custom capability registered on activation.
-			'specflux-marketing-analytics-chat-abilities',
+			'specflux-mac-abilities',
 			array( $this, 'render_abilities_page' )
 		);
 
 		// Settings page.
 		add_submenu_page(
-			'specflux-marketing-analytics-chat',
+			'specflux-mac',
 			__( 'Settings', 'specflux-marketing-analytics-chat' ),
 			__( 'Settings', 'specflux-marketing-analytics-chat' ),
 			'access_specflux_mac', // phpcs:ignore WordPress.WP.Capabilities.Unknown -- Custom capability registered on activation.
-			'specflux-marketing-analytics-chat-settings',
+			'specflux-mac-settings',
 			array( $this, 'render_settings_page' )
 		);
 
 		// AI Chat page.
 		add_submenu_page(
-			'specflux-marketing-analytics-chat',
+			'specflux-mac',
 			__( 'AI Assistant', 'specflux-marketing-analytics-chat' ),
 			__( 'AI Assistant', 'specflux-marketing-analytics-chat' ),
 			'access_specflux_mac', // phpcs:ignore WordPress.WP.Capabilities.Unknown -- Custom capability registered on activation.
-			'specflux-marketing-analytics-chat-ai-assistant',
+			'specflux-mac-ai-assistant',
 			array( $this, 'render_chat_page' )
 		);
 
@@ -104,21 +104,21 @@ class Admin {
 	 */
 	public function enqueue_styles( $hook ) {
 		// Only load on our admin pages.
-		if ( strpos( $hook, 'specflux-marketing-analytics-chat' ) === false ) {
+		if ( strpos( $hook, 'specflux-mac' ) === false ) {
 			return;
 		}
 
 		wp_enqueue_style(
-			'specflux-marketing-analytics-chat-admin',
+			'specflux-mac-admin',
 			SPECFLUX_MAC_URL . 'admin/css/admin-styles.css',
 			array(),
 			SPECFLUX_MAC_VERSION
 		);
 
 		// Enqueue chat styles on AI Assistant page.
-		if ( strpos( $hook, 'specflux-marketing-analytics-chat-ai-assistant' ) !== false ) {
+		if ( strpos( $hook, 'specflux-mac-ai-assistant' ) !== false ) {
 			wp_enqueue_style(
-				'specflux-marketing-analytics-chat-interface',
+				'specflux-mac-interface',
 				SPECFLUX_MAC_URL . 'admin/css/chat-interface.css',
 				array(),
 				SPECFLUX_MAC_VERSION
@@ -126,7 +126,7 @@ class Admin {
 		}
 
 		// Enqueue wizard styles on settings page.
-		if ( strpos( $hook, 'specflux-marketing-analytics-chat-settings' ) !== false ) {
+		if ( strpos( $hook, 'specflux-mac-settings' ) !== false ) {
 			wp_enqueue_style(
 				'specflux-mac-wizard',
 				SPECFLUX_MAC_URL . 'admin/css/wizard.css',
@@ -156,18 +156,18 @@ class Admin {
 				'specflux-mac-dashboard-widget',
 				'specfluxMacDashboardWidget',
 				array(
-					'nonce' => wp_create_nonce( 'specflux-marketing-analytics-chat-admin' ),
+					'nonce' => wp_create_nonce( 'specflux_mac_admin' ),
 				)
 			);
 		}
 
 		// Only load remaining scripts on our admin pages.
-		if ( strpos( $hook, 'specflux-marketing-analytics-chat' ) === false ) {
+		if ( strpos( $hook, 'specflux-mac' ) === false ) {
 			return;
 		}
 
 		wp_enqueue_script(
-			'specflux-marketing-analytics-chat-admin',
+			'specflux-mac-admin',
 			SPECFLUX_MAC_URL . 'admin/js/admin-scripts.js',
 			array( 'jquery' ),
 			SPECFLUX_MAC_VERSION,
@@ -176,11 +176,11 @@ class Admin {
 
 		// Localize script with data.
 		wp_localize_script(
-			'specflux-marketing-analytics-chat-admin',
+			'specflux-mac-admin',
 			'specfluxMacAdmin',
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'specflux-marketing-analytics-chat-admin' ),
+				'nonce'   => wp_create_nonce( 'specflux_mac_admin' ),
 				'strings' => array(
 					'testing'   => __( 'Testing connection...', 'specflux-marketing-analytics-chat' ),
 					'success'   => __( 'Connection successful!', 'specflux-marketing-analytics-chat' ),
@@ -191,7 +191,7 @@ class Admin {
 		);
 
 		// Enqueue wizard script on settings page.
-		if ( strpos( $hook, 'specflux-marketing-analytics-chat-settings' ) !== false ) {
+		if ( strpos( $hook, 'specflux-mac-settings' ) !== false ) {
 			wp_enqueue_script(
 				'specflux-mac-wizard',
 				SPECFLUX_MAC_URL . 'admin/js/wizard.js',
@@ -210,7 +210,7 @@ class Admin {
 		}
 
 		// Enqueue sparklines on the dashboard page.
-		if ( 'toplevel_page_specflux-marketing-analytics-chat' === $hook ) {
+		if ( 'toplevel_page_specflux-mac' === $hook ) {
 			wp_enqueue_script(
 				'specflux-mac-sparklines',
 				SPECFLUX_MAC_URL . 'admin/js/sparklines.js',
@@ -224,13 +224,13 @@ class Admin {
 				'specfluxMacDashboardInsights',
 				array(
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-					'nonce'   => wp_create_nonce( 'specflux-marketing-analytics-chat-dashboard-insights' ),
+					'nonce'   => wp_create_nonce( 'specflux_mac_dashboard_insights' ),
 				)
 			);
 		}
 
 		// Enqueue onboarding wizard on dashboard page (toplevel only).
-		if ( 'toplevel_page_specflux-marketing-analytics-chat' === $hook && ! get_option( 'specflux_mac_onboarding_complete' ) ) {
+		if ( 'toplevel_page_specflux-mac' === $hook && ! get_option( 'specflux_mac_onboarding_complete' ) ) {
 			wp_enqueue_script(
 				'specflux-mac-onboarding-wizard',
 				SPECFLUX_MAC_URL . 'admin/js/onboarding-wizard.js',
@@ -250,9 +250,9 @@ class Admin {
 		}
 
 		// Enqueue chat interface script on AI Assistant page.
-		if ( strpos( $hook, 'specflux-marketing-analytics-chat-ai-assistant' ) !== false ) {
+		if ( strpos( $hook, 'specflux-mac-ai-assistant' ) !== false ) {
 			wp_enqueue_script(
-				'specflux-marketing-analytics-chat-interface',
+				'specflux-mac-interface',
 				SPECFLUX_MAC_URL . 'admin/js/chat-interface.js',
 				array( 'jquery' ),
 				SPECFLUX_MAC_VERSION,
@@ -263,21 +263,21 @@ class Admin {
 			$active_conversation_id = isset( $_GET['conversation_id'] ) ? absint( $_GET['conversation_id'] ) : 0;
 
 			wp_localize_script(
-				'specflux-marketing-analytics-chat-interface',
+				'specflux-mac-interface',
 				'specfluxMacChat',
 				array(
 					'ajaxUrl'           => admin_url( 'admin-ajax.php' ),
-					'nonce'             => wp_create_nonce( 'specflux-marketing-analytics-chat-admin' ),
+					'nonce'             => wp_create_nonce( 'specflux_mac_admin' ),
 					'conversationId'    => $active_conversation_id ? $active_conversation_id : null,
 					'userId'            => get_current_user_id(),
-					'chatPageUrl'       => admin_url( 'admin.php?page=specflux-marketing-analytics-chat-ai-assistant' ),
+					'chatPageUrl'       => admin_url( 'admin.php?page=specflux-mac-ai-assistant' ),
 					'conversationNonce' => wp_create_nonce( 'specflux_mac_conversation' ),
 				)
 			);
 		}
 
 		// Enqueue abilities catalog filter script.
-		if ( strpos( $hook, 'specflux-marketing-analytics-chat-abilities' ) !== false ) {
+		if ( strpos( $hook, 'specflux-mac-abilities' ) !== false ) {
 			wp_enqueue_script(
 				'specflux-mac-abilities-catalog',
 				SPECFLUX_MAC_URL . 'admin/js/abilities-catalog.js',
@@ -288,7 +288,7 @@ class Admin {
 		}
 
 		// Enqueue prompts page script.
-		if ( strpos( $hook, 'specflux-marketing-analytics-chat-prompts' ) !== false ) {
+		if ( strpos( $hook, 'specflux-mac-prompts' ) !== false ) {
 			wp_enqueue_script(
 				'specflux-mac-prompts',
 				SPECFLUX_MAC_URL . 'admin/js/prompts.js',
@@ -312,7 +312,7 @@ class Admin {
 		}
 
 		// Enqueue connection page scripts.
-		if ( strpos( $hook, 'specflux-marketing-analytics-chat-connections' ) !== false ) {
+		if ( strpos( $hook, 'specflux-mac-connections' ) !== false ) {
 			$this->enqueue_connection_scripts();
 		}
 	}
@@ -321,7 +321,7 @@ class Admin {
 	 * Enqueue scripts for the connections page
 	 */
 	private function enqueue_connection_scripts() {
-		$nonce = wp_create_nonce( 'specflux-marketing-analytics-chat-admin' );
+		$nonce = wp_create_nonce( 'specflux_mac_admin' );
 
 		// GA4 connection script.
 		$credential_manager = new \Specflux_Marketing_Analytics\Credentials\Credential_Manager();
@@ -510,7 +510,7 @@ class Admin {
 			array(
 				'id'    => 'specflux-mac-pulse',
 				'title' => $title,
-				'href'  => esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat' ) ),
+				'href'  => esc_url( admin_url( 'admin.php?page=specflux-mac' ) ),
 				'meta'  => array(
 					'class' => 'specflux-mac-pulse-node',
 				),
@@ -528,7 +528,7 @@ class Admin {
 					'id'     => 'specflux-mac-anomaly-' . $index,
 					'parent' => 'specflux-mac-pulse',
 					'title'  => '<span class="smac-bar-severity smac-bar-severity-' . esc_attr( $severity ) . '">' . esc_html( ucfirst( $severity ) ) . '</span> ' . esc_html( $anomaly_title ),
-					'href'   => esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat' ) ),
+					'href'   => esc_url( admin_url( 'admin.php?page=specflux-mac' ) ),
 				)
 			);
 		}
@@ -539,7 +539,7 @@ class Admin {
 				'id'     => 'specflux-mac-view-dashboard',
 				'parent' => 'specflux-mac-pulse',
 				'title'  => esc_html__( 'View Dashboard', 'specflux-marketing-analytics-chat' ),
-				'href'   => esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat' ) ),
+				'href'   => esc_url( admin_url( 'admin.php?page=specflux-mac' ) ),
 			)
 		);
 

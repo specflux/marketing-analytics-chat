@@ -126,7 +126,7 @@ if ( $prompts_nonce && wp_verify_nonce( $prompts_nonce, 'specflux_mac_prompts' )
 		<?php esc_html_e( 'Create custom prompts to guide AI assistants through complex marketing analytics workflows. Prompts can combine multiple tools and provide step-by-step instructions.', 'specflux-marketing-analytics-chat' ); ?>
 	</p>
 
-	<div class="specflux-marketing-analytics-chat-prompts-container">
+	<div class="specflux-mac-prompts-container">
 		<!-- Existing Prompts -->
 		<div class="card">
 			<h2><?php esc_html_e( 'Your Custom Prompts', 'specflux-marketing-analytics-chat' ); ?></h2>

@@ -206,7 +206,7 @@ class Connection_Promoter {
 			<p class="smac-connection-prompt-message"><?php echo esc_html( $prompt['message'] ); ?></p>
 
 			<?php if ( ! empty( $prompt['next'] ) && ! empty( $prompt['cta'] ) ) : ?>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections&tab=' . $prompt['next']['tab'] ) ); ?>" class="button button-primary">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=' . $prompt['next']['tab'] ) ); ?>" class="button button-primary">
 					<span class="dashicons dashicons-<?php echo esc_attr( $prompt['next']['icon'] ); ?>"></span>
 					<?php echo esc_html( $prompt['cta'] ); ?>
 				</a>

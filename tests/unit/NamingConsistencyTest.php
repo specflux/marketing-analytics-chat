@@ -33,6 +33,13 @@ class NamingConsistencyTest extends TestCase {
 	private $expected_slug = 'specflux-marketing-analytics-chat';
 
 	/**
+	 * Expected prefix for script/style handles.
+	 *
+	 * @var string
+	 */
+	private $expected_handle_prefix = 'specflux-mac-';
+
+	/**
 	 * Expected option prefix for database options.
 	 *
 	 * @var string
@@ -569,9 +576,9 @@ class NamingConsistencyTest extends TestCase {
 							continue;
 						}
 
-						if ( strpos( $handle, $this->expected_slug ) !== 0 ) {
+						if ( strpos( $handle, $this->expected_handle_prefix ) !== 0 ) {
 							$relative = str_replace( SPECFLUX_MAC_PATH, '', $file );
-							$errors[] = "{$relative}:" . ( $line_num + 1 ) . " handle '{$handle}' should start with '{$this->expected_slug}'";
+							$errors[] = "{$relative}:" . ( $line_num + 1 ) . " handle '{$handle}' should start with '{$this->expected_handle_prefix}'";
 						}
 					}
 				}

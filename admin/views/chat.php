@@ -58,7 +58,7 @@ $conversation_link_nonce = wp_create_nonce( 'specflux_mac_conversation' );
 						$class     = $is_active ? 'conversation-item active' : 'conversation-item';
 						?>
 						<div class="<?php echo esc_attr( $class ); ?>">
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-ai-assistant&conversation_id=' . $conversation->id . '&_wpnonce=' . $conversation_link_nonce ) ); ?>" class="conversation-link">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-ai-assistant&conversation_id=' . $conversation->id . '&_wpnonce=' . $conversation_link_nonce ) ); ?>" class="conversation-link">
 								<div class="conversation-title"><?php echo esc_html( $conversation->title ); ?></div>
 								<div class="conversation-date"><?php echo esc_html( human_time_diff( strtotime( $conversation->updated_at ), time() ) . ' ago' ); ?></div>
 							</a>
@@ -152,7 +152,7 @@ $conversation_link_nonce = wp_create_nonce( 'specflux_mac_conversation' );
 				<!-- Message Input -->
 				<div class="chat-input-container">
 					<form id="chat-form" method="post">
-						<?php wp_nonce_field( 'specflux-marketing-analytics-chat-admin', 'chat_nonce' ); ?>
+						<?php wp_nonce_field( 'specflux_mac_admin', 'chat_nonce' ); ?>
 						<input type="hidden" name="conversation_id" value="<?php echo esc_attr( $active_conversation_id ); ?>">
 
 						<div class="suggested-prompts" id="suggested-prompts">

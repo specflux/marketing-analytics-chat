@@ -4,7 +4,7 @@ Donate link: https://www.specflux.com/
 Tags: marketing analytics, ai, chat, mcp
 Requires at least: 6.9
 Tested up to: 6.9
-Stable tag: 0.1.5
+Stable tag: 0.1.6
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -132,6 +132,10 @@ WordPress 6.9 and higher is required. The plugin uses the Abilities API (include
 4. Settings page with API configuration
 
 == Changelog ==
+
+= 0.1.6 - 2026-05-09 =
+* Fixed: Downgraded PHPUnit to ^10.5 for PHP 8.1 compatibility in CI
+* Fixed: Updated menu slugs to use full specflux-marketing-analytics-chat prefix
 
 = 0.1.5 - 2026-05-09 =
 * Fixed: Upgraded jetpack-autoloader (5.0.16 → 5.0.17) and google/apiclient (2.19.0 → 2.19.3)

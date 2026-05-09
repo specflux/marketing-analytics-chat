@@ -361,7 +361,7 @@ class OAuth_Handler {
 	 * @return string Redirect URI.
 	 */
 	public function get_redirect_uri() {
-		return admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections&oauth_callback=1' );
+		return admin_url( 'admin.php?page=specflux-mac-connections&oauth_callback=1' );
 	}
 
 	/**

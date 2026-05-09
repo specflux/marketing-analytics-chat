@@ -68,7 +68,7 @@ $widget_data        = get_transient( 'specflux_mac_widget_data' );
 
 	<!-- Quick Action -->
 	<div class="smac-widget-section" style="margin-top: 15px; text-align: center;">
-		<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-ai-assistant' ) ); ?>" class="button button-primary" style="width: 100%; text-align: center;">
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-ai-assistant' ) ); ?>" class="button button-primary" style="width: 100%; text-align: center;">
 			<?php esc_html_e( 'Open AI Assistant', 'specflux-marketing-analytics-chat' ); ?>
 		</a>
 	</div>

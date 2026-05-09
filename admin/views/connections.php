@@ -122,7 +122,7 @@ $platforms         = isset( $settings['platforms'] ) ? $settings['platforms'] : 
 $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 ?>
 
-<div class="wrap specflux-marketing-analytics-chat-connections">
+<div class="wrap specflux-mac-connections">
 	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
 	<?php if ( $success_message ) : ?>
@@ -142,13 +142,13 @@ $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 	</p>
 
 	<h2 class="nav-tab-wrapper">
-		<a href="?page=specflux-marketing-analytics-chat-connections&tab=clarity" class="nav-tab <?php echo esc_attr( 'clarity' === $active_tab ? 'nav-tab-active' : '' ); ?>">
+		<a href="?page=specflux-mac-connections&tab=clarity" class="nav-tab <?php echo esc_attr( 'clarity' === $active_tab ? 'nav-tab-active' : '' ); ?>">
 			<?php esc_html_e( 'Microsoft Clarity', 'specflux-marketing-analytics-chat' ); ?>
 		</a>
-		<a href="?page=specflux-marketing-analytics-chat-connections&tab=ga4" class="nav-tab <?php echo esc_attr( 'ga4' === $active_tab ? 'nav-tab-active' : '' ); ?>">
+		<a href="?page=specflux-mac-connections&tab=ga4" class="nav-tab <?php echo esc_attr( 'ga4' === $active_tab ? 'nav-tab-active' : '' ); ?>">
 			<?php esc_html_e( 'Google Analytics 4', 'specflux-marketing-analytics-chat' ); ?>
 		</a>
-		<a href="?page=specflux-marketing-analytics-chat-connections&tab=gsc" class="nav-tab <?php echo esc_attr( 'gsc' === $active_tab ? 'nav-tab-active' : '' ); ?>">
+		<a href="?page=specflux-mac-connections&tab=gsc" class="nav-tab <?php echo esc_attr( 'gsc' === $active_tab ? 'nav-tab-active' : '' ); ?>">
 			<?php esc_html_e( 'Google Search Console', 'specflux-marketing-analytics-chat' ); ?>
 		</a>
 		<?php
@@ -280,7 +280,7 @@ $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 						<p><?php esc_html_e( 'Google API credentials need to be configured in Settings before you can connect.', 'specflux-marketing-analytics-chat' ); ?></p>
 
 						<p class="submit">
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-settings&tab=google-api' ) ); ?>" class="button button-primary button-large">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-settings&tab=google-api' ) ); ?>" class="button button-primary button-large">
 								<span class="dashicons dashicons-admin-settings" style="margin-top: 3px;"></span>
 								<?php esc_html_e( 'Configure Google API Credentials', 'specflux-marketing-analytics-chat' ); ?>
 							</a>
@@ -417,7 +417,7 @@ $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 						<p><?php esc_html_e( 'Google API credentials need to be configured in Settings before you can connect.', 'specflux-marketing-analytics-chat' ); ?></p>
 
 						<p class="submit">
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-settings&tab=google-api' ) ); ?>" class="button button-primary button-large">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-settings&tab=google-api' ) ); ?>" class="button button-primary button-large">
 								<span class="dashicons dashicons-admin-settings" style="margin-top: 3px;"></span>
 								<?php esc_html_e( 'Configure Google API Credentials', 'specflux-marketing-analytics-chat' ); ?>
 							</a>

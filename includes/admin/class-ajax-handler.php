@@ -60,7 +60,7 @@ class Ajax_Handler {
 		Logger::debug( '===== AJAX TEST CONNECTION REQUEST =====' );
 
 		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux-marketing-analytics-chat-admin' ) ) {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
 			Logger::error( 'Nonce verification failed' );
 			wp_send_json_error(
 				array(
@@ -251,7 +251,7 @@ class Ajax_Handler {
 		Logger::debug( '===== AJAX SAVE CREDENTIALS REQUEST =====' );
 
 		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux-marketing-analytics-chat-admin' ) ) {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
 			Logger::error( 'Nonce verification failed' );
 			wp_send_json_error(
 				array(
@@ -324,7 +324,7 @@ class Ajax_Handler {
 		Logger::debug( '===== AJAX CLEAR CACHES REQUEST =====' );
 
 		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux-marketing-analytics-chat-admin' ) ) {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
 			Logger::error( 'Nonce verification failed' );
 			wp_send_json_error(
 				array(
@@ -370,7 +370,7 @@ class Ajax_Handler {
 		Logger::debug( '===== AJAX LIST GA4 PROPERTIES REQUEST =====' );
 
 		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux-marketing-analytics-chat-admin' ) ) {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
 			Logger::error( 'Nonce verification failed' );
 			wp_send_json_error(
 				array(
@@ -436,7 +436,7 @@ class Ajax_Handler {
 		Logger::debug( '===== AJAX SAVE GA4 PROPERTY REQUEST =====' );
 
 		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux-marketing-analytics-chat-admin' ) ) {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
 			Logger::error( 'Nonce verification failed' );
 			wp_send_json_error(
 				array(
@@ -509,7 +509,7 @@ class Ajax_Handler {
 		Logger::debug( '===== AJAX LIST GSC SITES REQUEST =====' );
 
 		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux-marketing-analytics-chat-admin' ) ) {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
 			Logger::error( 'Nonce verification failed' );
 			wp_send_json_error(
 				array(
@@ -575,7 +575,7 @@ class Ajax_Handler {
 		Logger::debug( '===== AJAX SAVE GSC SITE REQUEST =====' );
 
 		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux-marketing-analytics-chat-admin' ) ) {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
 			Logger::error( 'Nonce verification failed' );
 			wp_send_json_error(
 				array(
@@ -646,7 +646,7 @@ class Ajax_Handler {
 	 */
 	public function handle_refresh_widget_data() {
 		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux-marketing-analytics-chat-admin' ) ) {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
 			wp_send_json_error(
 				array(
 					'message' => 'Security check failed.',
@@ -726,7 +726,7 @@ class Ajax_Handler {
 	 */
 	public function handle_refresh_dashboard_metrics() {
 		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux-marketing-analytics-chat-dashboard-insights' ) ) {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_dashboard_insights' ) ) {
 			wp_send_json_error(
 				array(
 					'message' => 'Security check failed.',

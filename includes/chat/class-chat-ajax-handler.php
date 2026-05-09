@@ -63,7 +63,7 @@ class Chat_Ajax_Handler {
 	 */
 	public function create_conversation() {
 		// Verify nonce.
-		check_ajax_referer( 'specflux-marketing-analytics-chat-admin', 'nonce' );
+		check_ajax_referer( 'specflux_mac_admin', 'nonce' );
 
 		// Check user permissions.
 		if ( ! Permission_Manager::can_access_plugin() ) {
@@ -99,7 +99,7 @@ class Chat_Ajax_Handler {
 	 */
 	public function send_message() {
 		// Verify nonce.
-		check_ajax_referer( 'specflux-marketing-analytics-chat-admin', 'nonce' );
+		check_ajax_referer( 'specflux_mac_admin', 'nonce' );
 
 		// Check user permissions.
 		if ( ! Permission_Manager::can_access_plugin() ) {
@@ -502,7 +502,7 @@ class Chat_Ajax_Handler {
 	 */
 	public function retry_tool_call() {
 		// Verify nonce.
-		check_ajax_referer( 'specflux-marketing-analytics-chat-admin', 'nonce' );
+		check_ajax_referer( 'specflux_mac_admin', 'nonce' );
 
 		// Check user permissions.
 		if ( ! Permission_Manager::can_access_plugin() ) {
@@ -620,7 +620,7 @@ class Chat_Ajax_Handler {
 	 */
 	public function delete_conversation() {
 		// Verify nonce.
-		check_ajax_referer( 'specflux-marketing-analytics-chat-admin', 'nonce' );
+		check_ajax_referer( 'specflux_mac_admin', 'nonce' );
 
 		// Check user permissions.
 		if ( ! Permission_Manager::can_access_plugin() ) {

@@ -83,7 +83,7 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 	$has_oauth_credentials = $oauth_handler->has_oauth_credentials();
 ?>
 
-<div class="wrap specflux-marketing-analytics-chat-settings">
+<div class="wrap specflux-mac-settings">
 	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
 	<?php if ( $success_message ) : ?>
@@ -99,22 +99,22 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 	<?php endif; ?>
 
 	<h2 class="nav-tab-wrapper">
-		<a href="?page=specflux-marketing-analytics-chat-settings&tab=general" class="nav-tab		                                                                             <?php echo esc_attr( 'general' === $active_tab ? 'nav-tab-active' : '' ); ?>">
+		<a href="?page=specflux-mac-settings&tab=general" class="nav-tab		                                                                             <?php echo esc_attr( 'general' === $active_tab ? 'nav-tab-active' : '' ); ?>">
 			<?php esc_html_e( 'General', 'specflux-marketing-analytics-chat' ); ?>
 		</a>
-		<a href="?page=specflux-marketing-analytics-chat-settings&tab=google-api" class="nav-tab		                                                                                <?php echo esc_attr( 'google-api' === $active_tab ? 'nav-tab-active' : '' ); ?>">
+		<a href="?page=specflux-mac-settings&tab=google-api" class="nav-tab		                                                                                <?php echo esc_attr( 'google-api' === $active_tab ? 'nav-tab-active' : '' ); ?>">
 			<?php esc_html_e( 'Google API', 'specflux-marketing-analytics-chat' ); ?>
 			<?php if ( $has_oauth_credentials ) : ?>
 				<span class="dashicons dashicons-yes-alt" style="color: #00a32a; font-size: 14px; margin-left: 5px;"></span>
 			<?php endif; ?>
 		</a>
-		<a href="?page=specflux-marketing-analytics-chat-settings&tab=cache" class="nav-tab		                                                                           <?php echo esc_attr( 'cache' === $active_tab ? 'nav-tab-active' : '' ); ?>">
+		<a href="?page=specflux-mac-settings&tab=cache" class="nav-tab		                                                                           <?php echo esc_attr( 'cache' === $active_tab ? 'nav-tab-active' : '' ); ?>">
 			<?php esc_html_e( 'Cache', 'specflux-marketing-analytics-chat' ); ?>
 		</a>
-		<a href="?page=specflux-marketing-analytics-chat-settings&tab=advanced" class="nav-tab		                                                                              <?php echo esc_attr( 'advanced' === $active_tab ? 'nav-tab-active' : '' ); ?>">
+		<a href="?page=specflux-mac-settings&tab=advanced" class="nav-tab		                                                                              <?php echo esc_attr( 'advanced' === $active_tab ? 'nav-tab-active' : '' ); ?>">
 			<?php esc_html_e( 'Advanced', 'specflux-marketing-analytics-chat' ); ?>
 		</a>
-		<a href="?page=specflux-marketing-analytics-chat-settings&tab=access-control" class="nav-tab		                                                                                    <?php echo esc_attr( 'access-control' === $active_tab ? 'nav-tab-active' : '' ); ?>">
+		<a href="?page=specflux-mac-settings&tab=access-control" class="nav-tab		                                                                                    <?php echo esc_attr( 'access-control' === $active_tab ? 'nav-tab-active' : '' ); ?>">
 			<?php esc_html_e( 'Access Control', 'specflux-marketing-analytics-chat' ); ?>
 		</a>
 		<?php
@@ -440,7 +440,7 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 								<?php esc_html_e( 'Your Google OAuth credentials are saved. You can now connect GA4 and GSC from the Connections page.', 'specflux-marketing-analytics-chat' ); ?>
 							</p>
 							<p>
-								<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections&tab=ga4' ) ); ?>" class="button button-primary">
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=ga4' ) ); ?>" class="button button-primary">
 									<?php esc_html_e( 'Go to Connections', 'specflux-marketing-analytics-chat' ); ?>
 								</a>
 							</p>
@@ -843,7 +843,7 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 								<p><?php esc_html_e( 'Now go to the Connections page to authorize Google Analytics and Search Console.', 'specflux-marketing-analytics-chat' ); ?></p>
 
 								<div class="final-actions">
-									<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections&tab=ga4' ) ); ?>"
+									<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=ga4' ) ); ?>"
 										class="button button-primary button-hero">
 										<span class="dashicons dashicons-admin-links"></span>
 										<?php esc_html_e( 'Go to Connections Page', 'specflux-marketing-analytics-chat' ); ?>
@@ -900,7 +900,7 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 								<p><?php esc_html_e( 'Make sure you\'re in the correct Google Cloud project. Check the project dropdown at the top.', 'specflux-marketing-analytics-chat' ); ?></p>
 
 								<p>
-									<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat' ) ); ?>">
+									<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac' ) ); ?>">
 						<?php esc_html_e( 'View Full Documentation', 'specflux-marketing-analytics-chat' ); ?> →
 									</a>
 								</p>

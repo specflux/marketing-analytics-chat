@@ -29,8 +29,8 @@ if ( ! isset( $gsc_connected ) ) {
 }
 $all_connected   = $clarity_connected && $ga4_connected && $gsc_connected;
 $any_connected   = $clarity_connected || $ga4_connected || $gsc_connected;
-$connections_url = admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections' );
-$ai_chat_url     = admin_url( 'admin.php?page=specflux-marketing-analytics-chat-ai-assistant' );
+$connections_url = admin_url( 'admin.php?page=specflux-mac-connections' );
+$ai_chat_url     = admin_url( 'admin.php?page=specflux-mac-ai-assistant' );
 
 // Determine initial step (auto-skip completed steps).
 $initial_step = 1;
@@ -246,11 +246,11 @@ if ( $any_connected ) {
 					<span class="dashicons dashicons-admin-plugins"></span>
 					<span><?php esc_html_e( 'Connections', 'specflux-marketing-analytics-chat' ); ?></span>
 				</a>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-prompts' ) ); ?>" class="smac-wizard-final-link">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-prompts' ) ); ?>" class="smac-wizard-final-link">
 					<span class="dashicons dashicons-editor-code"></span>
 					<span><?php esc_html_e( 'Custom Prompts', 'specflux-marketing-analytics-chat' ); ?></span>
 				</a>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-settings' ) ); ?>" class="smac-wizard-final-link">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-settings' ) ); ?>" class="smac-wizard-final-link">
 					<span class="dashicons dashicons-admin-generic"></span>
 					<span><?php esc_html_e( 'Settings', 'specflux-marketing-analytics-chat' ); ?></span>
 				</a>
