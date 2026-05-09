@@ -75,6 +75,13 @@ class NamingConsistencyTest extends TestCase {
 	private $expected_ajax_prefix = 'specflux_mac_';
 
 	/**
+	 * Short menu slug prefix (for shorter admin URLs).
+	 *
+	 * @var string
+	 */
+	private $short_menu_slug = 'specflux-mac';
+
+	/**
 	 * Get all PHP files in the plugin directory (excluding vendor and tests).
 	 *
 	 * @return array List of PHP file paths.
@@ -384,7 +391,9 @@ class NamingConsistencyTest extends TestCase {
 	}
 
 	/**
-	 * Test that admin menu slugs use the expected plugin slug.
+	 * Test that admin menu slugs use a valid prefix.
+	 *
+	 * Accepts both the full slug and short slug for better URL readability.
 	 */
 	public function test_menu_slug_consistency(): void {
 		$files  = $this->get_plugin_php_files();
@@ -396,15 +405,25 @@ class NamingConsistencyTest extends TestCase {
 		$menu_pattern    = "/add_menu_page\s*\([^)]*?['\"]({$this->expected_slug}[^'\"]*?)['\"]/s";
 		$submenu_pattern = "/add_submenu_page\s*\(\s*['\"]([^'\"]+)['\"]/";
 
+		// Accept both full slug and short slug for admin menu URLs.
+		$valid_prefixes = array( $this->expected_slug, $this->short_menu_slug );
+
 		foreach ( $files as $file ) {
 			$content = file_get_contents( $file );
 
 			// Check submenu parent slugs.
 			if ( preg_match_all( $submenu_pattern, $content, $matches ) ) {
 				foreach ( $matches[1] as $parent_slug ) {
-					if ( strpos( $parent_slug, $this->expected_slug ) !== 0 ) {
+					$is_valid = false;
+					foreach ( $valid_prefixes as $prefix ) {
+						if ( strpos( $parent_slug, $prefix ) === 0 ) {
+							$is_valid = true;
+							break;
+						}
+					}
+					if ( ! $is_valid ) {
 						$relative = str_replace( SPECFLUX_MAC_PATH, '', $file );
-						$errors[] = "{$relative}: submenu parent slug '{$parent_slug}' should start with '{$this->expected_slug}'";
+						$errors[] = "{$relative}: submenu parent slug '{$parent_slug}' should start with a valid prefix";
 					}
 				}
 			}
@@ -683,7 +702,9 @@ class NamingConsistencyTest extends TestCase {
 	}
 
 	/**
-	 * Test that admin page URLs reference the correct slug.
+	 * Test that admin page URLs reference a valid slug prefix.
+	 *
+	 * Accepts both the full slug and short slug for better URL readability.
 	 */
 	public function test_admin_url_slug_references(): void {
 		$files  = $this->get_plugin_php_files();
@@ -692,6 +713,9 @@ class NamingConsistencyTest extends TestCase {
 		// Match admin.php?page= references.
 		$pattern = '/admin\.php\?page=([a-z0-9_-]+)/';
 
+		// Accept both full slug and short slug for admin URLs.
+		$valid_prefixes = array( $this->expected_slug, $this->short_menu_slug );
+
 		foreach ( $files as $file ) {
 			$content = file_get_contents( $file );
 			$lines   = explode( "\n", $content );
@@ -699,9 +723,16 @@ class NamingConsistencyTest extends TestCase {
 			foreach ( $lines as $line_num => $line ) {
 				if ( preg_match_all( $pattern, $line, $matches ) ) {
 					foreach ( $matches[1] as $page_slug ) {
-						if ( strpos( $page_slug, $this->expected_slug ) !== 0 ) {
+						$is_valid = false;
+						foreach ( $valid_prefixes as $prefix ) {
+							if ( strpos( $page_slug, $prefix ) === 0 ) {
+								$is_valid = true;
+								break;
+							}
+						}
+						if ( ! $is_valid ) {
 							$relative = str_replace( SPECFLUX_MAC_PATH, '', $file );
-							$errors[] = "{$relative}:" . ( $line_num + 1 ) . " admin page slug '{$page_slug}' should start with '{$this->expected_slug}'";
+							$errors[] = "{$relative}:" . ( $line_num + 1 ) . " admin page slug '{$page_slug}' should start with a valid prefix";
 						}
 					}
 				}

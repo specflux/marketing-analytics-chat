@@ -179,7 +179,7 @@ class ConnectionPromoterTest extends TestCase {
 		$output = ob_get_clean();
 
 		$this->assertStringContainsString( 'smac-connection-prompt', $output );
-		$this->assertStringContainsString( 'specflux-marketing-analytics-chat-connections', $output );
+		$this->assertStringContainsString( 'specflux-mac-connections', $output );
 	}
 
 	/**
