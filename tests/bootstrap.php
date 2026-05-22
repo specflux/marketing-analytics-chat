@@ -418,7 +418,7 @@ if ( ! function_exists( 'delete_transient' ) ) {
 if ( ! function_exists( 'get_bloginfo' ) ) {
     function get_bloginfo( $show = '', $filter = 'raw' ) {
         $info = array(
-            'version' => '6.9',
+            'version' => '7.0',
             'name'    => 'Test Blog',
             'url'     => 'https://example.com',
         );

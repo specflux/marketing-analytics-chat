@@ -83,6 +83,11 @@ class Plugin {
 
 		// Register abilities when the Abilities API is ready.
 		$this->loader->add_action( 'wp_abilities_api_init', $abilities_registrar, 'register_all_abilities' );
+
+		// WP 7.0+ Abilities API observability hooks. Harmless on older WP — the
+		// actions simply never fire. Logger filters to the marketing-analytics/ namespace.
+		$this->loader->add_action( 'wp_before_execute_ability', $abilities_registrar, 'log_ability_start', 10, 2 );
+		$this->loader->add_action( 'wp_after_execute_ability', $abilities_registrar, 'log_ability_end', 10, 3 );
 	}
 
 	/**

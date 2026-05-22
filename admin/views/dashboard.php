@@ -89,7 +89,7 @@ $gsc_connected      = $credential_manager->has_credentials( 'gsc' );
 	 *
 	 * Used by the premium add-on to inject AI Insight Cards and other dashboard widgets.
 	 *
-	 * @since 1.5.0
+	 * @since 0.1.2
 	 */
 	do_action( 'specflux_mac_dashboard_cards' );
 	?>
