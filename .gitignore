@@ -2,6 +2,7 @@
 /node_modules/
 /coverage/
 .phpunit.result.cache
+.phpunit.cache/
 .phpcs-cache
 *.log
 .DS_Store
