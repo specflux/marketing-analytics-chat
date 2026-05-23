@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Admin notice on the Plugins screen now clarifies when MCP Adapter is needed
   and links to the correct GitHub source.
 
+### Security
+- Refreshed all bundled runtime libraries to their latest patch releases to
+  address the WordPress.org reviewer "Out of Date Libraries" finding:
+  - `guzzlehttp/guzzle`: 7.10.0 → 7.10.4
+  - `guzzlehttp/psr7`: 2.9.0 → 2.10.1
+  - `guzzlehttp/promises`: 2.3.0 → 2.4.1
+  - `google/apiclient-services`: 0.440.0 → 0.441.1
+  - `automattic/jetpack-autoloader`: 5.0.17 → 5.0.18
+
 ### Fixed
 - Stale `@since 1.5.0` tag on the `specflux_mac_dashboard_cards` action hook
   (the hook was actually introduced in 0.1.2).
@@ -33,9 +42,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.5] - 2026-05-09
 
+### Changed
+- Upgraded dev tooling to PHPUnit 11 and PHPStan 2 (major versions), with
+  the corresponding migration of `phpunit.xml.dist` schema and conversion
+  of `@group` annotations to `#[Group]` PHP 8 attributes.
+- Bumped bundled runtime libraries to latest patch releases:
+  `automattic/jetpack-autoloader` (5.0.16 → 5.0.17),
+  `google/apiclient` (2.19.0 → 2.19.3),
+  `google/apiclient-services` (0.435.0 → 0.440.0),
+  `google/auth` (1.50.0 → 1.50.1),
+  `firebase/php-jwt` (7.0.3 → 7.0.5),
+  `symfony/deprecation-contracts` (3.6.0 → 3.7.0).
+
 ### Fixed
-- Upgraded `jetpack-autoloader` (5.0.16 → 5.0.17) and `google/apiclient`
-  (2.19.0 → 2.19.3).
 - Removed inline `<style>` tag, replaced with `wp_add_inline_style()`.
 - Sanitized `$_COOKIE` name/value before passing to `WP_Http_Cookie`.
 - Added `sanitize_text_field()` before `json_decode()` in AJAX handler and

@@ -138,6 +138,7 @@ WordPress 7.0 and higher is required. The plugin registers abilities with the co
 * Added: Integration with the core Abilities API observability hooks (wp_before_execute_ability, wp_after_execute_ability) for centralized execution logging
 * Changed: MCP Adapter is now correctly documented as an optional GitHub-distributed plugin (it is not on WordPress.org). The free plugin runs standalone on WP 7.0 via the core Abilities API and AI Client
 * Changed: Updated admin notice to clarify when MCP Adapter is needed (external MCP clients only)
+* Security: Refreshed all bundled runtime libraries to latest patch releases — guzzlehttp/guzzle (7.10.0 → 7.10.4), guzzlehttp/psr7 (2.9.0 → 2.10.1), guzzlehttp/promises (2.3.0 → 2.4.1), google/apiclient-services (0.440.0 → 0.441.1), and automattic/jetpack-autoloader (5.0.17 → 5.0.18)
 * Fixed: Stale @since tag on the specflux_mac_dashboard_cards action hook
 
 = 0.1.6 - 2026-05-09 =
