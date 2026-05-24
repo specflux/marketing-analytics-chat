@@ -2,13 +2,13 @@
 
 > Expose Google Analytics 4, Search Console, and Microsoft Clarity data to AI assistants via the Model Context Protocol.
 
-[![WordPress Version](https://img.shields.io/badge/WordPress-6.9%2B-blue)](https://wordpress.org/)
+[![WordPress Version](https://img.shields.io/badge/WordPress-7.0%2B-blue)](https://wordpress.org/)
 [![PHP Version](https://img.shields.io/badge/PHP-8.1%2B-purple)](https://www.php.net/)
 [![License](https://img.shields.io/badge/License-GPL%20v2%2B-green)](LICENSE)
 
 ## Overview
 
-This WordPress plugin bridges your marketing analytics platforms with AI assistants using the **Model Context Protocol (MCP)**. Built on WordPress 6.9+ Abilities API and the MCP Adapter plugin, it exposes analytics data as MCP abilities that any compatible AI client can use.
+This WordPress plugin bridges your marketing analytics platforms with AI assistants using the **Model Context Protocol (MCP)**. Built on the WordPress 7.0+ Abilities API and AI Client (both in core), it exposes analytics data as abilities that the built-in AI Client — and any compatible external MCP client via the optional MCP Adapter — can use.
 
 ### Supported Platforms
 
@@ -43,20 +43,19 @@ Chat with your analytics data directly in WordPress using Claude (Anthropic), Op
 
 ## Requirements
 
-- **WordPress**: 6.9+
+- **WordPress**: 7.0+
 - **PHP**: 8.1+
 - **PHP Extensions**: `json`, `curl`, `openssl`, `sodium`
-- **Required Plugin**: [MCP Adapter](https://wordpress.org/plugins/mcp-adapter/)
+- **Optional Plugin**: [MCP Adapter](https://github.com/wordpress/mcp-adapter) — only needed to expose abilities to external MCP clients (Claude Desktop, Cursor, ChatGPT)
 
 ## Installation
 
 ### From WordPress.org
 
-1. Install and activate the **MCP Adapter** plugin from WordPress.org
-2. Upload `specflux-marketing-analytics-chat` to `/wp-content/plugins/`
-3. Activate through the Plugins menu
-4. Go to **Marketing Analytics > Settings > Google API** to configure OAuth
-5. Connect your platforms from the **Connections** page
+1. Install and activate **Specflux Marketing Analytics Chat** from WordPress.org
+2. Go to **Marketing Analytics > Settings > Google API** to configure OAuth
+3. Connect your platforms from the **Connections** page
+4. (Optional) Install the [MCP Adapter](https://github.com/wordpress/mcp-adapter) from GitHub if you want external MCP clients to use your abilities
 
 ### From Source
 
@@ -133,7 +132,8 @@ GPL v2 or later. See [LICENSE](LICENSE) for details.
 ## Credits
 
 Built with:
-- [WordPress MCP Adapter](https://wordpress.org/plugins/mcp-adapter/)
+- [WordPress Abilities API](https://developer.wordpress.org/apis/abilities-api/) (core, WP 7.0+)
+- [WordPress MCP Adapter](https://github.com/wordpress/mcp-adapter) (optional)
 - [Google API PHP Client](https://github.com/googleapis/google-api-php-client)
 
 ## Support

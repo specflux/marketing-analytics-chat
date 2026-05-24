@@ -114,6 +114,58 @@ class Abilities_Registrar {
 	}
 
 	/**
+	 * Ability name prefix this plugin owns.
+	 *
+	 * Used to filter the global wp_before_execute_ability / wp_after_execute_ability
+	 * hooks so we only log abilities registered by this plugin.
+	 *
+	 * @var string
+	 */
+	private const ABILITY_PREFIX = 'marketing-analytics/';
+
+	/**
+	 * Log the start of an ability execution.
+	 *
+	 * Hooked to 'wp_before_execute_ability' (WordPress 7.0+).
+	 *
+	 * @param string $ability_name The namespaced name of the ability being executed.
+	 * @param mixed  $input        The input data passed to the ability.
+	 */
+	public function log_ability_start( $ability_name, $input ) {
+		if ( ! is_string( $ability_name ) || 0 !== strpos( $ability_name, self::ABILITY_PREFIX ) ) {
+			return;
+		}
+
+		Logger::debug(
+			sprintf(
+				'Ability execute: %s input=%s',
+				$ability_name,
+				wp_json_encode( $input )
+			)
+		);
+	}
+
+	/**
+	 * Log the successful completion of an ability execution.
+	 *
+	 * Hooked to 'wp_after_execute_ability' (WordPress 7.0+).
+	 *
+	 * @param string $ability_name The namespaced name of the ability.
+	 * @param mixed  $input        The input data passed to the ability.
+	 * @param mixed  $result       The validated result returned by the ability.
+	 */
+	public function log_ability_end( $ability_name, $input, $result ) {
+		unset( $input );
+
+		if ( ! is_string( $ability_name ) || 0 !== strpos( $ability_name, self::ABILITY_PREFIX ) ) {
+			return;
+		}
+
+		$summary = is_wp_error( $result ) ? 'WP_Error: ' . $result->get_error_message() : 'ok';
+		Logger::debug( sprintf( 'Ability done: %s result=%s', $ability_name, $summary ) );
+	}
+
+	/**
 	 * Register all abilities
 	 *
 	 * Called on the 'wp_abilities_api_init' hook

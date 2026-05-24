@@ -2,9 +2,9 @@
 Contributors: stephenpaulsamynathan
 Donate link: https://www.specflux.com/
 Tags: marketing analytics, ai, chat, mcp
-Requires at least: 6.9
-Tested up to: 6.9
-Stable tag: 0.1.6
+Requires at least: 7.0
+Tested up to: 7.0
+Stable tag: 0.2.0
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -45,11 +45,11 @@ Specflux Marketing Analytics Chat lets you have conversations with your marketin
 
 = Requirements =
 
-* WordPress 6.9 or higher (includes Abilities API in core)
-* MCP Adapter plugin (from WordPress.org)
+* WordPress 7.0 or higher (includes Abilities API and AI Client in core)
 * PHP 8.1 or higher
 * SSL certificate (HTTPS) for OAuth connections
 * PHP extensions: json, curl, openssl, sodium
+* Optional: MCP Adapter plugin (from GitHub) — only needed to expose abilities to external MCP clients like Claude Desktop, Cursor, or ChatGPT
 
 = External Services =
 
@@ -67,8 +67,8 @@ This plugin connects to the following third-party services when you configure th
 
 = Prerequisites =
 
-1. Ensure you are running WordPress 6.9 or higher (includes Abilities API)
-2. Install and activate the "MCP Adapter" plugin from WordPress.org
+1. Ensure you are running WordPress 7.0 or higher (includes Abilities API and AI Client in core)
+2. (Optional) Install the MCP Adapter plugin from https://github.com/wordpress/mcp-adapter if you want to expose abilities to external MCP clients
 
 = Plugin Installation =
 
@@ -76,7 +76,7 @@ This plugin connects to the following third-party services when you configure th
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Go to Marketing Analytics > Settings > Google API to configure OAuth credentials
 4. Connect your analytics platforms from the Connections page
-5. Configure your MCP client (e.g., Claude Desktop) to use the plugin endpoint
+5. (Optional) Configure your external MCP client (e.g., Claude Desktop) to use the plugin endpoint
 
 = Configuring MCP Client =
 
@@ -122,7 +122,7 @@ You can ask questions like:
 
 = What WordPress versions are supported? =
 
-WordPress 6.9 and higher is required. The plugin uses the Abilities API (included in WordPress 6.9 core) and requires the MCP Adapter plugin.
+WordPress 7.0 and higher is required. The plugin registers abilities with the core Abilities API, so it works standalone with the built-in AI Client. The MCP Adapter plugin (from GitHub) is optional and only needed if you want external MCP clients (Claude Desktop, Cursor, ChatGPT) to call those abilities.
 
 == Screenshots ==
 
@@ -132,6 +132,14 @@ WordPress 6.9 and higher is required. The plugin uses the Abilities API (include
 4. Settings page with API configuration
 
 == Changelog ==
+
+= 0.2.0 - 2026-05-22 =
+* Added: WordPress 7.0 compatibility — Requires at least bumped to 7.0
+* Added: Integration with the core Abilities API observability hooks (wp_before_execute_ability, wp_after_execute_ability) for centralized execution logging
+* Changed: MCP Adapter is now correctly documented as an optional GitHub-distributed plugin (it is not on WordPress.org). The free plugin runs standalone on WP 7.0 via the core Abilities API and AI Client
+* Changed: Updated admin notice to clarify when MCP Adapter is needed (external MCP clients only)
+* Security: Refreshed all bundled runtime libraries to latest patch releases — guzzlehttp/guzzle (7.10.0 → 7.10.4), guzzlehttp/psr7 (2.9.0 → 2.10.1), guzzlehttp/promises (2.3.0 → 2.4.1), google/apiclient-services (0.440.0 → 0.441.1), and automattic/jetpack-autoloader (5.0.17 → 5.0.18)
+* Fixed: Stale @since tag on the specflux_mac_dashboard_cards action hook
 
 = 0.1.6 - 2026-05-09 =
 * Fixed: Downgraded PHPUnit to ^10.5 for PHP 8.1 compatibility in CI

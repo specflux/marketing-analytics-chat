@@ -5,96 +5,102 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Added (Phase 1 - Foundation Setup) ✅
-- Initial plugin structure and main plugin file
-- Composer configuration with all required dependencies
-- Plugin activation/deactivation/uninstall handlers
-- WordPress admin interface (Dashboard, Connections, Settings pages)
-- Admin CSS and JavaScript assets
-- Hook loader system for organizing WordPress hooks
-- Stub ability classes for future implementation
-- Basic plugin documentation (README, CHANGELOG)
-
-### Planned
-
-#### Phase 2 - Credential Management
-- Encrypted credential storage using libsodium
-- Google OAuth 2.0 authentication flow
-- Connection testing for all platforms
-- Secure credential management UI
-
-#### Phase 3 - API Client Layer
-- Microsoft Clarity API client
-- Google Analytics 4 API client
-- Google Search Console API client
-- Caching layer with WordPress Transients API
-- Rate limiting implementation
-
-#### Phase 4 - Clarity Abilities
-- `marketing-analytics/get-clarity-insights` tool
-- `marketing-analytics/get-clarity-recordings` tool
-- `marketing-analytics/analyze-clarity-heatmaps` tool
-- Clarity dashboard resource
-
-#### Phase 5 - GA4 Abilities
-- `marketing-analytics/get-ga4-metrics` tool
-- `marketing-analytics/get-ga4-events` tool
-- `marketing-analytics/get-ga4-realtime` tool
-- `marketing-analytics/get-traffic-sources` tool
-- GA4 overview resource
-
-#### Phase 6 - Search Console Abilities
-- `marketing-analytics/get-search-performance` tool
-- `marketing-analytics/get-top-queries` tool
-- `marketing-analytics/get-indexing-status` tool
-- Search Console overview resource
-
-#### Phase 7 - Cross-Platform Features
-- `marketing-analytics/compare-periods` tool
-- `marketing-analytics/get-top-content` tool
-- `marketing-analytics/generate-summary-report` tool
-- Dashboard summary resource
-- Platform status resource
-- Alerts resource
-
-#### Phase 8 - MCP Prompts
-- `marketing-analytics/analyze-traffic-drop` prompt
-- `marketing-analytics/weekly-report` prompt
-- `marketing-analytics/seo-health-check` prompt
-- `marketing-analytics/content-performance-audit` prompt
-- `marketing-analytics/conversion-funnel-analysis` prompt
-
-#### Phase 9 - Admin UI Polish
-- Enhanced dashboard with status widgets
-- Activity feed for API calls
-- Quick stats widgets
-- MCP server configuration helper
-- Debug mode with request logging
-- Responsive design improvements
-
-#### Phase 10 - Testing & Documentation
-- PHPUnit test suite (unit + integration)
-- Security audit and fixes
-- Complete user and developer documentation
-- WordPress.org preparation
-- Version 1.0.0 release
-
-## [1.0.0] - TBD
-
-Initial release - coming soon!
+## [0.2.0] - 2026-05-22
 
 ### Added
-- Full support for Microsoft Clarity, Google Analytics 4, and Google Search Console
-- 13 MCP tools for analytics operations
-- 4 MCP resources for quick data access
-- 5 MCP prompts for common analysis workflows
-- Secure credential management with encryption
-- OAuth 2.0 authentication for Google services
-- Comprehensive caching system
-- WordPress admin interface
-- Complete documentation
+- WordPress 7.0 compatibility — `Requires at least` bumped to 7.0.
+- Integration with the core Abilities API observability hooks
+  (`wp_before_execute_ability`, `wp_after_execute_ability`) for centralized
+  execution logging of all `marketing-analytics/*` abilities.
 
-[Unreleased]: https://github.com/yourusername/specflux-marketing-analytics-chat/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/yourusername/specflux-marketing-analytics-chat/releases/tag/v1.0.0
+### Changed
+- MCP Adapter is now correctly documented as an optional GitHub-distributed
+  plugin (it is not on WordPress.org). The plugin runs standalone on WP 7.0
+  via the core Abilities API and AI Client; MCP Adapter is only required to
+  expose abilities to external MCP clients (Claude Desktop, Cursor, ChatGPT).
+- Admin notice on the Plugins screen now clarifies when MCP Adapter is needed
+  and links to the correct GitHub source.
+
+### Security
+- Refreshed all bundled runtime libraries to their latest patch releases to
+  address the WordPress.org reviewer "Out of Date Libraries" finding:
+  - `guzzlehttp/guzzle`: 7.10.0 → 7.10.4
+  - `guzzlehttp/psr7`: 2.9.0 → 2.10.1
+  - `guzzlehttp/promises`: 2.3.0 → 2.4.1
+  - `google/apiclient-services`: 0.440.0 → 0.441.1
+  - `automattic/jetpack-autoloader`: 5.0.17 → 5.0.18
+
+### Fixed
+- Stale `@since 1.5.0` tag on the `specflux_mac_dashboard_cards` action hook
+  (the hook was actually introduced in 0.1.2).
+
+## [0.1.6] - 2026-05-09
+
+### Fixed
+- Downgraded PHPUnit to `^10.5` for PHP 8.1 compatibility in CI.
+- Updated menu slugs to use full `specflux-marketing-analytics-chat` prefix.
+
+## [0.1.5] - 2026-05-09
+
+### Changed
+- Upgraded dev tooling to PHPUnit 11 and PHPStan 2 (major versions), with
+  the corresponding migration of `phpunit.xml.dist` schema and conversion
+  of `@group` annotations to `#[Group]` PHP 8 attributes.
+- Bumped bundled runtime libraries to latest patch releases:
+  `automattic/jetpack-autoloader` (5.0.16 → 5.0.17),
+  `google/apiclient` (2.19.0 → 2.19.3),
+  `google/apiclient-services` (0.435.0 → 0.440.0),
+  `google/auth` (1.50.0 → 1.50.1),
+  `firebase/php-jwt` (7.0.3 → 7.0.5),
+  `symfony/deprecation-contracts` (3.6.0 → 3.7.0).
+
+### Fixed
+- Removed inline `<style>` tag, replaced with `wp_add_inline_style()`.
+- Sanitized `$_COOKIE` name/value before passing to `WP_Http_Cookie`.
+- Added `sanitize_text_field()` before `json_decode()` in AJAX handler and
+  prompts view.
+- Prefixed all JS globals with `specfluxMac` to prevent naming conflicts.
+
+## [0.1.4] - 2026-04-20
+
+### Fixed
+- WordPress.org review issues.
+- Removed `mcp-adapter` from `Requires Plugins` (now optional recommendation).
+- Fixed Plugin URI to correct repository URL.
+- Included `composer.json` in distribution.
+- Improved function prefixing for consistency.
+
+## [0.1.2] - 2025-12-13
+
+### Added
+- Interactive onboarding wizard with guided setup.
+- Analytics-at-a-glance dashboard widget with sparkline trends.
+- Admin bar analytics pulse indicator.
+- Auto-installed smart prompt templates.
+- MCP Abilities Catalog page.
+- Connection depth prompts for contextual suggestions.
+- Improved cross-platform summary abilities.
+
+## [0.1.1] - 2025-12-13
+
+- Release version 0.1.1.
+
+## [0.1.0] - 2025-12-06
+
+### Added
+- Initial release.
+- MCP-native analytics abilities for AI assistants.
+- Google Analytics 4 integration.
+- Google Search Console integration.
+- Microsoft Clarity integration.
+- Secure OAuth and credential management.
+- Cross-platform comparison tools.
+- Smart caching system.
+
+[0.2.0]: https://github.com/specflux/marketing-analytics-chat/releases/tag/v0.2.0
+[0.1.6]: https://github.com/specflux/marketing-analytics-chat/releases/tag/v0.1.6
+[0.1.5]: https://github.com/specflux/marketing-analytics-chat/releases/tag/v0.1.5
+[0.1.4]: https://github.com/specflux/marketing-analytics-chat/releases/tag/v0.1.4
+[0.1.2]: https://github.com/specflux/marketing-analytics-chat/releases/tag/v0.1.2
+[0.1.1]: https://github.com/specflux/marketing-analytics-chat/releases/tag/v0.1.1
+[0.1.0]: https://github.com/specflux/marketing-analytics-chat/releases/tag/v0.1.0
