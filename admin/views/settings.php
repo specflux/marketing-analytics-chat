@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 	use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
+	use Specflux_Marketing_Analytics\Credentials\Encryption;
 	use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 	$active_tab      = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
@@ -49,14 +50,27 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 
 	// AI Chat Settings.
 	$new_settings['ai_provider']    = sanitize_text_field( wp_unslash( $_POST['ai_provider'] ?? 'wp-ai' ) );
-	$new_settings['claude_api_key'] = sanitize_text_field( wp_unslash( $_POST['claude_api_key'] ?? '' ) );
 	$new_settings['claude_model']   = sanitize_text_field( wp_unslash( $_POST['claude_model'] ?? 'claude-sonnet-4-20250514' ) );
-	$new_settings['openai_api_key'] = sanitize_text_field( wp_unslash( $_POST['openai_api_key'] ?? '' ) );
 	$new_settings['openai_model']   = sanitize_text_field( wp_unslash( $_POST['openai_model'] ?? 'gpt-5.1' ) );
-	$new_settings['gemini_api_key'] = sanitize_text_field( wp_unslash( $_POST['gemini_api_key'] ?? '' ) );
 	$new_settings['gemini_model']   = sanitize_text_field( wp_unslash( $_POST['gemini_model'] ?? 'gemini-2.5-pro' ) );
 	$new_settings['ai_temperature'] = floatval( $_POST['ai_temperature'] ?? 0.7 );
 	$new_settings['ai_max_tokens']  = absint( $_POST['ai_max_tokens'] ?? 4096 );
+
+	// Provider API keys are stored encrypted (libsodium) via the credential
+	// store, never as plaintext in the settings option. Only a newly entered
+	// key is persisted; an empty field leaves the saved key intact. A
+	// pre-existing plaintext key from an older install is migrated to encrypted
+	// storage on first save.
+	foreach ( array( 'claude', 'openai', 'gemini' ) as $ai_platform ) {
+		$key_field  = $ai_platform . '_api_key';
+		$posted_key = isset( $_POST[ $key_field ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key_field ] ) ) : '';
+
+		if ( '' !== $posted_key ) {
+			Encryption::save_credentials( $ai_platform, array( 'api_key' => $posted_key ) );
+		} elseif ( ! empty( $existing_settings[ $key_field ] ) && ! Encryption::get_credentials( $ai_platform ) ) {
+			Encryption::save_credentials( $ai_platform, array( 'api_key' => $existing_settings[ $key_field ] ) );
+		}
+	}
 
 	// Tool Categories.
 	$enabled_categories                      = isset( $_POST['enabled_tool_categories'] ) && is_array( $_POST['enabled_tool_categories'] )
@@ -74,6 +88,8 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 
 	// Preserve keys not present in the form (e.g. platforms, version).
 	$new_settings = array_merge( $existing_settings, $new_settings );
+	// Drop any legacy plaintext API keys now held in encrypted storage.
+	unset( $new_settings['claude_api_key'], $new_settings['openai_api_key'], $new_settings['gemini_api_key'] );
 	update_option( 'specflux_mac_settings', $new_settings );
 
 	$success_message = __( 'Settings saved successfully.', 'specflux-marketing-analytics-chat' );
@@ -81,7 +97,15 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 
 	$settings              = get_option( 'specflux_mac_settings', array() );
 	$has_oauth_credentials = $oauth_handler->has_oauth_credentials();
-?>
+
+	// Whether an encrypted API key is on file for each direct provider. The key
+	// itself is never rendered back to the browser.
+	$ai_key_saved = array(
+		'claude' => (bool) Encryption::get_credentials( 'claude' ),
+		'openai' => (bool) Encryption::get_credentials( 'openai' ),
+		'gemini' => (bool) Encryption::get_credentials( 'gemini' ),
+	);
+	?>
 
 <div class="wrap specflux-mac-settings">
 	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
@@ -166,8 +190,8 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 							</th>
 							<td>
 								<input type="password" id="claude_api_key" name="claude_api_key"
-									value="<?php echo esc_attr( isset( $settings['claude_api_key'] ) ? $settings['claude_api_key'] : '' ); ?>"
-									class="regular-text" placeholder="sk-ant-..." />
+									value="" autocomplete="new-password"
+									class="regular-text" placeholder="<?php echo esc_attr( $ai_key_saved['claude'] ? __( 'Saved — leave blank to keep current key', 'specflux-marketing-analytics-chat' ) : 'sk-ant-...' ); ?>" />
 								<p class="description">
 								<?php
 									printf(
@@ -213,8 +237,8 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 							</th>
 							<td>
 								<input type="password" id="openai_api_key" name="openai_api_key"
-									value="<?php echo esc_attr( isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '' ); ?>"
-									class="regular-text" placeholder="sk-..." />
+									value="" autocomplete="new-password"
+									class="regular-text" placeholder="<?php echo esc_attr( $ai_key_saved['openai'] ? __( 'Saved — leave blank to keep current key', 'specflux-marketing-analytics-chat' ) : 'sk-...' ); ?>" />
 								<p class="description">
 									<?php
 									printf(
@@ -303,8 +327,8 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 							</th>
 							<td>
 								<input type="password" id="gemini_api_key" name="gemini_api_key"
-									value="<?php echo esc_attr( isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '' ); ?>"
-									class="regular-text" placeholder="AIza..." />
+									value="" autocomplete="new-password"
+									class="regular-text" placeholder="<?php echo esc_attr( $ai_key_saved['gemini'] ? __( 'Saved — leave blank to keep current key', 'specflux-marketing-analytics-chat' ) : 'AIza...' ); ?>" />
 								<p class="description">
 									<?php
 									printf(
@@ -920,13 +944,7 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 					<?php wp_nonce_field( 'specflux_mac_save_settings', 'settings_nonce' ); ?>
 
 					<!-- Preserve other settings -->
-					<input type="hidden" name="ai_provider" value="<?php echo esc_attr( $settings['ai_provider'] ?? 'wp-ai' ); ?>" />
-					<input type="hidden" name="claude_api_key" value="<?php echo esc_attr( $settings['claude_api_key'] ?? '' ); ?>" />
-					<input type="hidden" name="claude_model" value="<?php echo esc_attr( $settings['claude_model'] ?? 'claude-sonnet-4-20250514' ); ?>" />
-					<input type="hidden" name="openai_api_key" value="<?php echo esc_attr( $settings['openai_api_key'] ?? '' ); ?>" />
-					<input type="hidden" name="openai_model" value="<?php echo esc_attr( $settings['openai_model'] ?? 'gpt-5.1' ); ?>" />
-					<input type="hidden" name="gemini_api_key" value="<?php echo esc_attr( $settings['gemini_api_key'] ?? '' ); ?>" />
-					<input type="hidden" name="gemini_model" value="<?php echo esc_attr( $settings['gemini_model'] ?? 'gemini-2.5-pro' ); ?>" />
+					<input type="hidden" name="ai_provider" value="<?php echo esc_attr( $settings['ai_provider'] ?? 'wp-ai' ); ?>" />					<input type="hidden" name="claude_model" value="<?php echo esc_attr( $settings['claude_model'] ?? 'claude-sonnet-4-20250514' ); ?>" />					<input type="hidden" name="openai_model" value="<?php echo esc_attr( $settings['openai_model'] ?? 'gpt-5.1' ); ?>" />					<input type="hidden" name="gemini_model" value="<?php echo esc_attr( $settings['gemini_model'] ?? 'gemini-2.5-pro' ); ?>" />
 					<input type="hidden" name="ai_temperature" value="<?php echo esc_attr( $settings['ai_temperature'] ?? '0.7' ); ?>" />
 					<input type="hidden" name="ai_max_tokens" value="<?php echo esc_attr( $settings['ai_max_tokens'] ?? '4096' ); ?>" />
 					<?php
@@ -1005,13 +1023,7 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 				<?php wp_nonce_field( 'specflux_mac_save_settings', 'settings_nonce' ); ?>
 
 					<!-- Preserve other settings -->
-					<input type="hidden" name="ai_provider" value="<?php echo esc_attr( $settings['ai_provider'] ?? 'wp-ai' ); ?>" />
-					<input type="hidden" name="claude_api_key" value="<?php echo esc_attr( $settings['claude_api_key'] ?? '' ); ?>" />
-					<input type="hidden" name="claude_model" value="<?php echo esc_attr( $settings['claude_model'] ?? 'claude-sonnet-4-20250514' ); ?>" />
-					<input type="hidden" name="openai_api_key" value="<?php echo esc_attr( $settings['openai_api_key'] ?? '' ); ?>" />
-					<input type="hidden" name="openai_model" value="<?php echo esc_attr( $settings['openai_model'] ?? 'gpt-5.1' ); ?>" />
-					<input type="hidden" name="gemini_api_key" value="<?php echo esc_attr( $settings['gemini_api_key'] ?? '' ); ?>" />
-					<input type="hidden" name="gemini_model" value="<?php echo esc_attr( $settings['gemini_model'] ?? 'gemini-2.5-pro' ); ?>" />
+					<input type="hidden" name="ai_provider" value="<?php echo esc_attr( $settings['ai_provider'] ?? 'wp-ai' ); ?>" />					<input type="hidden" name="claude_model" value="<?php echo esc_attr( $settings['claude_model'] ?? 'claude-sonnet-4-20250514' ); ?>" />					<input type="hidden" name="openai_model" value="<?php echo esc_attr( $settings['openai_model'] ?? 'gpt-5.1' ); ?>" />					<input type="hidden" name="gemini_model" value="<?php echo esc_attr( $settings['gemini_model'] ?? 'gemini-2.5-pro' ); ?>" />
 					<input type="hidden" name="ai_temperature" value="<?php echo esc_attr( $settings['ai_temperature'] ?? '0.7' ); ?>" />
 					<input type="hidden" name="ai_max_tokens" value="<?php echo esc_attr( $settings['ai_max_tokens'] ?? '4096' ); ?>" />
 						<?php
