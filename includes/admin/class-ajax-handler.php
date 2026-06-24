@@ -115,6 +115,19 @@ class Ajax_Handler {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in test_connection().
 		$project_id = isset( $_POST['project_id'] ) ? sanitize_text_field( wp_unslash( $_POST['project_id'] ) ) : '';
 
+		// The token field renders a masked value (first/last chars joined by "...")
+		// once a token is stored, so a Test click after saving posts the mask, not
+		// the real token. Fall back to the stored token when the field is empty or
+		// still showing the mask, mirroring the save form's behavior.
+		$existing_credentials = Encryption::get_credentials( 'clarity' );
+		if ( $existing_credentials && ! empty( $existing_credentials['api_token'] )
+			&& ( empty( $api_token ) || false !== strpos( $api_token, '...' ) ) ) {
+			$api_token = $existing_credentials['api_token'];
+		}
+		if ( empty( $project_id ) && $existing_credentials && ! empty( $existing_credentials['project_id'] ) ) {
+			$project_id = $existing_credentials['project_id'];
+		}
+
 		Logger::debug( sprintf( 'API Token provided: %s', $api_token ? 'yes (length: ' . strlen( $api_token ) . ')' : 'NO' ) );
 		Logger::debug( sprintf( 'Project ID: %s', $project_id ? $project_id : 'EMPTY' ) );
 
