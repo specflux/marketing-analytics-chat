@@ -17,7 +17,19 @@
 		 */
 		init: function() {
 			this.bindEvents();
+			this.renderStoredMessages();
 			this.scrollToBottom();
+		},
+
+		/**
+		 * Re-render server-rendered history through the same Markdown
+		 * formatter used for live messages, so reloads match exactly.
+		 */
+		renderStoredMessages: function() {
+			var self = this;
+			$('#chat-messages .message-text[data-md]').each(function() {
+				$(this).html(self.formatMessage($(this).attr('data-md')));
+			});
 		},
 
 		/**
@@ -39,10 +51,9 @@
 			// Auto-resize textarea
 			$('#message-input').on('input', this.autoResizeTextarea);
 
-			// Keyboard shortcuts
+			// Keyboard shortcuts: Enter sends, Shift+Enter inserts a new line.
 			$('#message-input').on('keydown', function(e) {
-				// Cmd/Ctrl + Enter to send
-				if ((e.metaKey || e.ctrlKey) && e.keyCode === 13) {
+				if (e.keyCode === 13 && !e.shiftKey) {
 					e.preventDefault();
 					$('#chat-form').submit();
 				}
@@ -192,16 +203,10 @@
 						if (response.data.messages && response.data.messages.length > 0) {
 							var self = this;
 							response.data.messages.forEach(function(msg, index) {
-								// Add each message to UI
-								// For tool_calls message, show a brief indicator
+								// Add each message to UI. Tool calls render as a
+								// compact chip rather than inline pseudo-text.
 								if (msg.tool_calls && msg.tool_calls.length > 0) {
-									var toolNames = msg.tool_calls.map(function(tc) { return tc.name; }).join(', ');
-									var toolIndicator = '🔧 *Using tools: ' + toolNames + '*';
-									if (msg.content) {
-										self.addMessageToUI('assistant', msg.content + '\n\n' + toolIndicator, null, response.data.tool_metadata);
-									} else {
-										self.addMessageToUI('assistant', toolIndicator, null, response.data.tool_metadata);
-									}
+									self.addMessageToUI('assistant', msg.content || '', msg.usage || null, response.data.tool_metadata, null, msg.tool_calls);
 								} else if (msg.content) {
 									// Regular message or final response after tool calls
 									// Use 'error' role if is_error flag is set for distinct styling
@@ -242,9 +247,18 @@
 		/**
 		 * Add message to UI
 		 */
-		addMessageToUI: function(role, content, usage, toolMetadata, failedTools) {
+		addMessageToUI: function(role, content, usage, toolMetadata, failedTools, toolCalls) {
 			var $messages = $('#chat-messages');
 			var self = this;
+
+			var hasText = content !== null && content !== undefined && String(content).trim() !== '';
+			var hasToolCalls = toolCalls && toolCalls.length > 0;
+			var hasFailed = failedTools && failedTools.length > 0;
+
+			// Don't render empty bubbles (e.g. a tool-only turn with no prose).
+			if (!hasText && !hasToolCalls && !hasFailed) {
+				return;
+			}
 
 			// Remove welcome message if present
 			$messages.find('.welcome-message').remove();
@@ -291,6 +305,22 @@
 				usageHTML += '</div>';
 			}
 
+			// Build tool-calls chip
+			var toolCallsHTML = '';
+			if (hasToolCalls) {
+				var toolCount = toolCalls.length;
+				toolCallsHTML = '<div class="tool-calls">' +
+					'<span class="tool-calls-label">' +
+						'<span class="dashicons dashicons-admin-tools"></span> Used ' +
+						toolCount + ' tool' + (toolCount !== 1 ? 's' : '') +
+					'</span><ul>';
+				toolCalls.forEach(function(tc) {
+					var shortName = tc && tc.name ? String(tc.name).split('/').pop() : 'tool';
+					toolCallsHTML += '<li>' + $('<div>').text(shortName).html() + '</li>';
+				});
+				toolCallsHTML += '</ul></div>';
+			}
+
 			// Build failed tools HTML with retry buttons
 			var failedToolsHTML = '';
 			if (failedTools && failedTools.length > 0) {
@@ -312,13 +342,15 @@
 				failedToolsHTML += '</ul></div>';
 			}
 
+			var textHTML = hasText ? '<div class="message-text">' + this.formatMessage(content) + '</div>' : '';
+
 			var messageHTML = '<div class="message message-' + role + '">' +
-				'<div class="message-avatar">' +
+				'<div class="message-avatar" role="img" aria-label="' + roleName + '">' +
 					'<span class="dashicons dashicons-' + avatarIcon + '"></span>' +
 				'</div>' +
 				'<div class="message-content">' +
-					'<div class="message-role">' + roleName + '</div>' +
-					'<div class="message-text">' + this.formatMessage(content) + '</div>' +
+					textHTML +
+					toolCallsHTML +
 					failedToolsHTML +
 					usageHTML +
 					'<div class="message-time">Just now</div>' +
@@ -385,43 +417,118 @@
 		},
 
 		/**
-		 * Format message content with markdown-like formatting
+		 * Format message content with markdown-like formatting.
+		 *
+		 * Line-based parser so lists, ordered lists, and tables group
+		 * correctly. All raw text is HTML-escaped before any tags are added.
 		 */
 		formatMessage: function(content) {
-			// Escape HTML first
-			var formatted = $('<div>').text(content).html();
+			if (content === null || content === undefined) {
+				content = '';
+			}
 
-			// Headers (### text)
-			formatted = formatted.replace(/^### (.+)$/gm, '<h4>$1</h4>');
-			formatted = formatted.replace(/^## (.+)$/gm, '<h3>$1</h3>');
-			formatted = formatted.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+			var esc = function(s) { return $('<div>').text(s).html(); };
 
-			// Bold (**text** or __text__)
-			formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-			formatted = formatted.replace(/__(.+?)__/g, '<strong>$1</strong>');
+			// Inline formatting applied to already-escaped text.
+			var inline = function(text) {
+				text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+				text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+				text = text.replace(/__(.+?)__/g, '<strong>$1</strong>');
+				text = text.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+				text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+				return text;
+			};
 
-			// Italic (*text* or _text_) - but not inside already bolded text
-			formatted = formatted.replace(/(?<!\*)\*([^\*]+)\*(?!\*)/g, '<em>$1</em>');
+			var isTableSep = function(s) { return s && s.indexOf('-') !== -1 && /^\s*\|?[\s:\-|]+\|?\s*$/.test(s); };
+			var parseRow = function(r) { return r.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map(function(c) { return c.trim(); }); };
 
-			// Code blocks (```code```)
-			formatted = formatted.replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>');
+			var lines = String(content).split('\n');
+			var html = '';
+			var i = 0;
 
-			// Inline code (`code`)
-			formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
+			while (i < lines.length) {
+				var line = lines[i];
 
-			// Unordered lists (lines starting with - or *)
-			formatted = formatted.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
-			formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+				// Fenced code block.
+				if (/^```/.test(line)) {
+					var code = [];
+					i++;
+					while (i < lines.length && !/^```/.test(lines[i])) { code.push(lines[i]); i++; }
+					i++;
+					html += '<pre><code>' + esc(code.join('\n')) + '</code></pre>';
+					continue;
+				}
 
-			// Checkmarks and warnings
-			formatted = formatted.replace(/✓/g, '<span class="dashicons dashicons-yes-alt" style="color: #00a32a;"></span>');
-			formatted = formatted.replace(/⚠️|⚠/g, '<span class="dashicons dashicons-warning" style="color: #dba617;"></span>');
+				// Headers.
+				var hm = line.match(/^(#{1,3})\s+(.*)$/);
+				if (hm) {
+					var level = hm[1].length + 1;
+					html += '<h' + level + '>' + inline(esc(hm[2])) + '</h' + level + '>';
+					i++;
+					continue;
+				}
 
-			// Line breaks and paragraphs
-			formatted = formatted.replace(/\n\n/g, '</p><p>');
-			formatted = formatted.replace(/\n/g, '<br>');
+				// Pipe table (header row + separator row).
+				if (line.indexOf('|') !== -1 && i + 1 < lines.length && isTableSep(lines[i + 1])) {
+					var headers = parseRow(line);
+					i += 2;
+					var rows = [];
+					while (i < lines.length && lines[i].indexOf('|') !== -1 && lines[i].trim() !== '') {
+						rows.push(parseRow(lines[i]));
+						i++;
+					}
+					var t = '<table class="chat-table"><thead><tr>';
+					headers.forEach(function(h) { t += '<th>' + inline(esc(h)) + '</th>'; });
+					t += '</tr></thead><tbody>';
+					rows.forEach(function(row) {
+						t += '<tr>';
+						row.forEach(function(c) { t += '<td>' + inline(esc(c)) + '</td>'; });
+						t += '</tr>';
+					});
+					html += t + '</tbody></table>';
+					continue;
+				}
 
-			return '<div class="formatted-content">' + formatted + '</div>';
+				// Unordered list.
+				if (/^\s*[-*]\s+/.test(line)) {
+					var items = [];
+					while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+						items.push(lines[i].replace(/^\s*[-*]\s+/, ''));
+						i++;
+					}
+					html += '<ul>' + items.map(function(it) { return '<li>' + inline(esc(it)) + '</li>'; }).join('') + '</ul>';
+					continue;
+				}
+
+				// Ordered list.
+				if (/^\s*\d+\.\s+/.test(line)) {
+					var oitems = [];
+					while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+						oitems.push(lines[i].replace(/^\s*\d+\.\s+/, ''));
+						i++;
+					}
+					html += '<ol>' + oitems.map(function(it) { return '<li>' + inline(esc(it)) + '</li>'; }).join('') + '</ol>';
+					continue;
+				}
+
+				// Blank line.
+				if (line.trim() === '') { i++; continue; }
+
+				// Paragraph: gather consecutive plain lines.
+				var para = [];
+				while (i < lines.length && lines[i].trim() !== '' &&
+					!/^```/.test(lines[i]) && !/^#{1,3}\s+/.test(lines[i]) &&
+					!/^\s*[-*]\s+/.test(lines[i]) && !/^\s*\d+\.\s+/.test(lines[i]) &&
+					!(lines[i].indexOf('|') !== -1 && i + 1 < lines.length && isTableSep(lines[i + 1]))) {
+					para.push(lines[i]);
+					i++;
+				}
+				if (para.length) {
+					html += '<p>' + inline(esc(para.join('\n'))).replace(/\n/g, '<br>') + '</p>';
+				}
+			}
+
+			return '<div class="formatted-content">' + html + '</div>';
 		},
 
 		/**
@@ -449,11 +556,10 @@
 			}
 
 			var typingHTML = '<div class="message message-assistant typing-indicator">' +
-				'<div class="message-avatar">' +
+				'<div class="message-avatar" role="img" aria-label="AI Assistant">' +
 					'<span class="dashicons dashicons-superhero"></span>' +
 				'</div>' +
 				'<div class="message-content">' +
-					'<div class="message-role">AI Assistant</div>' +
 					'<div class="message-loading">' +
 						'<span></span><span></span><span></span>' +
 					'</div>' +

@@ -28,6 +28,30 @@ $active_conversation     = $active_conversation_id ? $chat_manager->get_conversa
 $messages                = $active_conversation_id ? $chat_manager->get_messages( $active_conversation_id ) : array();
 $conversation_link_nonce = wp_create_nonce( 'specflux_mac_conversation' );
 
+if ( ! function_exists( 'specflux_mac_format_chat_markdown' ) ) {
+	/**
+	 * Apply lightweight inline Markdown to stored chat text.
+	 *
+	 * Covers the common inline cases (links, bold, inline code) so history on
+	 * reload matches the live JS renderer instead of showing literal markup.
+	 * The result is sanitized by wp_kses_post() at the call site.
+	 *
+	 * @param string $text Raw message text.
+	 * @return string Text with inline Markdown converted to HTML.
+	 */
+	function specflux_mac_format_chat_markdown( $text ) {
+		// Links: [label](https://url).
+		$text = preg_replace( '/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/', '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>', $text );
+		// Bold: **text** or __text__.
+		$text = preg_replace( '/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $text );
+		$text = preg_replace( '/__(.+?)__/s', '<strong>$1</strong>', $text );
+		// Inline code: `code`.
+		$text = preg_replace( '/`([^`]+)`/', '<code>$1</code>', $text );
+
+		return $text;
+	}
+}
+
 ?>
 
 <div class="wrap specflux-marketing-analytics-chat">
@@ -95,47 +119,69 @@ $conversation_link_nonce = wp_create_nonce( 'specflux_mac_conversation' );
 						</div>
 					<?php else : ?>
 						<?php foreach ( $messages as $message ) : ?>
-							<div class="message message-<?php echo esc_attr( $message->role ); ?>">
-								<div class="message-avatar">
-									<?php if ( 'user' === $message->role ) : ?>
+							<?php
+							$msg_role      = $message->role;
+							$msg_has_text  = '' !== trim( (string) $message->content );
+							$msg_has_tools = ! empty( $message->tool_calls );
+
+							// Tool result rows render as a compact collapsible chip, not a bubble.
+							if ( 'tool' === $msg_role ) :
+								$tool_pretty  = (string) $message->content;
+								$tool_decoded = json_decode( $tool_pretty, true );
+								if ( null !== $tool_decoded ) {
+									$tool_pretty = wp_json_encode( $tool_decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+								}
+								?>
+								<div class="message message-tool-activity">
+									<details class="tool-activity">
+										<summary>
+											<span class="dashicons dashicons-admin-tools"></span>
+											<?php
+											/* translators: %s: Tool name */
+											echo esc_html( sprintf( __( 'Used tool: %s', 'specflux-marketing-analytics-chat' ), $message->tool_name ) );
+											?>
+										</summary>
+										<pre class="tool-result"><?php echo esc_html( $tool_pretty ); ?></pre>
+									</details>
+								</div>
+								<?php
+								continue;
+							endif;
+
+							// Skip empty assistant/system bubbles that carry no text and no tool calls.
+							if ( ! $msg_has_text && ! $msg_has_tools ) {
+								continue;
+							}
+
+							$is_user      = 'user' === $msg_role;
+							$avatar_label = $is_user ? __( 'You', 'specflux-marketing-analytics-chat' ) : __( 'AI Assistant', 'specflux-marketing-analytics-chat' );
+							?>
+							<div class="message message-<?php echo esc_attr( $msg_role ); ?>">
+								<div class="message-avatar" role="img" aria-label="<?php echo esc_attr( $avatar_label ); ?>">
+									<?php if ( $is_user ) : ?>
 										<span class="dashicons dashicons-admin-users"></span>
-									<?php elseif ( 'assistant' === $message->role ) : ?>
+									<?php else : ?>
 										<span class="dashicons dashicons-superhero"></span>
-									<?php elseif ( 'tool' === $message->role ) : ?>
-										<span class="dashicons dashicons-admin-tools"></span>
 									<?php endif; ?>
 								</div>
 								<div class="message-content">
-									<div class="message-role">
-										<?php
-										if ( 'user' === $message->role ) {
-											esc_html_e( 'You', 'specflux-marketing-analytics-chat' );
-										} elseif ( 'assistant' === $message->role ) {
-											esc_html_e( 'AI Assistant', 'specflux-marketing-analytics-chat' );
-										} elseif ( 'tool' === $message->role ) {
-											/* translators: %s: Tool name */
-											echo esc_html( sprintf( __( 'Tool: %s', 'specflux-marketing-analytics-chat' ), $message->tool_name ) );
-										}
-										?>
-									</div>
-									<div class="message-text">
-										<?php
-										if ( 'tool' === $message->role ) {
-											echo '<pre>' . esc_html( $message->content ) . '</pre>';
-										} else {
-											echo wp_kses_post( wpautop( $message->content ) );
-										}
-										?>
-									</div>
-									<?php if ( ! empty( $message->tool_calls ) ) : ?>
+									<?php if ( $msg_has_text ) : ?>
+										<div class="message-text" data-md="<?php echo esc_attr( (string) $message->content ); ?>"><?php echo wp_kses_post( wpautop( specflux_mac_format_chat_markdown( (string) $message->content ) ) ); ?></div>
+									<?php endif; ?>
+									<?php if ( $msg_has_tools ) : ?>
 										<div class="tool-calls">
-											<strong><?php esc_html_e( 'Using tools:', 'specflux-marketing-analytics-chat' ); ?></strong>
+											<span class="tool-calls-label">
+												<span class="dashicons dashicons-admin-tools"></span>
+												<?php
+												$tool_count = count( $message->tool_calls );
+												/* translators: %d: number of tools used */
+												echo esc_html( sprintf( _n( 'Used %d tool', 'Used %d tools', $tool_count, 'specflux-marketing-analytics-chat' ), $tool_count ) );
+												?>
+											</span>
 											<ul>
 												<?php foreach ( $message->tool_calls as $tool_call ) : ?>
-													<li>
-														<span class="dashicons dashicons-admin-tools"></span>
-														<?php echo esc_html( $tool_call['name'] ?? 'Unknown tool' ); ?>
-													</li>
+													<?php $tc_name = (string) ( $tool_call['name'] ?? 'tool' ); ?>
+													<li><?php echo esc_html( false !== strpos( $tc_name, '/' ) ? substr( strrchr( $tc_name, '/' ), 1 ) : $tc_name ); ?></li>
 												<?php endforeach; ?>
 											</ul>
 										</div>
@@ -180,6 +226,16 @@ $conversation_link_nonce = wp_create_nonce( 'specflux_mac_conversation' );
 								<?php esc_html_e( 'Send', 'specflux-marketing-analytics-chat' ); ?>
 							</button>
 						</div>
+						<p class="input-hint">
+							<?php
+							printf(
+								/* translators: 1: Enter key label, 2: Shift+Enter key label */
+								esc_html__( 'Press %1$s to send, %2$s for a new line.', 'specflux-marketing-analytics-chat' ),
+								'<kbd>' . esc_html__( 'Enter', 'specflux-marketing-analytics-chat' ) . '</kbd>',
+								'<kbd>' . esc_html__( 'Shift + Enter', 'specflux-marketing-analytics-chat' ) . '</kbd>'
+							);
+							?>
+						</p>
 					</form>
 				</div>
 			<?php else : ?>
