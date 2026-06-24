@@ -256,16 +256,44 @@ class WP_AI_Provider implements LLM_Provider_Interface {
 				continue;
 			}
 
-			$input_schema = $tool['inputSchema'] ?? null;
+			$input_schema = $this->normalize_schema( $tool['inputSchema'] ?? null );
 
 			$declarations[] = new FunctionDeclaration(
 				$this->convert_tool_name_from_mcp( $name ),
 				$tool['description'] ?? '',
-				! empty( $input_schema ) ? $input_schema : null
+				$input_schema
 			);
 		}
 
 		return $declarations;
+	}
+
+	/**
+	 * Normalize a JSON schema so strict providers accept it
+	 *
+	 * Tools with no parameters (e.g. argument-less prompts) build their schema
+	 * with an empty PHP array for `properties`, which json_encodes to `[]`.
+	 * JSON Schema (and OpenAI's strict validation) require `properties` to be an
+	 * object, so an empty array is rejected with "[] is not of type 'object'".
+	 * Force an object and drop an empty `required` list.
+	 *
+	 * @param array|null $schema Raw input schema.
+	 * @return array|null Normalized schema, or null when there is nothing to send.
+	 */
+	private function normalize_schema( $schema ) {
+		if ( empty( $schema ) || ! is_array( $schema ) ) {
+			return null;
+		}
+
+		if ( isset( $schema['properties'] ) && is_array( $schema['properties'] ) && empty( $schema['properties'] ) ) {
+			$schema['properties'] = new \stdClass();
+		}
+
+		if ( isset( $schema['required'] ) && is_array( $schema['required'] ) && empty( $schema['required'] ) ) {
+			unset( $schema['required'] );
+		}
+
+		return $schema;
 	}
 
 	/**

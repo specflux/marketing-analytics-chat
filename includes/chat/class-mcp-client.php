@@ -178,8 +178,10 @@ class MCP_Client {
 			$ability = wp_get_ability( $tool_name );
 
 			if ( $ability instanceof \WP_Ability ) {
-				// Execute the ability directly.
-				$result = $ability->execute( $arguments );
+				// Execute the ability directly. Core treats an empty array as
+				// "input provided" and rejects it when the ability defines no
+				// input schema, so pass null for argument-less tool calls.
+				$result = $ability->execute( empty( $arguments ) ? null : $arguments );
 
 				if ( is_wp_error( $result ) ) {
 					return $result;
