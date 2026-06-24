@@ -27,9 +27,9 @@ class Activator {
 	 */
 	public static function activate() {
 		// Check minimum WordPress version.
-		if ( version_compare( get_bloginfo( 'version' ), '6.9', '<' ) ) {
+		if ( version_compare( get_bloginfo( 'version' ), '7.0', '<' ) ) {
 			wp_die(
-				esc_html__( 'Specflux Marketing Analytics Chat requires WordPress 6.9 or higher.', 'specflux-marketing-analytics-chat' ),
+				esc_html__( 'Specflux Marketing Analytics Chat requires WordPress 7.0 or higher.', 'specflux-marketing-analytics-chat' ),
 				esc_html__( 'Plugin Activation Error', 'specflux-marketing-analytics-chat' ),
 				array( 'back_link' => true )
 			);

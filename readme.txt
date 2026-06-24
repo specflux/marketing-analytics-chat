@@ -2,9 +2,9 @@
 Contributors: stephenpaulsamynathan
 Donate link: https://www.specflux.com/
 Tags: marketing analytics, ai, chat, mcp
-Requires at least: 6.9
-Tested up to: 6.9
-Stable tag: 0.1.6
+Requires at least: 7.0
+Tested up to: 7.0
+Stable tag: 0.2.0
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -23,7 +23,7 @@ Specflux Marketing Analytics Chat lets you have conversations with your marketin
 
 = Key Features =
 
-* **Built-in AI Chat** - Chat with your analytics data using Claude, OpenAI, or Google Gemini directly in WordPress
+* **Built-in AI Chat** - Chat with your analytics data using the native WordPress AI Client (no API key setup in the plugin), or bring your own Claude, OpenAI, or Google Gemini key
 * **MCP-Native Architecture** - Exposes analytics as MCP abilities for any compatible AI assistant
 * **Interactive Onboarding Wizard** - Step-by-step setup with guided configuration
 * **Analytics at a Glance Dashboard** - Dashboard widget with sparkline trends
@@ -45,7 +45,7 @@ Specflux Marketing Analytics Chat lets you have conversations with your marketin
 
 = Requirements =
 
-* WordPress 6.9 or higher (includes Abilities API in core)
+* WordPress 7.0 or higher (includes Abilities API and AI Client in core)
 * MCP Adapter plugin (from WordPress.org)
 * PHP 8.1 or higher
 * SSL certificate (HTTPS) for OAuth connections
@@ -63,11 +63,13 @@ This plugin connects to the following third-party services when you configure th
 * **OpenAI API** (https://platform.openai.com/docs) - When OpenAI is selected as the AI provider, your analytics data and chat messages are sent to OpenAI's servers for AI responses. Requires your own API key. [OpenAI Privacy Policy](https://openai.com/policies/privacy-policy)
 * **Google Gemini API** (https://ai.google.dev/docs) - When Gemini is selected as the AI provider, your analytics data and chat messages are sent to Google's servers for AI responses. Requires your own API key. [Google Privacy Policy](https://policies.google.com/privacy)
 
+When "WordPress AI" is selected as the AI provider, requests are routed through the WordPress core AI Client to whichever AI provider you have configured under Settings > Connectors in WordPress. The privacy policy of that provider applies.
+
 == Installation ==
 
 = Prerequisites =
 
-1. Ensure you are running WordPress 6.9 or higher (includes Abilities API)
+1. Ensure you are running WordPress 7.0 or higher (includes Abilities API and AI Client)
 2. Install and activate the "MCP Adapter" plugin from WordPress.org
 
 = Plugin Installation =
@@ -122,7 +124,7 @@ You can ask questions like:
 
 = What WordPress versions are supported? =
 
-WordPress 6.9 and higher is required. The plugin uses the Abilities API (included in WordPress 6.9 core) and requires the MCP Adapter plugin.
+WordPress 7.0 and higher is required. The plugin uses the Abilities API and the AI Client (both included in WordPress 7.0 core) and requires the MCP Adapter plugin for external AI client access.
 
 == Screenshots ==
 
@@ -132,6 +134,12 @@ WordPress 6.9 and higher is required. The plugin uses the Abilities API (include
 4. Settings page with API configuration
 
 == Changelog ==
+
+= 0.2.0 - 2026-06-11 =
+* Added: Native WordPress AI Client chat provider - use the AI provider configured in WordPress core (Settings > Connectors) without entering an API key in the plugin
+* Added: Behavior annotations (read-only, non-destructive, idempotent) on all registered abilities for better AI agent safety hints
+* Changed: Minimum required WordPress version is now 7.0 (Abilities API and AI Client in core)
+* Changed: Admin notices now use the wp_admin_notice() core function
 
 = 0.1.6 - 2026-05-09 =
 * Fixed: Downgraded PHPUnit to ^10.5 for PHP 8.1 compatibility in CI

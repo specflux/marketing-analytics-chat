@@ -98,6 +98,13 @@ class Prompts {
 					return $this->execute_prompt( $prompt_data, $args );
 				},
 				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}

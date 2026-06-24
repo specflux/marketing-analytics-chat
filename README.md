@@ -2,13 +2,13 @@
 
 > Expose Google Analytics 4, Search Console, and Microsoft Clarity data to AI assistants via the Model Context Protocol.
 
-[![WordPress Version](https://img.shields.io/badge/WordPress-6.9%2B-blue)](https://wordpress.org/)
+[![WordPress Version](https://img.shields.io/badge/WordPress-7.0%2B-blue)](https://wordpress.org/)
 [![PHP Version](https://img.shields.io/badge/PHP-8.1%2B-purple)](https://www.php.net/)
 [![License](https://img.shields.io/badge/License-GPL%20v2%2B-green)](LICENSE)
 
 ## Overview
 
-This WordPress plugin bridges your marketing analytics platforms with AI assistants using the **Model Context Protocol (MCP)**. Built on WordPress 6.9+ Abilities API and the MCP Adapter plugin, it exposes analytics data as MCP abilities that any compatible AI client can use.
+This WordPress plugin bridges your marketing analytics platforms with AI assistants using the **Model Context Protocol (MCP)**. Built on the WordPress 7.0+ Abilities API and the MCP Adapter plugin, it exposes analytics data as MCP abilities that any compatible AI client can use.
 
 ### Supported Platforms
 
@@ -27,7 +27,7 @@ This WordPress plugin bridges your marketing analytics platforms with AI assista
 
 ### Built-in AI Chat
 
-Chat with your analytics data directly in WordPress using Claude (Anthropic), OpenAI GPT, or Google Gemini. Bring your own API key — the plugin connects to the MCP abilities and lets the AI analyze your data conversationally.
+Chat with your analytics data directly in WordPress. Use the native WordPress AI Client (WordPress 7.0+, configured under Settings > Connectors — no API key stored in the plugin), or bring your own key for Claude (Anthropic), OpenAI GPT, or Google Gemini. The plugin connects the AI to the MCP abilities and lets it analyze your data conversationally.
 
 ### Additional Features
 
@@ -43,7 +43,7 @@ Chat with your analytics data directly in WordPress using Claude (Anthropic), Op
 
 ## Requirements
 
-- **WordPress**: 6.9+
+- **WordPress**: 7.0+
 - **PHP**: 8.1+
 - **PHP Extensions**: `json`, `curl`, `openssl`, `sodium`
 - **Required Plugin**: [MCP Adapter](https://wordpress.org/plugins/mcp-adapter/)

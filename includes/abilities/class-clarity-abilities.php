@@ -92,6 +92,13 @@ class Clarity_Abilities {
 
 				'execute_callback'    => array( $this, 'execute_get_clarity_insights' ),
 				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}
@@ -154,6 +161,13 @@ class Clarity_Abilities {
 
 				'execute_callback'    => array( $this, 'execute_get_clarity_recordings' ),
 				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}
@@ -202,6 +216,13 @@ class Clarity_Abilities {
 
 				'execute_callback'    => array( $this, 'execute_analyze_clarity_heatmaps' ),
 				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}
@@ -229,6 +250,13 @@ class Clarity_Abilities {
 
 				'execute_callback'    => array( $this, 'execute_clarity_dashboard' ),
 				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}

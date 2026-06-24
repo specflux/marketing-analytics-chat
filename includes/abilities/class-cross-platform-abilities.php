@@ -70,7 +70,6 @@ class Cross_Platform_Abilities {
 		wp_register_ability(
 			'marketing-analytics/compare-periods',
 			array(
-				'type'         => 'tool',
 				'label'        => __( 'Compare Periods', 'specflux-marketing-analytics-chat' ),
 				'description'  => __( 'Compare analytics metrics between two time periods across connected platforms.', 'specflux-marketing-analytics-chat' ),
 				'category'     => 'marketing-analytics',
@@ -98,7 +97,15 @@ class Cross_Platform_Abilities {
 					),
 					'required'   => array( 'period_a', 'period_b' ),
 				),
-				'callback'     => array( $this, 'handle_compare_periods' ),
+				'execute_callback'    => array( $this, 'handle_compare_periods' ),
+				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}
@@ -110,7 +117,6 @@ class Cross_Platform_Abilities {
 		wp_register_ability(
 			'marketing-analytics/get-top-content',
 			array(
-				'type'         => 'tool',
 				'label'        => __( 'Get Top Content', 'specflux-marketing-analytics-chat' ),
 				'description'  => __( 'Get top performing content by combining GA4 engagement and GSC search data.', 'specflux-marketing-analytics-chat' ),
 				'category'     => 'marketing-analytics',
@@ -127,7 +133,15 @@ class Cross_Platform_Abilities {
 						),
 					),
 				),
-				'callback'     => array( $this, 'handle_get_top_content' ),
+				'execute_callback'    => array( $this, 'handle_get_top_content' ),
+				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}
@@ -139,7 +153,6 @@ class Cross_Platform_Abilities {
 		wp_register_ability(
 			'marketing-analytics/generate-summary-report',
 			array(
-				'type'         => 'tool',
 				'label'        => __( 'Generate Summary Report', 'specflux-marketing-analytics-chat' ),
 				'description'  => __( 'Generate a comprehensive analytics summary report from all connected platforms.', 'specflux-marketing-analytics-chat' ),
 				'category'     => 'marketing-analytics',
@@ -157,7 +170,15 @@ class Cross_Platform_Abilities {
 						),
 					),
 				),
-				'callback'     => array( $this, 'handle_generate_summary_report' ),
+				'execute_callback'    => array( $this, 'handle_generate_summary_report' ),
+				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}
@@ -393,9 +414,11 @@ class Cross_Platform_Abilities {
 	/**
 	 * Check user permissions
 	 *
+	 * Public so it can serve as the ability permission_callback.
+	 *
 	 * @return bool True if user has permission.
 	 */
-	private function check_permissions() {
+	public function check_permissions() {
 		return Permission_Manager::can_access_plugin();
 	}
 

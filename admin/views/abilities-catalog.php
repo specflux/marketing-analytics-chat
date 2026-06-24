@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Build the abilities list.
  *
- * Uses wp_get_registered_abilities() if available (WordPress 6.9+),
+ * Uses wp_get_registered_abilities() if available (WordPress 7.0+),
  * otherwise falls back to a static list of known abilities.
  */
 $mac_abilities = array();

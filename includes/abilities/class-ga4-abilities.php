@@ -95,6 +95,13 @@ class GA4_Abilities {
 
 				'execute_callback'    => array( $this, 'execute_get_ga4_metrics' ),
 				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}
@@ -142,6 +149,13 @@ class GA4_Abilities {
 
 				'execute_callback'    => array( $this, 'execute_get_ga4_events' ),
 				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}
@@ -179,6 +193,13 @@ class GA4_Abilities {
 
 				'execute_callback'    => array( $this, 'execute_get_ga4_realtime' ),
 				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}
@@ -222,6 +243,13 @@ class GA4_Abilities {
 
 				'execute_callback'    => array( $this, 'execute_get_traffic_sources' ),
 				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}
@@ -248,6 +276,13 @@ class GA4_Abilities {
 
 				'execute_callback'    => array( $this, 'execute_ga4_overview' ),
 				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}

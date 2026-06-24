@@ -91,6 +91,13 @@ class GSC_Abilities {
 
 				'execute_callback'    => array( $this, 'execute_get_search_performance' ),
 				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}
@@ -146,6 +153,13 @@ class GSC_Abilities {
 
 				'execute_callback'    => array( $this, 'execute_get_top_queries' ),
 				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}
@@ -191,6 +205,13 @@ class GSC_Abilities {
 
 				'execute_callback'    => array( $this, 'execute_get_indexing_status' ),
 				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}
@@ -217,6 +238,13 @@ class GSC_Abilities {
 
 				'execute_callback'    => array( $this, 'execute_gsc_overview' ),
 				'permission_callback' => array( $this, 'check_permissions' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
 			)
 		);
 	}

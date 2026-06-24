@@ -48,7 +48,7 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 	$new_settings      = array();
 
 	// AI Chat Settings.
-	$new_settings['ai_provider']    = sanitize_text_field( wp_unslash( $_POST['ai_provider'] ?? 'claude' ) );
+	$new_settings['ai_provider']    = sanitize_text_field( wp_unslash( $_POST['ai_provider'] ?? 'wp-ai' ) );
 	$new_settings['claude_api_key'] = sanitize_text_field( wp_unslash( $_POST['claude_api_key'] ?? '' ) );
 	$new_settings['claude_model']   = sanitize_text_field( wp_unslash( $_POST['claude_model'] ?? 'claude-sonnet-4-20250514' ) );
 	$new_settings['openai_api_key'] = sanitize_text_field( wp_unslash( $_POST['openai_api_key'] ?? '' ) );
@@ -144,7 +144,10 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 							</th>
 							<td>
 								<select id="ai_provider" name="ai_provider">
-									<option value="claude"									                       <?php selected( isset( $settings['ai_provider'] ) ? $settings['ai_provider'] : 'claude', 'claude' ); ?>>
+									<option value="wp-ai" <?php selected( isset( $settings['ai_provider'] ) ? $settings['ai_provider'] : 'wp-ai', 'wp-ai' ); ?>>
+									<?php esc_html_e( 'WordPress AI (Core) - No API key needed', 'specflux-marketing-analytics-chat' ); ?>
+									</option>
+									<option value="claude"									                       <?php selected( isset( $settings['ai_provider'] ) ? $settings['ai_provider'] : 'wp-ai', 'claude' ); ?>>
 									<?php esc_html_e( 'Claude (Anthropic)', 'specflux-marketing-analytics-chat' ); ?>
 									</option>
 									<option value="openai"									                       <?php selected( isset( $settings['ai_provider'] ) ? $settings['ai_provider'] : '', 'openai' ); ?>>
@@ -154,7 +157,7 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 									<?php esc_html_e( 'Google Gemini', 'specflux-marketing-analytics-chat' ); ?>
 									</option>
 								</select>
-								<p class="description"><?php esc_html_e( 'Select the AI provider for chat responses.', 'specflux-marketing-analytics-chat' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Select the AI provider for chat responses. "WordPress AI (Core)" uses the provider configured in WordPress under Settings > Connectors - no API key is stored in this plugin.', 'specflux-marketing-analytics-chat' ); ?></p>
 							</td>
 						</tr>
 						<tr>
@@ -917,7 +920,7 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 					<?php wp_nonce_field( 'specflux_mac_save_settings', 'settings_nonce' ); ?>
 
 					<!-- Preserve other settings -->
-					<input type="hidden" name="ai_provider" value="<?php echo esc_attr( $settings['ai_provider'] ?? 'claude' ); ?>" />
+					<input type="hidden" name="ai_provider" value="<?php echo esc_attr( $settings['ai_provider'] ?? 'wp-ai' ); ?>" />
 					<input type="hidden" name="claude_api_key" value="<?php echo esc_attr( $settings['claude_api_key'] ?? '' ); ?>" />
 					<input type="hidden" name="claude_model" value="<?php echo esc_attr( $settings['claude_model'] ?? 'claude-sonnet-4-20250514' ); ?>" />
 					<input type="hidden" name="openai_api_key" value="<?php echo esc_attr( $settings['openai_api_key'] ?? '' ); ?>" />
@@ -1002,7 +1005,7 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 				<?php wp_nonce_field( 'specflux_mac_save_settings', 'settings_nonce' ); ?>
 
 					<!-- Preserve other settings -->
-					<input type="hidden" name="ai_provider" value="<?php echo esc_attr( $settings['ai_provider'] ?? 'claude' ); ?>" />
+					<input type="hidden" name="ai_provider" value="<?php echo esc_attr( $settings['ai_provider'] ?? 'wp-ai' ); ?>" />
 					<input type="hidden" name="claude_api_key" value="<?php echo esc_attr( $settings['claude_api_key'] ?? '' ); ?>" />
 					<input type="hidden" name="claude_model" value="<?php echo esc_attr( $settings['claude_model'] ?? 'claude-sonnet-4-20250514' ); ?>" />
 					<input type="hidden" name="openai_api_key" value="<?php echo esc_attr( $settings['openai_api_key'] ?? '' ); ?>" />

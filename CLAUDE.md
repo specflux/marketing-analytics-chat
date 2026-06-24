@@ -34,6 +34,20 @@ free/
 - Text domain: `specflux-marketing-analytics-chat`
 - All strings: `esc_html_e( 'String', 'specflux-marketing-analytics-chat' )`
 
+## Naming Conventions — One Rule Per Context
+
+| Context | Prefix | Example |
+|---|---|---|
+| Script/style handles | `specflux-mac-` | `specflux-mac-admin`, `specflux-mac-sparklines` |
+| JS globals (`wp_localize_script`) | `specfluxMac` | `specfluxMacAdmin`, `specfluxMacChat` |
+| Menu/page slugs (appear in URLs) | `specflux-marketing-analytics-chat-` | `specflux-marketing-analytics-chat-settings` |
+| Options, hooks, AJAX, transients, nonces | `specflux_mac_` | `specflux_mac_settings`, `specflux_mac_save` |
+| PHP constants | `SPECFLUX_MAC_` | `SPECFLUX_MAC_VERSION` |
+| CSS classes / design tokens | `.smac-` / `--smac-` | `.smac-card`, `--smac-primary` |
+| Text domain / plugin slug | `specflux-marketing-analytics-chat` | (fixed, matches WordPress.org slug) |
+
+**Rule of thumb:** use `specflux-mac-` everywhere except where WordPress requires the full slug (menu slugs that appear in admin URLs) or where WordPress.org mandates the exact slug (text domain, plugin directory).
+
 ## Development Commands
 
 ```bash
@@ -100,8 +114,11 @@ The `marketing-analytics/` prefix in ability names (e.g., `marketing-analytics/g
 ### Repository Structure: free/ Is the GitHub Repo
 `free/` is a standalone git repo with its own remote (`github.com/specflux/marketing-analytics-chat`). The root directory is a local-only wrapper with no remote. GitHub Actions workflows must live in `free/.github/workflows/` — the root `.github/workflows/` files are stale copies GitHub never sees. All workflow file paths are relative to `free/` as repo root (no `free/` prefix needed).
 
-### WordPress 6.9 Abilities API vs MCP Adapter
-WordPress 6.9 includes the Abilities API in core (`wp_register_ability`, `wp_get_ability`), but MCP Adapter is a separate plugin that bridges abilities to the Model Context Protocol. This plugin works standalone for built-in chat (uses direct Abilities API calls in `class-mcp-client.php`), but external MCP clients (Claude Desktop, Cursor) need MCP Adapter. MCP Adapter is not yet on WordPress.org — preserved code with hard dependency is on branch `feature/mcp-adapter-dependency` for when it's available.
+### WordPress 7.0 Baseline: Abilities API, AI Client, MCP Adapter
+The plugin requires WordPress 7.0+ (since 0.2.0). Core provides the Abilities API (`wp_register_ability`, `wp_get_ability`) and the AI Client (`wp_ai_client_prompt()`, Settings > Connectors for provider keys). MCP Adapter remains a separate plugin that bridges abilities to the Model Context Protocol. This plugin works standalone for built-in chat (direct Abilities API calls in `class-mcp-client.php`), but external MCP clients (Claude Desktop, Cursor) need MCP Adapter. MCP Adapter is not yet on WordPress.org — preserved code with hard dependency is on branch `feature/mcp-adapter-dependency` for when it's available.
+
+### WP AI Provider (native core AI Client)
+`class-wp-ai-provider.php` (settings slug `wp-ai`, default for new installs) routes chat through the core AI Client — no API key stored in the plugin. The slug is deliberately `wp-ai`, NOT `wordpress`: the WPCS CapitalPDangit sniff flags the literal `'wordpress'` and phpcbf would corrupt it to `'WordPress'`. Tool names sent to the model use core's `wpab__` prefix convention (`wpab__marketing-analytics__get-ga4-metrics`).
 
 ### Soft Dependency Pattern for WordPress.org
 For optional plugin dependencies not on WordPress.org, use a soft check: call `is_plugin_active()`, show dismissible `notice-info` (not `notice-error`), limit display to relevant admin pages via `get_current_screen()`, and always return `true` so the plugin runs regardless. See `check_plugin_dependencies()` in main plugin file.

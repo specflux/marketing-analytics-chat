@@ -276,7 +276,15 @@ class Chat_Ajax_Handler {
 	 */
 	private function get_llm_provider() {
 		$settings = get_option( 'specflux_mac_settings', array() );
-		$provider = $settings['ai_provider'] ?? 'claude';
+		$provider = $settings['ai_provider'] ?? 'wp-ai';
+
+		if ( 'wp-ai' === $provider ) {
+			$config = array(
+				'temperature' => $settings['ai_temperature'] ?? 0.7,
+				'max_tokens'  => $settings['ai_max_tokens'] ?? 4096,
+			);
+			return new WP_AI_Provider( $config );
+		}
 
 		if ( 'claude' === $provider ) {
 			$config = array(
