@@ -374,12 +374,29 @@
 	padding: 40px;
 }
 
-.empty-state .dashicons {
+.empty-state > .dashicons {
 	font-size: 64px;
 	width: 64px;
 	height: 64px;
 	color: #a7aaad;
 	margin-bottom: 16px;
+}
+
+.empty-state #new-conversation-main {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+
+/* Center the plus glyph within its box; the button's line-height otherwise
+   pushes the dashicons glyph below the label baseline. */
+.sidebar-header .button-block .dashicons,
+.empty-state #new-conversation-main .dashicons {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
 }
 
 .empty-state h2 {
