@@ -1,0 +1,2785 @@
+# Copyright (C) 2026 Stephen Paul Samynathan
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Specflux Marketing Analytics Chat 0.2.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/free\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-07-02T11:11:55+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: specflux-marketing-analytics-chat\n"
+
+#. Plugin Name of the plugin
+#: specflux-marketing-analytics-chat.php
+msgid "Specflux Marketing Analytics Chat"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: specflux-marketing-analytics-chat.php
+msgid "https://github.com/specflux/marketing-analytics-chat"
+msgstr ""
+
+#. Description of the plugin
+#: specflux-marketing-analytics-chat.php
+msgid "Chat with your marketing analytics data using AI. Connects Google Analytics 4, Search Console, Microsoft Clarity, and more."
+msgstr ""
+
+#. Author of the plugin
+#: specflux-marketing-analytics-chat.php
+msgid "Stephen Paul Samynathan"
+msgstr ""
+
+#. Author URI of the plugin
+#: specflux-marketing-analytics-chat.php
+msgid "https://www.specflux.com/author/stephen/"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:43
+#: includes/abilities/class-ga4-abilities.php:45
+msgid "Get GA4 Metrics"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:45
+msgid "Retrieve traffic, user, and conversion metrics from Google Analytics 4."
+msgstr ""
+
+#: admin/views/abilities-catalog.php:51
+msgid "Get GA4 Realtime"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:53
+msgid "Get real-time active users and pageviews from Google Analytics 4."
+msgstr ""
+
+#: admin/views/abilities-catalog.php:59
+msgid "Get GA4 Audience"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:61
+msgid "Analyze audience demographics, devices, and geographic distribution."
+msgstr ""
+
+#: admin/views/abilities-catalog.php:69
+#: includes/abilities/class-gsc-abilities.php:44
+msgid "Get Search Performance"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:71
+msgid "Query search analytics for clicks, impressions, CTR, and average position."
+msgstr ""
+
+#: admin/views/abilities-catalog.php:77
+#: includes/abilities/class-gsc-abilities.php:112
+msgid "Get Top Queries"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:79
+msgid "Retrieve top-performing search queries by clicks or impressions."
+msgstr ""
+
+#: admin/views/abilities-catalog.php:85
+msgid "Get Page Performance"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:87
+msgid "Analyze individual page search performance and keyword rankings."
+msgstr ""
+
+#: admin/views/abilities-catalog.php:95
+msgid "Get Clarity Insights"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:97
+msgid "Retrieve session recordings, heatmap data, and user behavior insights."
+msgstr ""
+
+#: admin/views/abilities-catalog.php:103
+msgid "Get Clarity Metrics"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:105
+msgid "Get dead clicks, rage clicks, scroll depth, and engagement metrics."
+msgstr ""
+
+#: admin/views/abilities-catalog.php:113
+msgid "Cross-Platform Summary"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:115
+msgid "Get a unified summary combining data from all connected platforms."
+msgstr ""
+
+#: admin/views/abilities-catalog.php:121
+msgid "Compare Platforms"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:123
+msgid "Compare metrics across platforms to identify correlations and discrepancies."
+msgstr ""
+
+#: admin/views/abilities-catalog.php:136
+msgid "MCP Abilities Catalog"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:138
+msgid "All the analytics abilities available to your AI assistants via the Model Context Protocol. No competitor has MCP-native architecture."
+msgstr ""
+
+#: admin/views/abilities-catalog.php:144
+msgid "All"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:147
+msgid "Google Analytics"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:150
+msgid "Search Console"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:153
+#: admin/views/dashboard.php:184
+#: admin/views/dashboard.php:190
+msgid "Clarity"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:156
+msgid "Cross-Platform"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:176
+msgid "Free"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:186
+msgid "Connect Your AI Assistant"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:187
+msgid "Any MCP-compatible AI assistant can use these abilities. Add this endpoint to your assistant configuration:"
+msgstr ""
+
+#: admin/views/abilities-catalog.php:191
+#: admin/views/dashboard.php:384
+msgid "Copy URL"
+msgstr ""
+
+#. translators: %s: link to documentation
+#: admin/views/abilities-catalog.php:198
+#, php-format
+msgid "Works with Claude Desktop, ChatGPT, Cursor, and any MCP-compatible client. See our %s for setup guides."
+msgstr ""
+
+#: admin/views/abilities-catalog.php:199
+#: admin/views/dashboard.php:392
+msgid "documentation"
+msgstr ""
+
+#: admin/views/chat.php:65
+#: admin/views/chat.php:164
+#: admin/views/dashboard.php:48
+#: admin/views/dashboard.php:363
+#: includes/admin/class-admin.php:90
+#: includes/admin/class-admin.php:91
+msgid "AI Assistant"
+msgstr ""
+
+#: admin/views/chat.php:67
+msgid "Chat with an AI assistant about your marketing analytics data. The assistant can access Clarity, Google Analytics, and Search Console data."
+msgstr ""
+
+#: admin/views/chat.php:76
+msgid "New Conversation"
+msgstr ""
+
+#: admin/views/chat.php:83
+msgid "No conversations yet. Start a new conversation!"
+msgstr ""
+
+#: admin/views/chat.php:101
+msgid "Delete conversation"
+msgstr ""
+
+#: admin/views/chat.php:118
+msgid "Welcome to your AI Analytics Assistant!"
+msgstr ""
+
+#: admin/views/chat.php:119
+msgid "Ask me anything about your marketing analytics data. I can help with:"
+msgstr ""
+
+#: admin/views/chat.php:121
+msgid "Traffic trends and performance metrics"
+msgstr ""
+
+#: admin/views/chat.php:122
+msgid "Search Console rankings and queries"
+msgstr ""
+
+#: admin/views/chat.php:123
+msgid "User behavior insights from Clarity"
+msgstr ""
+
+#: admin/views/chat.php:124
+msgid "Period comparisons and analysis"
+msgstr ""
+
+#. translators: %s: Tool name
+#: admin/views/chat.php:148
+#, php-format
+msgid "Used tool: %s"
+msgstr ""
+
+#: admin/views/chat.php:164
+msgid "You"
+msgstr ""
+
+#. translators: %d: number of tools used
+#: admin/views/chat.php:185
+#, php-format
+msgid "Used %d tool"
+msgid_plural "Used %d tools"
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/views/chat.php:212
+#: admin/views/chat.php:213
+msgid "Show me traffic trends for the last 30 days"
+msgstr ""
+
+#: admin/views/chat.php:215
+#: admin/views/chat.php:216
+msgid "What are my top performing pages?"
+msgstr ""
+
+#: admin/views/chat.php:218
+#: admin/views/chat.php:219
+msgid "Compare this week vs last week"
+msgstr ""
+
+#: admin/views/chat.php:227
+msgid "Ask about your analytics data..."
+msgstr ""
+
+#: admin/views/chat.php:233
+msgid "Send"
+msgstr ""
+
+#. translators: 1: Enter key label, 2: Shift+Enter key label
+#: admin/views/chat.php:240
+#, php-format
+msgid "Press %1$s to send, %2$s for a new line."
+msgstr ""
+
+#: admin/views/chat.php:241
+msgid "Enter"
+msgstr ""
+
+#: admin/views/chat.php:242
+msgid "Shift + Enter"
+msgstr ""
+
+#: admin/views/chat.php:253
+msgid "No Conversation Selected"
+msgstr ""
+
+#: admin/views/chat.php:254
+msgid "Select a conversation from the sidebar or start a new one."
+msgstr ""
+
+#: admin/views/chat.php:257
+msgid "Start New Conversation"
+msgstr ""
+
+#. translators: %s: service name
+#: admin/views/connections.php:51
+#, php-format
+msgid "Successfully disconnected from %s."
+msgstr ""
+
+#: admin/views/connections.php:56
+msgid "Failed to disconnect."
+msgstr ""
+
+#: admin/views/connections.php:95
+msgid "Clarity credentials saved successfully!"
+msgstr ""
+
+#: admin/views/connections.php:97
+msgid "Failed to save Clarity credentials."
+msgstr ""
+
+#: admin/views/connections.php:100
+#: admin/views/prompts.php:37
+msgid "Please fill in all required fields."
+msgstr ""
+
+#: admin/views/connections.php:141
+msgid "Configure API credentials for your marketing analytics platforms."
+msgstr ""
+
+#: admin/views/connections.php:146
+#: admin/views/dashboard.php:280
+#: admin/views/onboarding/wizard.php:102
+msgid "Microsoft Clarity"
+msgstr ""
+
+#: admin/views/connections.php:149
+#: admin/views/connections/gsc.php:65
+#: admin/views/dashboard.php:301
+#: admin/views/onboarding/wizard.php:125
+msgid "Google Analytics 4"
+msgstr ""
+
+#: admin/views/connections.php:152
+#: admin/views/dashboard.php:322
+#: admin/views/onboarding/wizard.php:148
+msgid "Google Search Console"
+msgstr ""
+
+#: admin/views/connections.php:171
+msgid "Microsoft Clarity Configuration"
+msgstr ""
+
+#: admin/views/connections.php:175
+#: admin/views/connections.php:262
+#: admin/views/connections.php:399
+#: admin/views/connections/ga4.php:45
+#: admin/views/connections/gsc.php:45
+#: admin/views/dashboard.php:284
+#: admin/views/dashboard.php:305
+#: admin/views/dashboard.php:326
+#: admin/views/onboarding/wizard.php:109
+#: admin/views/onboarding/wizard.php:132
+#: admin/views/onboarding/wizard.php:155
+msgid "Connected"
+msgstr ""
+
+#: admin/views/connections.php:180
+#: admin/views/connections.php:267
+#: admin/views/connections.php:404
+#: admin/views/connections/ga4.php:50
+#: admin/views/connections/gsc.php:50
+#: admin/views/dashboard.php:286
+#: admin/views/dashboard.php:307
+#: admin/views/dashboard.php:328
+msgid "Not Connected"
+msgstr ""
+
+#: admin/views/connections.php:184
+msgid "Connect to Microsoft Clarity to access session recordings, heatmaps, and user behavior insights."
+msgstr ""
+
+#: admin/views/connections.php:192
+msgid "API Token"
+msgstr ""
+
+#: admin/views/connections.php:201
+msgid "Token saved (enter new token to update)"
+msgstr ""
+
+#: admin/views/connections.php:201
+msgid "Enter your API token"
+msgstr ""
+
+#: admin/views/connections.php:213
+msgid "API token is securely stored and encrypted. Leave blank to keep current token, or enter a new one to update."
+msgstr ""
+
+#. translators: %s: link to Clarity documentation
+#: admin/views/connections.php:220
+#, php-format
+msgid "Get your API token from the %s."
+msgstr ""
+
+#: admin/views/connections.php:221
+msgid "Clarity Data Export API"
+msgstr ""
+
+#: admin/views/connections.php:230
+msgid "Project ID"
+msgstr ""
+
+#: admin/views/connections.php:234
+msgid "Your Clarity project ID (for reference only - the API token identifies your project)"
+msgstr ""
+
+#: admin/views/connections.php:241
+#: admin/views/connections.php:377
+#: admin/views/connections.php:514
+#: admin/views/connections/ga4.php:172
+#: admin/views/connections/gsc.php:101
+msgid "Test Connection"
+msgstr ""
+
+#: admin/views/connections.php:243
+#: admin/views/settings.php:891
+msgid "Save Credentials"
+msgstr ""
+
+#: admin/views/connections.php:258
+#: admin/views/connections/ga4.php:41
+msgid "Google Analytics 4 Configuration"
+msgstr ""
+
+#: admin/views/connections.php:271
+#: admin/views/connections/ga4.php:54
+msgid "Connect to Google Analytics 4 to access traffic metrics, user behavior, and conversion data."
+msgstr ""
+
+#: admin/views/connections.php:276
+#: admin/views/connections.php:413
+msgid "Setup Required:"
+msgstr ""
+
+#: admin/views/connections.php:276
+#: admin/views/connections.php:413
+msgid "You need to configure Google OAuth credentials first."
+msgstr ""
+
+#: admin/views/connections.php:279
+#: admin/views/connections.php:416
+#: admin/views/connections/ga4.php:59
+msgid "Step 1: Configure Google OAuth Credentials"
+msgstr ""
+
+#: admin/views/connections.php:280
+#: admin/views/connections.php:417
+msgid "Google API credentials need to be configured in Settings before you can connect."
+msgstr ""
+
+#: admin/views/connections.php:285
+#: admin/views/connections.php:422
+msgid "Configure Google API Credentials"
+msgstr ""
+
+#: admin/views/connections.php:292
+#: admin/views/connections.php:429
+msgid "OAuth credentials configured!"
+msgstr ""
+
+#: admin/views/connections.php:292
+msgid "Now authorize access to your Google Analytics account."
+msgstr ""
+
+#: admin/views/connections.php:295
+msgid "Step 2: Authorize Google Analytics"
+msgstr ""
+
+#: admin/views/connections.php:296
+msgid "Click the button below to connect your Google Analytics 4 account:"
+msgstr ""
+
+#: admin/views/connections.php:302
+msgid "Connect to Google Analytics"
+msgstr ""
+
+#: admin/views/connections.php:307
+#: admin/views/connections.php:444
+msgid "Error generating authorization URL. Please check your OAuth credentials."
+msgstr ""
+
+#: admin/views/connections.php:314
+#: admin/views/connections.php:451
+msgid "Connected!"
+msgstr ""
+
+#: admin/views/connections.php:314
+msgid "Your Google Analytics 4 account is connected and ready to use."
+msgstr ""
+
+#: admin/views/connections.php:318
+msgid "Select GA4 Property"
+msgstr ""
+
+#: admin/views/connections.php:319
+msgid "Choose which Google Analytics 4 property to query for data:"
+msgstr ""
+
+#: admin/views/connections.php:324
+#: admin/views/connections/ga4.php:219
+msgid "GA4 Property"
+msgstr ""
+
+#: admin/views/connections.php:329
+#: admin/views/connections/ga4.php:223
+#: admin/views/connections/gsc.php:135
+#: includes/admin/class-admin.php:350
+#: includes/admin/class-admin.php:383
+msgid "Loading properties..."
+msgstr ""
+
+#: admin/views/connections.php:337
+msgid "Select a property..."
+msgstr ""
+
+#. translators: %s: property ID
+#: admin/views/connections.php:346
+#, php-format
+msgid "Currently selected property: %s"
+msgstr ""
+
+#: admin/views/connections.php:353
+msgid "No property selected yet. Please select a property from the list above."
+msgstr ""
+
+#: admin/views/connections.php:362
+msgid "Load Available Properties"
+msgstr ""
+
+#: admin/views/connections.php:365
+msgid "Save Selected Property"
+msgstr ""
+
+#: admin/views/connections.php:379
+#: admin/views/connections.php:516
+#: admin/views/connections/ga4.php:236
+#: admin/views/connections/gsc.php:148
+msgid "Disconnect"
+msgstr ""
+
+#: admin/views/connections.php:379
+msgid "Are you sure you want to disconnect from Google Analytics?"
+msgstr ""
+
+#: admin/views/connections.php:395
+#: admin/views/connections/gsc.php:41
+msgid "Google Search Console Configuration"
+msgstr ""
+
+#: admin/views/connections.php:408
+#: admin/views/connections/gsc.php:54
+msgid "Connect to Google Search Console to access search performance data, indexing status, and query analytics."
+msgstr ""
+
+#: admin/views/connections.php:429
+msgid "Now authorize access to your Google Search Console account."
+msgstr ""
+
+#: admin/views/connections.php:432
+msgid "Step 2: Authorize Google Search Console"
+msgstr ""
+
+#: admin/views/connections.php:433
+msgid "Click the button below to connect your Google Search Console account:"
+msgstr ""
+
+#: admin/views/connections.php:439
+#: admin/views/connections/gsc.php:117
+msgid "Connect to Google Search Console"
+msgstr ""
+
+#: admin/views/connections.php:451
+msgid "Your Google Search Console account is connected and ready to use."
+msgstr ""
+
+#: admin/views/connections.php:455
+msgid "Select Search Console Property"
+msgstr ""
+
+#: admin/views/connections.php:456
+msgid "Choose which Search Console property to query for data:"
+msgstr ""
+
+#: admin/views/connections.php:461
+msgid "Site URL"
+msgstr ""
+
+#: admin/views/connections.php:466
+msgid "Loading sites..."
+msgstr ""
+
+#: admin/views/connections.php:474
+msgid "Select a site..."
+msgstr ""
+
+#. translators: %s: site URL
+#: admin/views/connections.php:483
+#, php-format
+msgid "Currently selected site: %s"
+msgstr ""
+
+#: admin/views/connections.php:490
+msgid "No site selected yet. Please select a site from the list above."
+msgstr ""
+
+#: admin/views/connections.php:499
+msgid "Load Available Sites"
+msgstr ""
+
+#: admin/views/connections.php:502
+msgid "Save Selected Site"
+msgstr ""
+
+#: admin/views/connections.php:516
+#: admin/views/connections/gsc.php:147
+msgid "Are you sure you want to disconnect from Google Search Console?"
+msgstr ""
+
+#: admin/views/connections/ga4.php:60
+msgid "Before you can connect to Google Analytics 4, you need to set up OAuth credentials from the Google Cloud Console."
+msgstr ""
+
+#: admin/views/connections/ga4.php:63
+#: admin/views/connections/gsc.php:71
+msgid "Estimated time: ~5 minutes"
+msgstr ""
+
+#: admin/views/connections/ga4.php:74
+#: admin/views/connections/gsc.php:89
+msgid "Watch video walkthrough"
+msgstr ""
+
+#: admin/views/connections/ga4.php:83
+msgid "Required Google APIs"
+msgstr ""
+
+#: admin/views/connections/ga4.php:84
+msgid "Make sure you have enabled these APIs in your Google Cloud project:"
+msgstr ""
+
+#: admin/views/connections/ga4.php:86
+#: admin/views/connections/ga4.php:181
+#: admin/views/settings.php:626
+msgid "Google Analytics Data API"
+msgstr ""
+
+#: admin/views/connections/ga4.php:86
+msgid "For reading analytics data"
+msgstr ""
+
+#: admin/views/connections/ga4.php:87
+#: admin/views/connections/ga4.php:182
+#: admin/views/settings.php:647
+msgid "Google Analytics Admin API"
+msgstr ""
+
+#: admin/views/connections/ga4.php:87
+msgid "For listing your GA4 properties"
+msgstr ""
+
+#: admin/views/connections/ga4.php:91
+msgid "Enable Analytics Data API"
+msgstr ""
+
+#: admin/views/connections/ga4.php:94
+msgid "Enable Analytics Admin API"
+msgstr ""
+
+#. translators: %s: link to setup guide
+#: admin/views/connections/ga4.php:101
+#, php-format
+msgid "Need help? See the %s for detailed instructions."
+msgstr ""
+
+#: admin/views/connections/ga4.php:102
+msgid "Google OAuth Setup Guide"
+msgstr ""
+
+#: admin/views/connections/ga4.php:110
+msgid "Already have your Client ID and Client Secret? Paste them directly below."
+msgstr ""
+
+#: admin/views/connections/ga4.php:120
+msgid "OAuth Client ID"
+msgstr ""
+
+#. translators: %s: link to Google Cloud Console
+#: admin/views/connections/ga4.php:129
+#, php-format
+msgid "Get your OAuth credentials from the %s"
+msgstr ""
+
+#: admin/views/connections/ga4.php:130
+msgid "Google Cloud Console"
+msgstr ""
+
+#: admin/views/connections/ga4.php:138
+msgid "OAuth Client Secret"
+msgstr ""
+
+#: admin/views/connections/ga4.php:147
+msgid "Redirect URI"
+msgstr ""
+
+#: admin/views/connections/ga4.php:151
+msgid "Add this URL as an authorized redirect URI in your Google Cloud Console OAuth configuration."
+msgstr ""
+
+#: admin/views/connections/ga4.php:157
+msgid "Save OAuth Credentials"
+msgstr ""
+
+#: admin/views/connections/ga4.php:164
+msgid "Step 2: Connect to Google Analytics"
+msgstr ""
+
+#: admin/views/connections/ga4.php:165
+msgid "Click the button below to authorize access to your Google Analytics 4 properties."
+msgstr ""
+
+#: admin/views/connections/ga4.php:178
+msgid "Before you connect:"
+msgstr ""
+
+#: admin/views/connections/ga4.php:179
+msgid "Ensure these APIs are enabled in your Google Cloud project, or you will see errors when selecting properties:"
+msgstr ""
+
+#: admin/views/connections/ga4.php:186
+msgid "Enable Data API"
+msgstr ""
+
+#: admin/views/connections/ga4.php:189
+msgid "Enable Admin API"
+msgstr ""
+
+#: admin/views/connections/ga4.php:195
+#: admin/views/connections/gsc.php:107
+msgid "OAuth Client ID:"
+msgstr ""
+
+#: admin/views/connections/ga4.php:197
+#: admin/views/connections/gsc.php:109
+msgid "Are you sure you want to reset OAuth credentials? This will disconnect all Google services."
+msgstr ""
+
+#: admin/views/connections/ga4.php:198
+#: admin/views/connections/gsc.php:110
+msgid "Reset OAuth Credentials"
+msgstr ""
+
+#: admin/views/connections/ga4.php:205
+msgid "Connect to Google Analytics 4"
+msgstr ""
+
+#: admin/views/connections/ga4.php:212
+msgid "Step 3: Select Your GA4 Property"
+msgstr ""
+
+#: admin/views/connections/ga4.php:213
+msgid "You are authenticated with Google. Select the GA4 property you want to use."
+msgstr ""
+
+#: admin/views/connections/ga4.php:225
+msgid "Select the Google Analytics 4 property you want to connect to."
+msgstr ""
+
+#: admin/views/connections/ga4.php:233
+#: admin/views/connections/gsc.php:145
+#: includes/admin/class-admin.php:357
+#: includes/admin/class-admin.php:390
+msgid "Save Property Selection"
+msgstr ""
+
+#: admin/views/connections/ga4.php:235
+msgid "Are you sure you want to disconnect from Google Analytics 4?"
+msgstr ""
+
+#: admin/views/connections/gsc.php:59
+msgid "OAuth Credentials Required"
+msgstr ""
+
+#. translators: %s: link to GA4 tab
+#: admin/views/connections/gsc.php:64
+#, php-format
+msgid "Please configure OAuth credentials in the %s tab first. The same credentials are used for both GA4 and Search Console."
+msgstr ""
+
+#: admin/views/connections/gsc.php:78
+msgid "Step 2: Connect to Google Search Console"
+msgstr ""
+
+#: admin/views/connections/gsc.php:79
+msgid "Click the button below to authorize access to your Search Console properties."
+msgstr ""
+
+#: admin/views/connections/gsc.php:124
+msgid "Step 3: Select Your Search Console Property"
+msgstr ""
+
+#: admin/views/connections/gsc.php:125
+msgid "You are authenticated with Google. Select the property you want to use."
+msgstr ""
+
+#: admin/views/connections/gsc.php:131
+msgid "Search Console Property"
+msgstr ""
+
+#: admin/views/connections/gsc.php:137
+msgid "Select the Search Console property you want to connect to."
+msgstr ""
+
+#: admin/views/dashboard.php:37
+msgid "Welcome to Specflux Marketing Analytics Chat"
+msgstr ""
+
+#: admin/views/dashboard.php:38
+msgid "Chat with your marketing analytics data using AI. Connect Google Analytics 4, Search Console, Microsoft Clarity, and more to get instant insights."
+msgstr ""
+
+#: admin/views/dashboard.php:49
+msgid "Start chatting with your analytics data right now"
+msgstr ""
+
+#: admin/views/dashboard.php:51
+#: admin/views/onboarding/wizard.php:214
+msgid "Open AI Chat"
+msgstr ""
+
+#: admin/views/dashboard.php:60
+#: admin/views/onboarding/wizard.php:251
+#: includes/admin/class-admin.php:57
+#: includes/admin/class-admin.php:58
+msgid "Custom Prompts"
+msgstr ""
+
+#: admin/views/dashboard.php:61
+msgid "Create reusable prompt templates for common analyses"
+msgstr ""
+
+#: admin/views/dashboard.php:63
+msgid "Manage Prompts"
+msgstr ""
+
+#: admin/views/dashboard.php:72
+msgid "Quick Analysis"
+msgstr ""
+
+#: admin/views/dashboard.php:73
+msgid "Run a pre-built analysis with one click"
+msgstr ""
+
+#: admin/views/dashboard.php:76
+#: admin/views/onboarding/wizard.php:194
+msgid "Weekly Report"
+msgstr ""
+
+#: admin/views/dashboard.php:79
+msgid "SEO Health"
+msgstr ""
+
+#: admin/views/dashboard.php:110
+msgid "Analytics at a Glance"
+msgstr ""
+
+#: admin/views/dashboard.php:113
+#: admin/views/widgets/dashboard-widget.php:80
+msgid "Refresh"
+msgstr ""
+
+#: admin/views/dashboard.php:148
+#: admin/views/dashboard.php:157
+#: admin/views/dashboard.php:166
+msgid "GA4"
+msgstr ""
+
+#: admin/views/dashboard.php:149
+#: admin/views/dashboard.php:185
+#: includes/admin/class-ajax-handler.php:837
+#: includes/admin/class-ajax-handler.php:879
+msgid "Sessions"
+msgstr ""
+
+#: admin/views/dashboard.php:158
+#: includes/admin/class-ajax-handler.php:846
+msgid "Users"
+msgstr ""
+
+#: admin/views/dashboard.php:167
+#: includes/admin/class-ajax-handler.php:855
+msgid "Pageviews"
+msgstr ""
+
+#: admin/views/dashboard.php:191
+#: includes/admin/class-ajax-handler.php:888
+msgid "Pages / Session"
+msgstr ""
+
+#: admin/views/dashboard.php:224
+#: admin/views/dashboard.php:233
+#: admin/views/dashboard.php:242
+msgid "GSC"
+msgstr ""
+
+#: admin/views/dashboard.php:225
+#: includes/admin/class-ajax-handler.php:936
+msgid "Clicks"
+msgstr ""
+
+#: admin/views/dashboard.php:234
+#: includes/admin/class-ajax-handler.php:945
+msgid "Impressions"
+msgstr ""
+
+#: admin/views/dashboard.php:243
+#: includes/admin/class-ajax-handler.php:954
+msgid "Avg Position"
+msgstr ""
+
+#: admin/views/dashboard.php:254
+msgid "No cached data yet. Click Refresh to load metrics from your connected platforms."
+msgstr ""
+
+#: admin/views/dashboard.php:272
+#: admin/views/widgets/dashboard-widget.php:26
+msgid "Platform Status"
+msgstr ""
+
+#: admin/views/dashboard.php:290
+#: admin/views/onboarding/wizard.php:103
+msgid "Session recordings and heatmaps"
+msgstr ""
+
+#: admin/views/dashboard.php:292
+#: admin/views/dashboard.php:313
+#: admin/views/dashboard.php:334
+msgid "Configure"
+msgstr ""
+
+#: admin/views/dashboard.php:311
+#: admin/views/onboarding/wizard.php:126
+msgid "Traffic and user behavior metrics"
+msgstr ""
+
+#: admin/views/dashboard.php:332
+#: admin/views/onboarding/wizard.php:149
+msgid "Search performance and indexing"
+msgstr ""
+
+#: admin/views/dashboard.php:351
+msgid "Getting Started"
+msgstr ""
+
+#: admin/views/dashboard.php:354
+msgid "Connect Your Analytics"
+msgstr ""
+
+#: admin/views/dashboard.php:356
+msgid "Connect at least one analytics platform using the "
+msgstr ""
+
+#: admin/views/dashboard.php:357
+msgid "Connections page"
+msgstr ""
+
+#: admin/views/dashboard.php:360
+msgid "Start Chatting"
+msgstr ""
+
+#: admin/views/dashboard.php:362
+msgid "Open the "
+msgstr ""
+
+#: admin/views/dashboard.php:364
+msgid " and ask questions about your marketing data"
+msgstr ""
+
+#: admin/views/dashboard.php:367
+msgid "Save Common Prompts"
+msgstr ""
+
+#: admin/views/dashboard.php:369
+msgid "Create "
+msgstr ""
+
+#: admin/views/dashboard.php:370
+msgid "custom prompts"
+msgstr ""
+
+#: admin/views/dashboard.php:371
+msgid " for analyses you run frequently"
+msgstr ""
+
+#: admin/views/dashboard.php:379
+msgid "Advanced: Connect External AI Assistants"
+msgstr ""
+
+#: admin/views/dashboard.php:380
+msgid "You can also connect external AI assistants like Claude Desktop using the MCP endpoint below:"
+msgstr ""
+
+#. translators: %s: link to documentation
+#: admin/views/dashboard.php:391
+#, php-format
+msgid "Learn how to configure Claude Desktop and other MCP clients in our %s."
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:50
+msgid "Skip Setup"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:72
+msgid "Welcome to Specflux Marketing Analytics Chat!"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:74
+msgid "Chat with your marketing analytics data using AI. Connect Google Analytics 4, Search Console, and Microsoft Clarity to get instant insights about your website performance."
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:77
+msgid "Let's get you set up in under 60 seconds."
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:81
+msgid "Get Started"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:90
+msgid "Connect Your First Platform"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:92
+msgid "Connect at least one analytics platform to start chatting with your data."
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:113
+#: admin/views/onboarding/wizard.php:136
+#: admin/views/onboarding/wizard.php:159
+msgid "Connect"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:168
+#: admin/views/onboarding/wizard.php:220
+#: admin/views/onboarding/wizard.php:261
+msgid "Back"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:172
+#: admin/views/onboarding/wizard.php:223
+msgid "Next"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:176
+msgid "Skip for Now"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:186
+msgid "Try Your First Analysis"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:188
+msgid "Choose a quick analysis to see Specflux Marketing Analytics Chat in action."
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:195
+msgid "Get a summary of your past 7 days of analytics data."
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:200
+#: includes/prompts/class-prompt-manager.php:212
+msgid "SEO Health Check"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:201
+msgid "Analyze your search performance and find issues."
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:206
+#: includes/prompts/class-prompt-manager.php:238
+msgid "Anomaly Investigation"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:207
+msgid "Find unusual patterns in your analytics data."
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:212
+msgid "Or ask anything..."
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:235
+msgid "You're All Set!"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:237
+msgid "Specflux Marketing Analytics Chat is ready to use. Here are some quick links to get the most out of the plugin."
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:243
+msgid "AI Chat"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:247
+#: includes/admin/class-admin.php:47
+#: includes/admin/class-admin.php:48
+msgid "Connections"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:255
+#: includes/admin/class-admin.php:80
+#: includes/admin/class-admin.php:81
+msgid "Settings"
+msgstr ""
+
+#: admin/views/onboarding/wizard.php:264
+msgid "Dismiss Wizard"
+msgstr ""
+
+#: admin/views/prompts.php:42
+msgid "Prompt name can only contain lowercase letters, numbers, and hyphens."
+msgstr ""
+
+#: admin/views/prompts.php:65
+msgid "Invalid JSON in Arguments field."
+msgstr ""
+
+#: admin/views/prompts.php:84
+msgid "Prompt created successfully!"
+msgstr ""
+
+#: admin/views/prompts.php:92
+msgid "Missing prompt ID."
+msgstr ""
+
+#: admin/views/prompts.php:96
+msgid "Prompt deleted successfully!"
+msgstr ""
+
+#: admin/views/prompts.php:99
+msgid "Failed to delete prompt."
+msgstr ""
+
+#: admin/views/prompts.php:106
+msgid "Missing preset key."
+msgstr ""
+
+#: admin/views/prompts.php:114
+msgid "Preset imported successfully!"
+msgstr ""
+
+#: admin/views/prompts.php:124
+msgid "Custom MCP Prompts"
+msgstr ""
+
+#: admin/views/prompts.php:126
+msgid "Create custom prompts to guide AI assistants through complex marketing analytics workflows. Prompts can combine multiple tools and provide step-by-step instructions."
+msgstr ""
+
+#: admin/views/prompts.php:132
+msgid "Your Custom Prompts"
+msgstr ""
+
+#: admin/views/prompts.php:136
+msgid "No custom prompts yet. Create one below or import a preset template."
+msgstr ""
+
+#: admin/views/prompts.php:142
+msgid "Name"
+msgstr ""
+
+#: admin/views/prompts.php:143
+#: admin/views/prompts.php:195
+#: admin/views/prompts.php:266
+msgid "Description"
+msgstr ""
+
+#: admin/views/prompts.php:144
+#: admin/views/prompts.php:340
+msgid "Arguments"
+msgstr ""
+
+#: admin/views/prompts.php:145
+msgid "Actions"
+msgstr ""
+
+#: admin/views/prompts.php:166
+msgid "View"
+msgstr ""
+
+#: admin/views/prompts.php:172
+msgid "Are you sure you want to delete this prompt?"
+msgstr ""
+
+#: admin/views/prompts.php:173
+msgid "Delete"
+msgstr ""
+
+#: admin/views/prompts.php:186
+msgid "Import Preset Templates"
+msgstr ""
+
+#: admin/views/prompts.php:188
+msgid "Quick start with pre-built prompt templates for common marketing analytics workflows."
+msgstr ""
+
+#: admin/views/prompts.php:194
+msgid "Template"
+msgstr ""
+
+#: admin/views/prompts.php:196
+msgid "Action"
+msgstr ""
+
+#: admin/views/prompts.php:210
+msgid "Already imported"
+msgstr ""
+
+#: admin/views/prompts.php:217
+msgid "Import"
+msgstr ""
+
+#: admin/views/prompts.php:230
+msgid "Create Custom Prompt"
+msgstr ""
+
+#: admin/views/prompts.php:239
+msgid "Prompt Name"
+msgstr ""
+
+#: admin/views/prompts.php:245
+msgid "Use only lowercase letters, numbers, and hyphens"
+msgstr ""
+
+#: admin/views/prompts.php:247
+msgid "Unique identifier (lowercase, hyphens only). Will be prefixed with \"marketing-analytics/\""
+msgstr ""
+
+#: admin/views/prompts.php:254
+msgid "Display Label"
+msgstr ""
+
+#: admin/views/prompts.php:259
+msgid "Human-readable name shown in MCP clients"
+msgstr ""
+
+#: admin/views/prompts.php:271
+msgid "Brief description of what this prompt does"
+msgstr ""
+
+#: admin/views/prompts.php:278
+#: admin/views/prompts.php:336
+msgid "Instructions"
+msgstr ""
+
+#: admin/views/prompts.php:283
+msgid "Detailed step-by-step instructions for AI. Use {{argument_name}} placeholders for dynamic values."
+msgstr ""
+
+#: admin/views/prompts.php:290
+msgid "Arguments (JSON)"
+msgstr ""
+
+#: admin/views/prompts.php:295
+msgid "Optional: Define arguments as JSON array. Leave empty if no arguments needed."
+msgstr ""
+
+#: admin/views/prompts.php:297
+msgid "Show example"
+msgstr ""
+
+#: admin/views/prompts.php:320
+msgid "Create Prompt"
+msgstr ""
+
+#: admin/views/prompts.php:333
+msgid "ID:"
+msgstr ""
+
+#: admin/views/prompts.php:334
+msgid "Description:"
+msgstr ""
+
+#: admin/views/prompts.php:344
+msgid "Close"
+msgstr ""
+
+#: admin/views/settings.php:31
+msgid "Client ID is required."
+msgstr ""
+
+#: admin/views/settings.php:34
+msgid "Client Secret is required for initial setup."
+msgstr ""
+
+#: admin/views/settings.php:38
+msgid "Google OAuth credentials saved successfully!"
+msgstr ""
+
+#: admin/views/settings.php:40
+msgid "Failed to save Google OAuth credentials."
+msgstr ""
+
+#. translators: %s: comma-separated list of AI provider names.
+#: admin/views/settings.php:135
+#, php-format
+msgid "Settings saved, but the API key for these provider(s) could not be encrypted and was left in place: %s. Check that the server supports libsodium and re-save."
+msgstr ""
+
+#: admin/views/settings.php:139
+msgid "Settings saved successfully."
+msgstr ""
+
+#: admin/views/settings.php:172
+msgid "General"
+msgstr ""
+
+#: admin/views/settings.php:175
+msgid "Google API"
+msgstr ""
+
+#: admin/views/settings.php:181
+msgid "Cache"
+msgstr ""
+
+#: admin/views/settings.php:184
+msgid "Advanced"
+msgstr ""
+
+#: admin/views/settings.php:187
+msgid "Access Control"
+msgstr ""
+
+#: admin/views/settings.php:207
+msgid "AI Chat Settings"
+msgstr ""
+
+#: admin/views/settings.php:212
+msgid "AI Provider"
+msgstr ""
+
+#: admin/views/settings.php:217
+msgid "WordPress AI (Core) - No API key needed"
+msgstr ""
+
+#: admin/views/settings.php:220
+#: includes/chat/class-claude-provider.php:47
+msgid "Claude (Anthropic)"
+msgstr ""
+
+#: admin/views/settings.php:223
+#: includes/chat/class-openai-provider.php:42
+msgid "OpenAI GPT"
+msgstr ""
+
+#: admin/views/settings.php:226
+#: includes/chat/class-gemini-provider.php:42
+msgid "Google Gemini"
+msgstr ""
+
+#: admin/views/settings.php:229
+msgid "Select the AI provider for chat responses. \"WordPress AI (Core)\" uses the provider configured in WordPress under Settings > Connectors - no API key is stored in this plugin."
+msgstr ""
+
+#: admin/views/settings.php:234
+msgid "Claude API Key"
+msgstr ""
+
+#: admin/views/settings.php:239
+#: admin/views/settings.php:286
+#: admin/views/settings.php:376
+msgid "Saved — leave blank to keep current key"
+msgstr ""
+
+#. translators: %s: URL to Anthropic API keys page
+#: admin/views/settings.php:244
+#, php-format
+msgid "Get your API key from <a href=\"%s\" target=\"_blank\">Anthropic Console</a>."
+msgstr ""
+
+#: admin/views/settings.php:253
+msgid "Claude Model"
+msgstr ""
+
+#: admin/views/settings.php:258
+msgid "Claude Sonnet 4.5 (Latest & Best)"
+msgstr ""
+
+#: admin/views/settings.php:261
+msgid "Claude Sonnet 4 (Recommended)"
+msgstr ""
+
+#: admin/views/settings.php:264
+msgid "Claude Opus 4.1 (Most Capable)"
+msgstr ""
+
+#: admin/views/settings.php:267
+msgid "Claude Opus 4"
+msgstr ""
+
+#: admin/views/settings.php:270
+msgid "Claude Haiku 4.5 (Fastest)"
+msgstr ""
+
+#: admin/views/settings.php:273
+msgid "Claude 3 Haiku (Legacy)"
+msgstr ""
+
+#: admin/views/settings.php:276
+msgid "Select the Claude model to use for chat responses."
+msgstr ""
+
+#: admin/views/settings.php:281
+msgid "OpenAI API Key"
+msgstr ""
+
+#. translators: %s: URL to OpenAI API keys page
+#: admin/views/settings.php:291
+#, php-format
+msgid "Get your API key from <a href=\"%s\" target=\"_blank\">OpenAI Platform</a>."
+msgstr ""
+
+#: admin/views/settings.php:300
+msgid "OpenAI Model"
+msgstr ""
+
+#: admin/views/settings.php:304
+msgid "GPT-5 Series (Reasoning)"
+msgstr ""
+
+#: admin/views/settings.php:306
+msgid "GPT-5.1 - Flagship reasoning model (Recommended)"
+msgstr ""
+
+#: admin/views/settings.php:309
+msgid "GPT-5 - Superseded by GPT-5.1"
+msgstr ""
+
+#: admin/views/settings.php:312
+msgid "GPT-5 mini - Faster & cheaper reasoning"
+msgstr ""
+
+#: admin/views/settings.php:315
+msgid "GPT-5 nano - Budget reasoning"
+msgstr ""
+
+#: admin/views/settings.php:318
+msgid "GPT-5.1 Chat - ChatGPT reasoning"
+msgstr ""
+
+#: admin/views/settings.php:321
+msgid "GPT-5.1 Codex - Advanced coding"
+msgstr ""
+
+#: admin/views/settings.php:324
+msgid "GPT-5.1 Codex mini - Cost-efficient coding"
+msgstr ""
+
+#: admin/views/settings.php:327
+msgid "GPT-4.1 Series"
+msgstr ""
+
+#: admin/views/settings.php:329
+msgid "GPT-4.1 - Versatile general model"
+msgstr ""
+
+#: admin/views/settings.php:332
+msgid "GPT-4.1 mini - Balanced performance"
+msgstr ""
+
+#: admin/views/settings.php:335
+msgid "GPT-4.1 nano - Fast & cheap"
+msgstr ""
+
+#: admin/views/settings.php:338
+msgid "GPT-4o Series (Multimodal)"
+msgstr ""
+
+#: admin/views/settings.php:340
+msgid "GPT-4o - Text, images, audio"
+msgstr ""
+
+#: admin/views/settings.php:343
+msgid "GPT-4o mini - Budget multimodal"
+msgstr ""
+
+#: admin/views/settings.php:346
+msgid "o-series (Legacy Reasoning)"
+msgstr ""
+
+#: admin/views/settings.php:348
+msgid "o3 - Superseded by GPT-5"
+msgstr ""
+
+#: admin/views/settings.php:351
+msgid "o3-pro - Advanced reasoning"
+msgstr ""
+
+#: admin/views/settings.php:354
+msgid "o4-mini - Superseded by GPT-5 mini"
+msgstr ""
+
+#: admin/views/settings.php:357
+msgid "Open Weight Models"
+msgstr ""
+
+#: admin/views/settings.php:359
+msgid "GPT-OSS-120B - Open weight (117B params)"
+msgstr ""
+
+#: admin/views/settings.php:362
+msgid "GPT-OSS-20B - Medium open weight (21B params)"
+msgstr ""
+
+#: admin/views/settings.php:366
+msgid "Select the OpenAI model to use for chat responses."
+msgstr ""
+
+#: admin/views/settings.php:371
+msgid "Gemini API Key"
+msgstr ""
+
+#. translators: %s: URL to Google AI Studio
+#: admin/views/settings.php:381
+#, php-format
+msgid "Get your API key from <a href=\"%s\" target=\"_blank\">Google AI Studio</a>."
+msgstr ""
+
+#: admin/views/settings.php:390
+msgid "Gemini Model"
+msgstr ""
+
+#: admin/views/settings.php:395
+msgid "Gemini 3 Pro (Preview - Latest)"
+msgstr ""
+
+#: admin/views/settings.php:398
+msgid "Gemini 2.5 Pro (Recommended)"
+msgstr ""
+
+#: admin/views/settings.php:401
+msgid "Gemini 2.5 Flash (Fast)"
+msgstr ""
+
+#: admin/views/settings.php:404
+msgid "Gemini 2.5 Flash Lite (Budget)"
+msgstr ""
+
+#: admin/views/settings.php:407
+msgid "Gemini 2.0 Flash (Legacy)"
+msgstr ""
+
+#: admin/views/settings.php:410
+msgid "Select the Gemini model to use for chat responses."
+msgstr ""
+
+#: admin/views/settings.php:415
+msgid "Temperature"
+msgstr ""
+
+#: admin/views/settings.php:421
+msgid "Controls randomness (0 = focused, 1 = creative). Default: 0.7"
+msgstr ""
+
+#: admin/views/settings.php:426
+msgid "Max Tokens"
+msgstr ""
+
+#: admin/views/settings.php:432
+msgid "Maximum response length. Default: 4096"
+msgstr ""
+
+#: admin/views/settings.php:437
+msgid "AI Chat Tool Selection"
+msgstr ""
+
+#: admin/views/settings.php:442
+#: admin/views/settings.php:450
+msgid "Enabled Tool Categories"
+msgstr ""
+
+#: admin/views/settings.php:455
+msgid "All Tools"
+msgstr ""
+
+#: admin/views/settings.php:456
+msgid "(Recommended - AI can use any available tool)"
+msgstr ""
+
+#: admin/views/settings.php:463
+msgid "Microsoft Clarity Tools"
+msgstr ""
+
+#: admin/views/settings.php:470
+msgid "Google Analytics 4 Tools"
+msgstr ""
+
+#: admin/views/settings.php:477
+msgid "Google Search Console Tools"
+msgstr ""
+
+#: admin/views/settings.php:482
+msgid "Select which tool categories to send to the AI. Fewer tools = lower token costs per request. The AI will only see and use tools from enabled categories. Token usage with tool count is displayed below each AI response."
+msgstr ""
+
+#: admin/views/settings.php:493
+#: admin/views/settings.php:1130
+msgid "Save Settings"
+msgstr ""
+
+#: admin/views/settings.php:502
+msgid "Google Cloud Console Setup"
+msgstr ""
+
+#: admin/views/settings.php:504
+msgid "Follow this step-by-step wizard to set up Google OAuth credentials for Analytics and Search Console."
+msgstr ""
+
+#: admin/views/settings.php:511
+msgid "Credentials Configured"
+msgstr ""
+
+#: admin/views/settings.php:512
+msgid "Your Google OAuth credentials are saved. You can now connect GA4 and GSC from the Connections page."
+msgstr ""
+
+#: admin/views/settings.php:516
+msgid "Go to Connections"
+msgstr ""
+
+#: admin/views/settings.php:530
+msgid "Project"
+msgstr ""
+
+#: admin/views/settings.php:534
+msgid "APIs"
+msgstr ""
+
+#: admin/views/settings.php:538
+msgid "Consent"
+msgstr ""
+
+#: admin/views/settings.php:542
+msgid "Credentials"
+msgstr ""
+
+#: admin/views/settings.php:546
+msgid "WordPress"
+msgstr ""
+
+#: admin/views/settings.php:550
+msgid "Complete"
+msgstr ""
+
+#: admin/views/settings.php:558
+msgid "Estimated time: 5-7 minutes"
+msgstr ""
+
+#: admin/views/settings.php:567
+msgid "Step 1: Create Google Cloud Project"
+msgstr ""
+
+#: admin/views/settings.php:571
+msgid "You need a Google Cloud project to create OAuth credentials."
+msgstr ""
+
+#: admin/views/settings.php:578
+msgid "Create New Project in Google Cloud"
+msgstr ""
+
+#: admin/views/settings.php:583
+msgid "In the new window:"
+msgstr ""
+
+#: admin/views/settings.php:586
+msgid "Enter project name:"
+msgstr ""
+
+#: admin/views/settings.php:593
+#: admin/views/settings.php:813
+msgid "Click \"Create\""
+msgstr ""
+
+#: admin/views/settings.php:594
+msgid "Wait for project creation (takes a few seconds)"
+msgstr ""
+
+#: admin/views/settings.php:595
+msgid "Make sure your new project is selected in the project dropdown"
+msgstr ""
+
+#: admin/views/settings.php:602
+msgid "I've created and selected my Google Cloud project"
+msgstr ""
+
+#: admin/views/settings.php:614
+msgid "Step 2: Enable Required APIs"
+msgstr ""
+
+#: admin/views/settings.php:618
+msgid "Click each button below to enable the required APIs in your Google Cloud project."
+msgstr ""
+
+#: admin/views/settings.php:627
+msgid "Required for reading GA4 metrics and reports"
+msgstr ""
+
+#: admin/views/settings.php:632
+#: admin/views/settings.php:653
+#: admin/views/settings.php:674
+msgid "Enable API"
+msgstr ""
+
+#: admin/views/settings.php:637
+#: admin/views/settings.php:658
+#: admin/views/settings.php:679
+msgid "Enabled"
+msgstr ""
+
+#: admin/views/settings.php:648
+msgid "Required for listing your GA4 properties"
+msgstr ""
+
+#: admin/views/settings.php:668
+msgid "Google Search Console API"
+msgstr ""
+
+#: admin/views/settings.php:669
+msgid "Required for Search Console data"
+msgstr ""
+
+#: admin/views/settings.php:686
+msgid "For each API:"
+msgstr ""
+
+#: admin/views/settings.php:688
+msgid "Click the \"Enable API\" button (opens in new tab)"
+msgstr ""
+
+#: admin/views/settings.php:689
+msgid "On the API page, click the blue \"Enable\" button"
+msgstr ""
+
+#: admin/views/settings.php:690
+msgid "Wait for \"API enabled\" message"
+msgstr ""
+
+#: admin/views/settings.php:691
+msgid "Come back here and check the \"Enabled\" checkbox"
+msgstr ""
+
+#: admin/views/settings.php:698
+msgid "Please enable all 3 APIs before continuing"
+msgstr ""
+
+#: admin/views/settings.php:710
+msgid "Step 3: Configure OAuth Consent Screen"
+msgstr ""
+
+#: admin/views/settings.php:714
+msgid "Tell Google what permissions your app needs."
+msgstr ""
+
+#: admin/views/settings.php:721
+msgid "Configure OAuth Consent Screen"
+msgstr ""
+
+#: admin/views/settings.php:726
+msgid "Configuration:"
+msgstr ""
+
+#: admin/views/settings.php:728
+msgid "User Type:"
+msgstr ""
+
+#: admin/views/settings.php:728
+msgid "Choose \"External\""
+msgstr ""
+
+#: admin/views/settings.php:729
+msgid "App Name:"
+msgstr ""
+
+#: admin/views/settings.php:736
+msgid "User Support Email:"
+msgstr ""
+
+#: admin/views/settings.php:736
+#: admin/views/settings.php:737
+msgid "Your email address"
+msgstr ""
+
+#: admin/views/settings.php:737
+msgid "Developer Contact:"
+msgstr ""
+
+#: admin/views/settings.php:738
+msgid "Click \"Save and Continue\""
+msgstr ""
+
+#: admin/views/settings.php:739
+msgid "Scopes:"
+msgstr ""
+
+#: admin/views/settings.php:739
+msgid "Add these two scopes:"
+msgstr ""
+
+#: admin/views/settings.php:755
+msgid "Test Users:"
+msgstr ""
+
+#: admin/views/settings.php:755
+msgid "Add your Google account email"
+msgstr ""
+
+#: admin/views/settings.php:756
+msgid "Click \"Save and Continue\" until complete"
+msgstr ""
+
+#: admin/views/settings.php:763
+msgid "I've configured the OAuth consent screen"
+msgstr ""
+
+#: admin/views/settings.php:775
+msgid "Step 4: Create OAuth 2.0 Credentials"
+msgstr ""
+
+#: admin/views/settings.php:779
+msgid "Create the Client ID and Secret you'll use in WordPress."
+msgstr ""
+
+#: admin/views/settings.php:786
+msgid "Create OAuth Client ID"
+msgstr ""
+
+#: admin/views/settings.php:791
+msgid "In Google Cloud Console:"
+msgstr ""
+
+#: admin/views/settings.php:793
+msgid "Application Type:"
+msgstr ""
+
+#: admin/views/settings.php:793
+msgid "Select \"Web application\""
+msgstr ""
+
+#: admin/views/settings.php:794
+msgid "Name:"
+msgstr ""
+
+#: admin/views/settings.php:801
+msgid "Authorized Redirect URIs:"
+msgstr ""
+
+#: admin/views/settings.php:801
+msgid "Click \"Add URI\" and paste this:"
+msgstr ""
+
+#: admin/views/settings.php:808
+msgid "Copy URI"
+msgstr ""
+
+#: admin/views/settings.php:811
+msgid "Must match exactly including https:// and all parameters"
+msgstr ""
+
+#: admin/views/settings.php:814
+msgid "Copy the Client ID and Client Secret shown in the popup"
+msgstr ""
+
+#: admin/views/settings.php:821
+msgid "I've created OAuth credentials and copied the Client ID and Secret"
+msgstr ""
+
+#: admin/views/settings.php:833
+msgid "Step 5: Enter Credentials in WordPress"
+msgstr ""
+
+#: admin/views/settings.php:837
+msgid "Paste the credentials you copied from Google Cloud Console."
+msgstr ""
+
+#: admin/views/settings.php:845
+msgid "Client ID"
+msgstr ""
+
+#: admin/views/settings.php:855
+msgid "Should end with .apps.googleusercontent.com"
+msgstr ""
+
+#: admin/views/settings.php:860
+msgid "Client Secret"
+msgstr ""
+
+#: admin/views/settings.php:868
+msgid "Enter new secret to update"
+msgstr ""
+
+#: admin/views/settings.php:868
+msgid "GOCSPX-..."
+msgstr ""
+
+#: admin/views/settings.php:877
+msgid "Secret saved. Leave blank to keep current, or enter new to update."
+msgstr ""
+
+#: admin/views/settings.php:880
+msgid "Should start with GOCSPX-"
+msgstr ""
+
+#: admin/views/settings.php:905
+msgid "Step 6: Setup Complete!"
+msgstr ""
+
+#: admin/views/settings.php:912
+msgid "Credentials saved successfully!"
+msgstr ""
+
+#: admin/views/settings.php:915
+msgid "Now go to the Connections page to authorize Google Analytics and Search Console."
+msgstr ""
+
+#: admin/views/settings.php:921
+msgid "Go to Connections Page"
+msgstr ""
+
+#: admin/views/settings.php:927
+msgid "Complete Step 5 to save your credentials first."
+msgstr ""
+
+#: admin/views/settings.php:932
+msgid "Next Steps:"
+msgstr ""
+
+#: admin/views/settings.php:934
+msgid "Go to Marketing Analytics → Connections"
+msgstr ""
+
+#: admin/views/settings.php:935
+msgid "Click \"Connect to Google Analytics\""
+msgstr ""
+
+#: admin/views/settings.php:936
+msgid "Authorize access to your Google account"
+msgstr ""
+
+#: admin/views/settings.php:937
+msgid "Select your GA4 property"
+msgstr ""
+
+#: admin/views/settings.php:938
+msgid "Repeat for Google Search Console (if needed)"
+msgstr ""
+
+#: admin/views/settings.php:939
+msgid "Start chatting with your analytics data!"
+msgstr ""
+
+#: admin/views/settings.php:949
+msgid "Previous Step"
+msgstr ""
+
+#: admin/views/settings.php:952
+msgid "Next Step"
+msgstr ""
+
+#: admin/views/settings.php:962
+msgid "Need Help? Common Issues"
+msgstr ""
+
+#: admin/views/settings.php:965
+msgid "redirect_uri_mismatch error"
+msgstr ""
+
+#: admin/views/settings.php:966
+msgid "The redirect URI in Google Cloud must match exactly. Copy it again from Step 4 and make sure there are no extra spaces."
+msgstr ""
+
+#: admin/views/settings.php:968
+msgid "\"This app isn't verified\" warning"
+msgstr ""
+
+#: admin/views/settings.php:969
+msgid "This is normal. Click \"Advanced\" → \"Go to [Your App] (unsafe)\" to proceed."
+msgstr ""
+
+#: admin/views/settings.php:971
+msgid "APIs not showing as enabled"
+msgstr ""
+
+#: admin/views/settings.php:972
+msgid "Make sure you're in the correct Google Cloud project. Check the project dropdown at the top."
+msgstr ""
+
+#: admin/views/settings.php:976
+msgid "View Full Documentation"
+msgstr ""
+
+#: admin/views/settings.php:1003
+msgid "Cache Duration Settings"
+msgstr ""
+
+#: admin/views/settings.php:1004
+msgid "Configure how long API responses are cached to reduce API calls and improve performance."
+msgstr ""
+
+#: admin/views/settings.php:1009
+msgid "Clarity Cache Duration"
+msgstr ""
+
+#: admin/views/settings.php:1014
+#: admin/views/settings.php:1025
+#: admin/views/settings.php:1036
+msgid "minutes"
+msgstr ""
+
+#: admin/views/settings.php:1015
+msgid "Default: 60 minutes. Clarity has a rate limit of 10 requests per day."
+msgstr ""
+
+#: admin/views/settings.php:1020
+msgid "GA4 Cache Duration"
+msgstr ""
+
+#: admin/views/settings.php:1026
+msgid "Default: 30 minutes. Balance between freshness and API quota."
+msgstr ""
+
+#: admin/views/settings.php:1031
+msgid "Search Console Cache Duration"
+msgstr ""
+
+#: admin/views/settings.php:1037
+msgid "Default: 1440 minutes (24 hours). GSC data has a 2-3 day delay."
+msgstr ""
+
+#: admin/views/settings.php:1042
+msgid "Cache Management"
+msgstr ""
+
+#: admin/views/settings.php:1047
+msgid "Clear All Caches"
+msgstr ""
+
+#: admin/views/settings.php:1051
+msgid "Clear All Cached Data"
+msgstr ""
+
+#: admin/views/settings.php:1053
+msgid "Remove all cached API responses. Fresh data will be fetched on next request."
+msgstr ""
+
+#: admin/views/settings.php:1059
+msgid "Save Cache Settings"
+msgstr ""
+
+#: admin/views/settings.php:1084
+msgid "Debug Settings"
+msgstr ""
+
+#: admin/views/settings.php:1089
+msgid "Debug Mode"
+msgstr ""
+
+#: admin/views/settings.php:1095
+msgid "Enable debug logging"
+msgstr ""
+
+#: admin/views/settings.php:1097
+msgid "Log API requests and responses to the WordPress debug log (credentials are never logged)."
+msgstr ""
+
+#: admin/views/settings.php:1102
+msgid "System Information"
+msgstr ""
+
+#: admin/views/settings.php:1106
+msgid "Plugin Version"
+msgstr ""
+
+#: admin/views/settings.php:1110
+msgid "PHP Version"
+msgstr ""
+
+#: admin/views/settings.php:1114
+msgid "WordPress Version"
+msgstr ""
+
+#: admin/views/settings.php:1118
+msgid "Sodium Extension"
+msgstr ""
+
+#: admin/views/settings.php:1121
+msgid "Installed"
+msgstr ""
+
+#: admin/views/settings.php:1123
+msgid "Not installed (required for credential encryption)"
+msgstr ""
+
+#: admin/views/settings.php:1146
+msgid "Access control settings saved successfully."
+msgstr ""
+
+#: admin/views/settings.php:1150
+msgid "Failed to save access control settings."
+msgstr ""
+
+#: admin/views/settings.php:1162
+msgid "Plugin Access Permissions"
+msgstr ""
+
+#: admin/views/settings.php:1164
+msgid "Select which WordPress roles can access this plugin. All features are accessible to selected roles (all-or-nothing access)."
+msgstr ""
+
+#: admin/views/settings.php:1170
+#: admin/views/settings.php:1175
+msgid "Allowed Roles"
+msgstr ""
+
+#: admin/views/settings.php:1184
+msgid "(Recommended - Full access)"
+msgstr ""
+
+#: admin/views/settings.php:1190
+msgid "If no roles are selected, only Administrators will have access (default behavior)."
+msgstr ""
+
+#: admin/views/settings.php:1198
+msgid "Save Access Control Settings"
+msgstr ""
+
+#: admin/views/widgets/dashboard-widget.php:42
+msgid "Recent Anomalies"
+msgstr ""
+
+#. translators: 1: anomaly type (spike/drop), 2: metric name, 3: platform name
+#: admin/views/widgets/dashboard-widget.php:57
+#, php-format
+msgid "%1$s in %2$s (%3$s)"
+msgstr ""
+
+#: admin/views/widgets/dashboard-widget.php:72
+msgid "Open AI Assistant"
+msgstr ""
+
+#: includes/abilities/class-abilities-registrar.php:109
+#: includes/admin/class-admin.php:25
+#: includes/admin/class-admin.php:26
+#: includes/admin/class-admin.php:476
+msgid "Marketing Analytics"
+msgstr ""
+
+#: includes/abilities/class-abilities-registrar.php:110
+msgid "Tools for accessing marketing analytics data from Microsoft Clarity, Google Analytics 4, and Google Search Console."
+msgstr ""
+
+#: includes/abilities/class-clarity-abilities.php:44
+msgid "Get Microsoft Clarity Insights"
+msgstr ""
+
+#: includes/abilities/class-clarity-abilities.php:45
+msgid "Retrieve analytics dashboard data from Microsoft Clarity for a specified time period with optional dimension filters."
+msgstr ""
+
+#: includes/abilities/class-clarity-abilities.php:113
+msgid "Get Clarity Session Recordings"
+msgstr ""
+
+#: includes/abilities/class-clarity-abilities.php:114
+msgid "Fetch session recording URLs from Microsoft Clarity based on filters."
+msgstr ""
+
+#: includes/abilities/class-clarity-abilities.php:182
+msgid "Analyze Clarity Heatmaps"
+msgstr ""
+
+#: includes/abilities/class-clarity-abilities.php:183
+msgid "Get heatmap data and AI-friendly insights from Microsoft Clarity."
+msgstr ""
+
+#: includes/abilities/class-clarity-abilities.php:237
+msgid "Clarity Dashboard Summary"
+msgstr ""
+
+#: includes/abilities/class-clarity-abilities.php:238
+msgid "Get current Microsoft Clarity project summary with session counts and user metrics."
+msgstr ""
+
+#: includes/abilities/class-cross-platform-abilities.php:73
+msgid "Compare Periods"
+msgstr ""
+
+#: includes/abilities/class-cross-platform-abilities.php:74
+msgid "Compare analytics metrics between two time periods across connected platforms."
+msgstr ""
+
+#: includes/abilities/class-cross-platform-abilities.php:120
+msgid "Get Top Content"
+msgstr ""
+
+#: includes/abilities/class-cross-platform-abilities.php:121
+msgid "Get top performing content by combining GA4 engagement and GSC search data."
+msgstr ""
+
+#: includes/abilities/class-cross-platform-abilities.php:156
+msgid "Generate Summary Report"
+msgstr ""
+
+#: includes/abilities/class-cross-platform-abilities.php:157
+msgid "Generate a comprehensive analytics summary report from all connected platforms."
+msgstr ""
+
+#: includes/abilities/class-cross-platform-abilities.php:194
+#: includes/abilities/class-cross-platform-abilities.php:252
+#: includes/abilities/class-cross-platform-abilities.php:338
+msgid "Insufficient permissions."
+msgstr ""
+
+#. translators: %s: number of sessions
+#: includes/abilities/class-cross-platform-abilities.php:711
+#, php-format
+msgid "Total sessions: %s"
+msgstr ""
+
+#. translators: %s: number of active users
+#: includes/abilities/class-cross-platform-abilities.php:718
+#, php-format
+msgid "Active users: %s"
+msgstr ""
+
+#. translators: %s: number of search clicks
+#: includes/abilities/class-cross-platform-abilities.php:728
+#, php-format
+msgid "Search clicks: %s"
+msgstr ""
+
+#. translators: %s: number of search impressions
+#: includes/abilities/class-cross-platform-abilities.php:733
+#, php-format
+msgid "Search impressions: %s"
+msgstr ""
+
+#: includes/abilities/class-ga4-abilities.php:46
+msgid "Retrieve Google Analytics 4 metrics for a specified date range with optional dimensions."
+msgstr ""
+
+#: includes/abilities/class-ga4-abilities.php:116
+msgid "Get GA4 Events"
+msgstr ""
+
+#: includes/abilities/class-ga4-abilities.php:117
+msgid "Query custom event data from Google Analytics 4."
+msgstr ""
+
+#: includes/abilities/class-ga4-abilities.php:170
+msgid "Get GA4 Real-time Data"
+msgstr ""
+
+#: includes/abilities/class-ga4-abilities.php:171
+msgid "Get real-time user activity from Google Analytics 4."
+msgstr ""
+
+#: includes/abilities/class-ga4-abilities.php:214
+msgid "Get Traffic Sources"
+msgstr ""
+
+#: includes/abilities/class-ga4-abilities.php:215
+msgid "Analyze traffic sources and acquisition channels from GA4."
+msgstr ""
+
+#: includes/abilities/class-ga4-abilities.php:264
+msgid "GA4 Overview"
+msgstr ""
+
+#: includes/abilities/class-ga4-abilities.php:265
+msgid "Get Google Analytics 4 property summary with key metrics snapshot."
+msgstr ""
+
+#: includes/abilities/class-gsc-abilities.php:45
+msgid "Retrieve search performance data from Google Search Console including clicks, impressions, CTR, and position."
+msgstr ""
+
+#: includes/abilities/class-gsc-abilities.php:113
+msgid "Get top-performing search queries from Google Search Console."
+msgstr ""
+
+#: includes/abilities/class-gsc-abilities.php:174
+msgid "Get Indexing Status"
+msgstr ""
+
+#: includes/abilities/class-gsc-abilities.php:175
+msgid "Check page indexing status and coverage issues in Google Search Console."
+msgstr ""
+
+#: includes/abilities/class-gsc-abilities.php:226
+msgid "Search Console Overview"
+msgstr ""
+
+#: includes/abilities/class-gsc-abilities.php:227
+msgid "Get Google Search Console site summary with verification status, indexed pages, and top queries."
+msgstr ""
+
+#: includes/admin/class-admin.php:37
+#: includes/admin/class-admin.php:38
+msgid "Dashboard"
+msgstr ""
+
+#: includes/admin/class-admin.php:67
+msgid "Abilities Catalog"
+msgstr ""
+
+#: includes/admin/class-admin.php:68
+msgid "Abilities"
+msgstr ""
+
+#: includes/admin/class-admin.php:188
+msgid "Testing connection..."
+msgstr ""
+
+#: includes/admin/class-admin.php:189
+msgid "Connection successful!"
+msgstr ""
+
+#: includes/admin/class-admin.php:190
+msgid "Connection failed"
+msgstr ""
+
+#: includes/admin/class-admin.php:191
+msgid "Error saving settings"
+msgstr ""
+
+#: includes/admin/class-admin.php:311
+msgid "Invalid JSON in Arguments field. Please check your syntax."
+msgstr ""
+
+#: includes/admin/class-admin.php:351
+#: includes/admin/class-admin.php:384
+msgid "-- Select a property --"
+msgstr ""
+
+#: includes/admin/class-admin.php:352
+#: includes/admin/class-admin.php:385
+msgid "Failed to load properties"
+msgstr ""
+
+#: includes/admin/class-admin.php:353
+#: includes/admin/class-admin.php:386
+msgid "Error loading properties"
+msgstr ""
+
+#: includes/admin/class-admin.php:354
+#: includes/admin/class-admin.php:387
+msgid "Network error. Please try again."
+msgstr ""
+
+#: includes/admin/class-admin.php:355
+#: includes/admin/class-admin.php:388
+msgid "Please select a property"
+msgstr ""
+
+#: includes/admin/class-admin.php:356
+#: includes/admin/class-admin.php:389
+msgid "Saving..."
+msgstr ""
+
+#: includes/admin/class-admin.php:460
+msgid "You do not have permission to access this page."
+msgstr ""
+
+#: includes/admin/class-admin.php:509
+msgid "Analytics"
+msgstr ""
+
+#: includes/admin/class-admin.php:547
+msgid "View Dashboard"
+msgstr ""
+
+#: includes/admin/class-connection-promoter.php:66
+msgid "Connect your first platform to get started with marketing analytics."
+msgstr ""
+
+#: includes/admin/class-connection-promoter.php:68
+msgid "Connect Clarity"
+msgstr ""
+
+#. translators: 1: next platform name, 2: benefit description
+#: includes/admin/class-connection-promoter.php:78
+#, php-format
+msgid "Connect %1$s to unlock cross-platform insights with %2$s."
+msgstr ""
+
+#. translators: %s: platform name
+#: includes/admin/class-connection-promoter.php:85
+#: includes/admin/class-connection-promoter.php:101
+#, php-format
+msgid "Connect %s"
+msgstr ""
+
+#. translators: %s: last platform name
+#: includes/admin/class-connection-promoter.php:95
+#, php-format
+msgid "Add %s for the complete picture across all your marketing data."
+msgstr ""
+
+#: includes/admin/class-connection-promoter.php:110
+msgid "All platforms connected! You have full cross-platform analytics."
+msgstr ""
+
+#: includes/admin/class-connection-promoter.php:187
+msgid "Expand Your Analytics"
+msgstr ""
+
+#. translators: 1: connected count, 2: total platforms
+#: includes/admin/class-connection-promoter.php:198
+#, php-format
+msgid "%1$d of %2$d platforms connected"
+msgstr ""
+
+#. translators: %s: Error message
+#: includes/chat/class-abstract-llm-provider.php:103
+#: includes/chat/class-gemini-provider.php:417
+#, php-format
+msgid "API request failed: %s"
+msgstr ""
+
+#: includes/chat/class-abstract-llm-provider.php:120
+#: includes/chat/class-gemini-provider.php:434
+msgid "Unknown error"
+msgstr ""
+
+#. translators: 1: HTTP status code, 2: Error message
+#: includes/chat/class-abstract-llm-provider.php:125
+#: includes/chat/class-gemini-provider.php:439
+#, php-format
+msgid "API returned status %1$d: %2$s"
+msgstr ""
+
+#: includes/chat/class-abstract-llm-provider.php:139
+#: includes/chat/class-gemini-provider.php:453
+msgid "Invalid JSON response from API"
+msgstr ""
+
+#. translators: %s: Provider name
+#: includes/chat/class-abstract-llm-provider.php:166
+#, php-format
+msgid "%s API key is not configured"
+msgstr ""
+
+#: includes/chat/class-chat-ajax-handler.php:72
+#: includes/chat/class-chat-ajax-handler.php:109
+#: includes/chat/class-chat-ajax-handler.php:610
+#: includes/chat/class-chat-ajax-handler.php:728
+msgid "Insufficient permissions"
+msgstr ""
+
+#: includes/chat/class-chat-ajax-handler.php:88
+msgid "Conversation created successfully"
+msgstr ""
+
+#: includes/chat/class-chat-ajax-handler.php:93
+msgid "Failed to create conversation"
+msgstr ""
+
+#: includes/chat/class-chat-ajax-handler.php:121
+#: includes/chat/class-chat-ajax-handler.php:739
+msgid "Invalid conversation ID"
+msgstr ""
+
+#: includes/chat/class-chat-ajax-handler.php:128
+msgid "Message cannot be empty"
+msgstr ""
+
+#: includes/chat/class-chat-ajax-handler.php:137
+msgid "Conversation not found"
+msgstr ""
+
+#: includes/chat/class-chat-ajax-handler.php:151
+msgid "Failed to save message"
+msgstr ""
+
+#: includes/chat/class-chat-ajax-handler.php:196
+msgid "Failed to save AI response"
+msgstr ""
+
+#. translators: %s: Error message
+#: includes/chat/class-chat-ajax-handler.php:236
+#, php-format
+msgid "I tried to use tools to answer your question, but encountered an error: %s"
+msgstr ""
+
+#: includes/chat/class-chat-ajax-handler.php:269
+msgid "Message sent successfully"
+msgstr ""
+
+#: includes/chat/class-chat-ajax-handler.php:459
+msgid "AI provider is not configured. Please configure your API key in Settings."
+msgstr ""
+
+#: includes/chat/class-chat-ajax-handler.php:630
+msgid "Invalid parameters"
+msgstr ""
+
+#: includes/chat/class-chat-ajax-handler.php:748
+msgid "Conversation not found or access denied"
+msgstr ""
+
+#: includes/chat/class-chat-ajax-handler.php:759
+msgid "Conversation deleted successfully"
+msgstr ""
+
+#: includes/chat/class-chat-ajax-handler.php:764
+msgid "Failed to delete conversation"
+msgstr ""
+
+#: includes/chat/class-claude-provider.php:71
+msgid "Claude API is not configured"
+msgstr ""
+
+#: includes/chat/class-claude-provider.php:330
+#: includes/chat/class-gemini-provider.php:380
+#: includes/chat/class-openai-provider.php:321
+#: includes/chat/class-wp-ai-provider.php:385
+msgid "You are a helpful AI assistant with access to marketing analytics data from Google Analytics 4, Google Search Console, and Microsoft Clarity. Use the available tools to answer questions about website performance, user behavior, and marketing metrics. Provide clear, actionable insights based on the data."
+msgstr ""
+
+#: includes/chat/class-gemini-provider.php:66
+msgid "Gemini API is not configured"
+msgstr ""
+
+#: includes/chat/class-mcp-client.php:162
+#: includes/chat/class-mcp-client.php:236
+#: includes/chat/class-mcp-client.php:265
+#: includes/chat/class-mcp-client.php:297
+msgid "Invalid response from MCP server"
+msgstr ""
+
+#: includes/chat/class-mcp-client.php:229
+msgid "Tool execution failed"
+msgstr ""
+
+#. translators: %s: Error message
+#: includes/chat/class-mcp-client.php:345
+#, php-format
+msgid "MCP request failed: %s"
+msgstr ""
+
+#. translators: %d: HTTP status code
+#: includes/chat/class-mcp-client.php:357
+#, php-format
+msgid "MCP server returned status code: %d"
+msgstr ""
+
+#: includes/chat/class-mcp-client.php:369
+msgid "Invalid JSON response from MCP server"
+msgstr ""
+
+#: includes/chat/class-openai-provider.php:66
+msgid "OpenAI API is not configured"
+msgstr ""
+
+#: includes/chat/class-wp-ai-provider.php:74
+msgid "WordPress AI (Core)"
+msgstr ""
+
+#: includes/chat/class-wp-ai-provider.php:107
+msgid "The WordPress AI Client is not available. WordPress 7.0 or higher is required."
+msgstr ""
+
+#: includes/chat/class-wp-ai-provider.php:109
+msgid "No AI provider is connected in WordPress. Add a provider API key under Settings > Connectors."
+msgstr ""
+
+#: includes/chat/class-wp-ai-provider.php:127
+msgid "The WordPress AI Client is not configured. Add a provider under Settings > Connectors."
+msgstr ""
+
+#. translators: %s: Error message
+#: includes/chat/class-wp-ai-provider.php:162
+#, php-format
+msgid "WordPress AI Client request failed: %s"
+msgstr ""
+
+#: includes/class-activator.php:32
+msgid "Specflux Marketing Analytics Chat requires WordPress 7.0 or higher."
+msgstr ""
+
+#: includes/class-activator.php:33
+#: includes/class-activator.php:42
+#: includes/class-activator.php:64
+msgid "Plugin Activation Error"
+msgstr ""
+
+#: includes/class-activator.php:41
+msgid "Specflux Marketing Analytics Chat requires PHP 8.1 or higher."
+msgstr ""
+
+#. translators: %s: comma-separated list of PHP extensions
+#: includes/class-activator.php:61
+#, php-format
+msgid "Specflux Marketing Analytics Chat requires the following PHP extensions: %s"
+msgstr ""
+
+#: includes/credentials/class-connection-tester.php:54
+msgid "No Clarity credentials found."
+msgstr ""
+
+#: includes/credentials/class-connection-tester.php:61
+msgid "Clarity API token or project ID is missing."
+msgstr ""
+
+#: includes/credentials/class-connection-tester.php:74
+msgid "Successfully connected to Microsoft Clarity."
+msgstr ""
+
+#: includes/credentials/class-connection-tester.php:83
+msgid "Clarity API returned empty response."
+msgstr ""
+
+#. translators: %s: error message
+#: includes/credentials/class-connection-tester.php:90
+#, php-format
+msgid "Clarity connection failed: %s"
+msgstr ""
+
+#: includes/credentials/class-connection-tester.php:108
+msgid "No GA4 access token found. Please authorize Google Analytics."
+msgstr ""
+
+#. translators: %d: number of properties
+#: includes/credentials/class-connection-tester.php:140
+#, php-format
+msgid "Successfully connected to Google Analytics. Found %d property."
+msgid_plural "Successfully connected to Google Analytics. Found %d properties."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/credentials/class-connection-tester.php:156
+msgid "GA4 API returned empty response."
+msgstr ""
+
+#. translators: %s: error message
+#: includes/credentials/class-connection-tester.php:171
+#, php-format
+msgid "GA4 connection failed: %s"
+msgstr ""
+
+#: includes/credentials/class-connection-tester.php:189
+msgid "No GSC access token found. Please authorize Google Search Console."
+msgstr ""
+
+#. translators: %d: number of sites
+#: includes/credentials/class-connection-tester.php:211
+#, php-format
+msgid "Successfully connected to Google Search Console. Found %d site."
+msgid_plural "Successfully connected to Google Search Console. Found %d sites."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/credentials/class-connection-tester.php:227
+msgid "GSC API returned empty response."
+msgstr ""
+
+#. translators: %s: error message
+#: includes/credentials/class-connection-tester.php:242
+#, php-format
+msgid "GSC connection failed: %s"
+msgstr ""
+
+#: includes/credentials/class-oauth-handler.php:137
+msgid "Invalid state parameter. Possible CSRF attack."
+msgstr ""
+
+#: includes/credentials/class-oauth-handler.php:146
+msgid "Invalid state format."
+msgstr ""
+
+#: includes/credentials/class-oauth-handler.php:156
+msgid "Invalid service identifier."
+msgstr ""
+
+#: includes/credentials/class-oauth-handler.php:166
+msgid "Failed to initialize Google Client."
+msgstr ""
+
+#. translators: %s: error message
+#: includes/credentials/class-oauth-handler.php:178
+#, php-format
+msgid "OAuth error: %s"
+msgstr ""
+
+#: includes/credentials/class-oauth-handler.php:192
+msgid "Successfully connected to Google services."
+msgstr ""
+
+#. translators: %s: error message
+#: includes/credentials/class-oauth-handler.php:200
+#, php-format
+msgid "Failed to exchange authorization code: %s"
+msgstr ""
+
+#: includes/prompts/class-prompt-manager.php:95
+msgid "Prompt not found."
+msgstr ""
+
+#. translators: %s: field name
+#: includes/prompts/class-prompt-manager.php:144
+#, php-format
+msgid "Missing required field: %s"
+msgstr ""
+
+#: includes/prompts/class-prompt-manager.php:153
+msgid "Prompt name must contain only lowercase letters, numbers, and hyphens."
+msgstr ""
+
+#: includes/prompts/class-prompt-manager.php:161
+msgid "Arguments must be an array."
+msgstr ""
+
+#: includes/prompts/class-prompt-manager.php:187
+msgid "Analyze Traffic Drop"
+msgstr ""
+
+#: includes/prompts/class-prompt-manager.php:188
+msgid "Investigates sudden traffic decreases by comparing current metrics with historical data across all platforms"
+msgstr ""
+
+#: includes/prompts/class-prompt-manager.php:203
+msgid "Weekly Performance Report"
+msgstr ""
+
+#: includes/prompts/class-prompt-manager.php:204
+msgid "Generates a comprehensive weekly summary combining GA4, Clarity, and GSC data with key insights"
+msgstr ""
+
+#: includes/prompts/class-prompt-manager.php:213
+msgid "Analyzes GSC data for indexing issues, search performance trends, and optimization opportunities"
+msgstr ""
+
+#: includes/prompts/class-prompt-manager.php:221
+msgid "Content Performance Audit"
+msgstr ""
+
+#: includes/prompts/class-prompt-manager.php:222
+msgid "Identifies top and bottom performing content by combining pageviews, engagement, and search rankings"
+msgstr ""
+
+#: includes/prompts/class-prompt-manager.php:239
+msgid "Investigate an anomaly by pulling data from the affected platform, checking other platforms for correlated changes, and providing recommendations"
+msgstr ""
+
+#: includes/prompts/class-prompt-manager.php:266
+msgid "Conversion Funnel Analysis"
+msgstr ""
+
+#: includes/prompts/class-prompt-manager.php:267
+msgid "Analyzes user journey from traffic source through conversion using GA4 events and Clarity session data"
+msgstr ""
+
+#: includes/prompts/class-prompt-manager.php:292
+msgid "Preset template not found."
+msgstr ""
+
+#: specflux-marketing-analytics-chat.php:41
+msgid "Dependencies are missing. Please run \"composer install\" in the plugin directory."
+msgstr ""
+
+#: specflux-marketing-analytics-chat.php:74
+msgid "Specflux Marketing Analytics Chat:"
+msgstr ""
+
+#: specflux-marketing-analytics-chat.php:75
+msgid "For external AI client access (Claude Desktop, Cursor, etc.), install the MCP Adapter plugin."
+msgstr ""
+
+#: specflux-marketing-analytics-chat.php:77
+msgid "Get MCP Adapter from GitHub"
+msgstr ""

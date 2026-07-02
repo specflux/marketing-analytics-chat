@@ -1,5 +1,5 @@
 === Specflux Marketing Analytics Chat ===
-Contributors: stephenpaulsamynathan
+Contributors: stephen1204paul
 Donate link: https://www.specflux.com/
 Tags: marketing analytics, ai, chat, mcp
 Requires at least: 7.0
@@ -39,14 +39,16 @@ Specflux Marketing Analytics Chat lets you have conversations with your marketin
 = How It Works =
 
 1. Connect your analytics platforms via OAuth or API keys
-2. Configure your MCP client (e.g., Claude Desktop, ChatGPT, Cursor)
+2. Use the built-in AI chat right inside WordPress (works out of the box on WordPress 7.0)
 3. Ask questions like "How did my traffic change this week?"
 4. Get AI-powered insights and recommendations
+
+Prefer to use an external AI client (Claude Desktop, ChatGPT, Cursor)? Install the optional MCP Adapter plugin (see Requirements) to expose these tools over the Model Context Protocol.
 
 = Requirements =
 
 * WordPress 7.0 or higher (includes Abilities API and AI Client in core)
-* MCP Adapter plugin (from WordPress.org)
+* MCP Adapter plugin (optional; only needed to connect external AI clients such as Claude Desktop or Cursor). It is available from GitHub at https://github.com/WordPress/mcp-adapter and is not required for the built-in chat.
 * PHP 8.1 or higher
 * SSL certificate (HTTPS) for OAuth connections
 * PHP extensions: json, curl, openssl, sodium
@@ -70,7 +72,7 @@ When "WordPress AI" is selected as the AI provider, requests are routed through 
 = Prerequisites =
 
 1. Ensure you are running WordPress 7.0 or higher (includes Abilities API and AI Client)
-2. Install and activate the "MCP Adapter" plugin from WordPress.org
+2. Optional, for external AI clients only: install and activate the "MCP Adapter" plugin from GitHub (https://github.com/WordPress/mcp-adapter). The built-in chat works without it.
 
 = Plugin Installation =
 
@@ -124,7 +126,7 @@ You can ask questions like:
 
 = What WordPress versions are supported? =
 
-WordPress 7.0 and higher is required. The plugin uses the Abilities API and the AI Client (both included in WordPress 7.0 core) and requires the MCP Adapter plugin for external AI client access.
+WordPress 7.0 and higher is required. The plugin uses the Abilities API and the AI Client, both included in WordPress 7.0 core, so the built-in chat works out of the box. Connecting external AI clients (Claude Desktop, Cursor) over MCP is optional and requires the separate MCP Adapter plugin, available from GitHub.
 
 == Screenshots ==
 

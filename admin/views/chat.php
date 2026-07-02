@@ -25,6 +25,13 @@ if ( isset( $_GET['conversation_id'] ) && $conversation_nonce && wp_verify_nonce
 	$active_conversation_id = absint( wp_unslash( $_GET['conversation_id'] ) );
 }
 $active_conversation     = $active_conversation_id ? $chat_manager->get_conversation( $active_conversation_id ) : null;
+
+// Ownership gate: never render another user's conversation (IDOR guard).
+if ( $active_conversation && (int) $active_conversation->user_id !== $user_id ) {
+	$active_conversation    = null;
+	$active_conversation_id = null;
+}
+
 $messages                = $active_conversation_id ? $chat_manager->get_messages( $active_conversation_id ) : array();
 $conversation_link_nonce = wp_create_nonce( 'specflux_mac_conversation' );
 

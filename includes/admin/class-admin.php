@@ -71,12 +71,15 @@ class Admin {
 			array( $this, 'render_abilities_page' )
 		);
 
-		// Settings page.
+		// Settings page. Requires full admin capability: it holds sensitive
+		// controls (role grants, Google OAuth client credentials, AI provider
+		// keys, debug mode), so it must not be reachable via the plugin access
+		// capability alone.
 		add_submenu_page(
 			'specflux-mac',
 			__( 'Settings', 'specflux-marketing-analytics-chat' ),
 			__( 'Settings', 'specflux-marketing-analytics-chat' ),
-			'access_specflux_mac', // phpcs:ignore WordPress.WP.Capabilities.Unknown -- Custom capability registered on activation.
+			'manage_options',
 			'specflux-mac-settings',
 			array( $this, 'render_settings_page' )
 		);
@@ -450,8 +453,11 @@ class Admin {
 	 * Render settings page
 	 */
 	public function render_settings_page() {
-		if ( ! Permission_Manager::can_access_plugin() ) {
-			return;
+		// Sensitive page (role grants, OAuth client credentials, AI keys, debug):
+		// require full admin capability, not merely plugin access. This also
+		// guards the save handlers, which run inside the included template.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'specflux-marketing-analytics-chat' ) );
 		}
 
 		require_once SPECFLUX_MAC_PATH . 'admin/views/settings.php';

@@ -184,7 +184,7 @@ update_version_in_file "$MAIN_FILE" \
 
 update_version_in_file "$MAIN_FILE" \
     "s/define( 'SPECFLUX_MAC_VERSION', '${CURRENT_VERSION}' );/define( 'SPECFLUX_MAC_VERSION', '${NEW_VERSION}' );/" \
-    "define( 'MARKETING_ANALYTICS_MCP_VERSION', '${NEW_VERSION}' );"
+    "define( 'SPECFLUX_MAC_VERSION', '${NEW_VERSION}' );"
 
 # Update version in readme.txt
 update_version_in_file "$README_FILE" \
@@ -229,11 +229,13 @@ if [ "$SKIP_BUILD" = false ]; then
             ./build-plugin-optimized.sh
             echo -e "${GREEN}✓${NC} Plugin built successfully"
         else
-            echo -e "${RED}❌ build-plugin-optimized.sh not found${NC}"
-            exit 1
+            echo -e "${YELLOW}ℹ️  No local build script found — skipping local build.${NC}"
+            echo -e "${YELLOW}   The distributable zip is built in CI:${NC}"
+            echo -e "${YELLOW}   .github/workflows/deploy-wporg.yml runs 'composer install --no-dev'${NC}"
+            echo -e "${YELLOW}   and the 10up deploy action, honoring .distignore.${NC}"
         fi
     else
-        echo -e "${BLUE}Would run:${NC} ./build-plugin-optimized.sh"
+        echo -e "${BLUE}Would build the distributable zip (handled by CI deploy-wporg.yml).${NC}"
     fi
 
     echo ""

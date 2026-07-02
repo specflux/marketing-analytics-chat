@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	$oauth_handler = new OAuth_Handler();
 
 	// Handle Google OAuth credential setup.
-if ( isset( $_POST['save_google_oauth'] ) && check_admin_referer( 'specflux_mac_save_google_oauth', 'google_oauth_nonce' ) ) {
+if ( isset( $_POST['save_google_oauth'] ) && current_user_can( 'manage_options' ) && check_admin_referer( 'specflux_mac_save_google_oauth', 'google_oauth_nonce' ) ) {
 	$client_id     = isset( $_POST['google_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_client_id'] ) ) : '';
 	$client_secret = isset( $_POST['google_client_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['google_client_secret'] ) ) : '';
 
@@ -44,7 +44,7 @@ if ( isset( $_POST['save_google_oauth'] ) && check_admin_referer( 'specflux_mac_
 }
 
 	// Handle general settings form submission.
-if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save_settings', 'settings_nonce' ) ) {
+if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) && check_admin_referer( 'specflux_mac_save_settings', 'settings_nonce' ) ) {
 	$existing_settings = get_option( 'specflux_mac_settings', array() );
 	$new_settings      = array();
 
@@ -61,14 +61,40 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 	// key is persisted; an empty field leaves the saved key intact. A
 	// pre-existing plaintext key from an older install is migrated to encrypted
 	// storage on first save.
-	foreach ( array( 'claude', 'openai', 'gemini' ) as $ai_platform ) {
+	// The encrypted copy is verified via a round-trip before the plaintext
+	// original is dropped, so a failed encrypt can never destroy the key.
+	$ai_platforms       = array( 'claude', 'openai', 'gemini' );
+	$migration_failures = array();
+
+	foreach ( $ai_platforms as $ai_platform ) {
 		$key_field  = $ai_platform . '_api_key';
 		$posted_key = isset( $_POST[ $key_field ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key_field ] ) ) : '';
 
+		$key_to_store = '';
 		if ( '' !== $posted_key ) {
-			Encryption::save_credentials( $ai_platform, array( 'api_key' => $posted_key ) );
+			$key_to_store = $posted_key;
 		} elseif ( ! empty( $existing_settings[ $key_field ] ) && ! Encryption::get_credentials( $ai_platform ) ) {
-			Encryption::save_credentials( $ai_platform, array( 'api_key' => $existing_settings[ $key_field ] ) );
+			// Migrate a legacy plaintext key to encrypted storage.
+			$key_to_store = (string) $existing_settings[ $key_field ];
+		}
+
+		if ( '' === $key_to_store ) {
+			continue;
+		}
+
+		$saved  = Encryption::save_credentials( $ai_platform, array( 'api_key' => $key_to_store ) );
+		$stored = Encryption::get_credentials( $ai_platform );
+
+		$verified = $saved
+			&& is_array( $stored )
+			&& isset( $stored['api_key'] )
+			&& hash_equals( $key_to_store, (string) $stored['api_key'] );
+
+		if ( ! $verified ) {
+			// Encryption failed: keep the plaintext key in settings so it is
+			// not lost, and flag the platform so its legacy key is preserved.
+			$migration_failures[]       = $ai_platform;
+			$new_settings[ $key_field ] = $key_to_store;
 		}
 	}
 
@@ -88,11 +114,30 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 
 	// Preserve keys not present in the form (e.g. platforms, version).
 	$new_settings = array_merge( $existing_settings, $new_settings );
-	// Drop any legacy plaintext API keys now held in encrypted storage.
-	unset( $new_settings['claude_api_key'], $new_settings['openai_api_key'], $new_settings['gemini_api_key'] );
+
+	// Drop a legacy plaintext API key only where its encrypted copy verified.
+	// Platforms whose migration failed keep their plaintext key (set above).
+	foreach ( $ai_platforms as $ai_platform ) {
+		if ( ! in_array( $ai_platform, $migration_failures, true ) ) {
+			unset( $new_settings[ $ai_platform . '_api_key' ] );
+		}
+	}
+
 	update_option( 'specflux_mac_settings', $new_settings );
 
-	$success_message = __( 'Settings saved successfully.', 'specflux-marketing-analytics-chat' );
+	// Keep the standalone debug-mode option (read by Logger) in sync with the
+	// form so toggling debug actually takes effect.
+	update_option( 'specflux_mac_debug_mode', $new_settings['debug_mode'] ? 1 : 0 );
+
+	if ( ! empty( $migration_failures ) ) {
+		$error_message = sprintf(
+			/* translators: %s: comma-separated list of AI provider names. */
+			__( 'Settings saved, but the API key for these provider(s) could not be encrypted and was left in place: %s. Check that the server supports libsodium and re-save.', 'specflux-marketing-analytics-chat' ),
+			implode( ', ', $migration_failures )
+		);
+	} else {
+		$success_message = __( 'Settings saved successfully.', 'specflux-marketing-analytics-chat' );
+	}
 }
 
 	$settings              = get_option( 'specflux_mac_settings', array() );
@@ -1090,7 +1135,7 @@ if ( isset( $_POST['save_settings'] ) && check_admin_referer( 'specflux_mac_save
 
 			case 'access-control':
 				// Handle form submission.
-				if ( isset( $_POST['save_access_control'] ) && check_admin_referer( 'specflux_mac_save_access_control', 'access_control_nonce' ) ) {
+				if ( isset( $_POST['save_access_control'] ) && current_user_can( 'manage_options' ) && check_admin_referer( 'specflux_mac_save_access_control', 'access_control_nonce' ) ) {
 
 					$allowed_roles = isset( $_POST['allowed_roles'] ) && is_array( $_POST['allowed_roles'] )
 						? array_map( 'sanitize_text_field', wp_unslash( $_POST['allowed_roles'] ) )

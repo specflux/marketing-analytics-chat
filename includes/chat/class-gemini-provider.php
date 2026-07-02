@@ -140,16 +140,16 @@ class Gemini_Provider extends Abstract_LLM_Provider {
 				continue;
 			}
 
-			// Handle tool results.
+			// Handle tool results. Gemini v1beta expects the functionResponse to
+			// be carried on a 'user' turn (role 'function' is rejected), and the
+			// name must match the sanitized function-declaration name.
 			if ( 'tool' === $message['role'] ) {
-				// Tool results are part of function responses.
-				$tool_call_id = $message['tool_call_id'] ?? 'unknown';
-				$formatted[]  = array(
-					'role'  => 'function',
+				$formatted[] = array(
+					'role'  => 'user',
 					'parts' => array(
 						array(
 							'functionResponse' => array(
-								'name'     => $message['tool_name'] ?? 'unknown',
+								'name'     => $this->convert_tool_name_to_gemini( $message['tool_name'] ?? 'unknown' ),
 								'response' => array(
 									'result' => $message['content'],
 								),
@@ -173,7 +173,7 @@ class Gemini_Provider extends Abstract_LLM_Provider {
 
 					$parts[] = array(
 						'functionCall' => array(
-							'name' => $tool_call['name'],
+							'name' => $this->convert_tool_name_to_gemini( $tool_call['name'] ),
 							'args' => $arguments,
 						),
 					);
@@ -230,13 +230,37 @@ class Gemini_Provider extends Abstract_LLM_Provider {
 			$parameters = $this->convert_schema_to_gemini( $input_schema );
 
 			$gemini_tools[] = array(
-				'name'        => $name,
+				'name'        => $this->convert_tool_name_to_gemini( $name ),
 				'description' => $tool['description'] ?? '',
 				'parameters'  => $parameters,
 			);
 		}
 
 		return $gemini_tools;
+	}
+
+	/**
+	 * Sanitize an MCP ability name into a valid Gemini function name.
+	 *
+	 * Gemini function names may not contain '/', so slashes become '__'
+	 * (reversible) and any other unsupported character becomes '_'.
+	 *
+	 * @param string $name MCP ability name (e.g. marketing-analytics/get-ga4-metrics).
+	 * @return string Gemini-safe function name.
+	 */
+	private function convert_tool_name_to_gemini( $name ) {
+		$gemini_name = str_replace( '/', '__', (string) $name );
+		return preg_replace( '/[^a-zA-Z0-9_.-]/', '_', $gemini_name );
+	}
+
+	/**
+	 * Convert a Gemini function name back to its MCP ability name.
+	 *
+	 * @param string $gemini_name Gemini function name (e.g. marketing-analytics__get-ga4-metrics).
+	 * @return string MCP ability name.
+	 */
+	public function convert_tool_name_to_mcp( $gemini_name ) {
+		return str_replace( '__', '/', (string) $gemini_name );
 	}
 
 	/**
@@ -317,7 +341,7 @@ class Gemini_Provider extends Abstract_LLM_Provider {
 
 				$tool_calls[] = array(
 					'id'        => 'call_' . uniqid(), // Gemini doesn't provide IDs, so we generate one.
-					'name'      => $function_call['name'],
+					'name'      => $this->convert_tool_name_to_mcp( $function_call['name'] ),
 					'arguments' => $function_call['args'] ?? array(),
 				);
 			}

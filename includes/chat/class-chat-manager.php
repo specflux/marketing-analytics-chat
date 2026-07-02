@@ -236,17 +236,25 @@ class Chat_Manager {
 			return $cached;
 		}
 
+		// Fetch the NEWEST $limit messages (DESC), then restore chronological
+		// order in PHP. Selecting oldest-first with a LIMIT would truncate recent
+		// history in long conversations — feeding the model a stale prefix that
+		// omits the current question and can split tool_use/tool_result pairs.
+		// The id tiebreak keeps same-second inserts in insertion order.
 		$messages = $wpdb->get_results(
 			$wpdb->prepare(
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe, defined by plugin.
 				"SELECT * FROM {$table}
 				WHERE conversation_id = %d
-				ORDER BY created_at ASC
+				ORDER BY created_at DESC, id DESC
 				LIMIT %d",
 				$conversation_id,
 				$limit
 			)
 		);
+
+		// Restore chronological (oldest-first) order for display and history.
+		$messages = array_reverse( $messages );
 
 		// Parse JSON fields.
 		foreach ( $messages as $message ) {

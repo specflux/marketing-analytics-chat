@@ -74,8 +74,9 @@ class Chat_Ajax_Handler {
 			);
 		}
 
-		// Get user ID.
-		$user_id = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : get_current_user_id();
+		// Always own the conversation to the authenticated user; never trust a
+		// client-supplied user_id (prevents creating conversations for others).
+		$user_id = get_current_user_id();
 
 		// Create conversation.
 		$conversation_id = $this->chat_manager->create_conversation( $user_id, 'New Conversation' );
@@ -358,22 +359,89 @@ class Chat_Ajax_Handler {
 			return $tools;
 		}
 
-		// Filter tools by category.
+		$category_map = self::get_tool_category_map();
+
 		$filtered = array();
 		foreach ( $tools as $tool ) {
-			$tool_name = $tool['name'];
+			$short_name = self::normalize_ability_name( $tool['name'] );
+			$category   = $category_map[ $short_name ] ?? null;
 
-			// Categorize tools by prefix.
-			if ( strpos( $tool_name, 'clarity_' ) === 0 && in_array( 'clarity', $enabled_categories, true ) ) {
+			// Cross-platform tools (and any unmapped tool, e.g. a premium add-on
+			// ability) are base capabilities the chat always keeps; a specific
+			// category selection only ever hides the other platforms' tools.
+			if ( null === $category || 'cross-platform' === $category ) {
 				$filtered[] = $tool;
-			} elseif ( strpos( $tool_name, 'ga4_' ) === 0 && in_array( 'ga4', $enabled_categories, true ) ) {
-				$filtered[] = $tool;
-			} elseif ( strpos( $tool_name, 'gsc_' ) === 0 && in_array( 'gsc', $enabled_categories, true ) ) {
+				continue;
+			}
+
+			if ( in_array( $category, $enabled_categories, true ) ) {
 				$filtered[] = $tool;
 			}
 		}
 
 		return $filtered;
+	}
+
+	/**
+	 * Reduce an ability identifier to its short name for category lookup.
+	 *
+	 * Ability names arrive namespaced ('marketing-analytics/get-ga4-metrics')
+	 * and some providers sanitize them to the core prefix form
+	 * ('wpab__marketing-analytics__get-ga4-metrics'); both reduce to the final
+	 * segment ('get-ga4-metrics').
+	 *
+	 * @param string $name Raw ability/tool name.
+	 * @return string Short ability name.
+	 */
+	private static function normalize_ability_name( $name ) {
+		$name = (string) $name;
+
+		if ( false !== strpos( $name, '__' ) ) {
+			$parts = explode( '__', $name );
+			$name  = (string) end( $parts );
+		}
+
+		if ( false !== strpos( $name, '/' ) ) {
+			$parts = explode( '/', $name );
+			$name  = (string) end( $parts );
+		}
+
+		return $name;
+	}
+
+	/**
+	 * Explicit ability -> tool-category map.
+	 *
+	 * Ability short names do not reliably contain their platform token (e.g.
+	 * 'get-search-performance' is a GSC tool), so category membership is mapped
+	 * explicitly rather than inferred from a prefix. Cross-platform abilities
+	 * are always available regardless of the selected categories.
+	 *
+	 * @return array<string,string> Short ability name => category slug.
+	 */
+	private static function get_tool_category_map() {
+		return array(
+			// GA4.
+			'ga4-overview'             => 'ga4',
+			'get-ga4-events'           => 'ga4',
+			'get-ga4-metrics'          => 'ga4',
+			'get-ga4-realtime'         => 'ga4',
+			'get-traffic-sources'      => 'ga4',
+			// Google Search Console.
+			'get-indexing-status'      => 'gsc',
+			'get-search-performance'   => 'gsc',
+			'get-top-queries'          => 'gsc',
+			'gsc-overview'             => 'gsc',
+			// Microsoft Clarity.
+			'analyze-clarity-heatmaps' => 'clarity',
+			'clarity-dashboard'        => 'clarity',
+			'get-clarity-insights'     => 'clarity',
+			'get-clarity-recordings'   => 'clarity',
+			// Cross-platform (always available).
+			'compare-periods'          => 'cross-platform',
+			'generate-summary-report'  => 'cross-platform',
+			'get-top-content'          => 'cross-platform',
+		);
 	}
 
 	/**
@@ -402,6 +470,7 @@ class Chat_Ajax_Handler {
 				'content'      => $msg->content,
 				'tool_calls'   => ! empty( $msg->tool_calls ) ? $msg->tool_calls : null,
 				'tool_call_id' => $msg->tool_call_id ?? null,
+				'tool_name'    => $msg->tool_name ?? null,
 			);
 		}
 
@@ -489,6 +558,7 @@ class Chat_Ajax_Handler {
 				'content'      => $msg->content,
 				'tool_calls'   => ! empty( $msg->tool_calls ) ? $msg->tool_calls : null,
 				'tool_call_id' => $msg->tool_call_id ?? null,
+				'tool_name'    => $msg->tool_name ?? null,
 			);
 		}
 

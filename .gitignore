@@ -6,3 +6,17 @@
 *.log
 .DS_Store
 /dist
+
+# Tooling / editor scratch
+/.claude/
+/.phpunit.cache/
+
+# Working docs (not part of the plugin)
+HANDOFF.md
+HANDOFF.precompact.md
+reply.md
+WPORG-READINESS-FINDINGS.md
+
+# Visual-plan local artifacts
+/plans/
+plan-blocks.md
