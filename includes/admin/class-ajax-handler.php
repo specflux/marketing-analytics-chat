@@ -82,7 +82,7 @@ class Ajax_Handler {
 		}
 
 		$request_data = map_deep( wp_unslash( $_POST ), 'sanitize_text_field' );
-		Logger::debug( sprintf( 'Request data: %s', wp_json_encode( $request_data ) ) );
+		Logger::debug( sprintf( 'Request data: %s', wp_json_encode( Logger::redact( $request_data ) ) ) );
 
 		$platform = isset( $_POST['platform'] ) ? sanitize_text_field( wp_unslash( $_POST['platform'] ) ) : '';
 		Logger::debug( sprintf( 'Testing connection for platform: %s', $platform ) );
@@ -682,41 +682,42 @@ class Ajax_Handler {
 		$credential_manager = new Credential_Manager();
 
 		// Fetch GA4 metrics if connected.
+		// Signature: run_report( $metrics, $dimensions = array(), $date_range = '7daysAgo', $options = array() ).
 		if ( $credential_manager->has_credentials( 'ga4' ) ) {
 			try {
 				$ga4_client         = new GA4_Client();
 				$widget_data['ga4'] = $ga4_client->run_report(
-					array( 'date' ),
 					array( 'sessions', 'activeUsers', 'screenPageViews' ),
-					array( 'date_range' => '7daysAgo' )
+					array( 'date' ),
+					'7daysAgo'
 				);
-			} catch ( \Exception $e ) {
+			} catch ( \Throwable $e ) {
 				$widget_data['ga4_error'] = $e->getMessage();
 			}
 		}
 
 		// Fetch GSC metrics if connected.
+		// Signature: query_search_analytics( $date_range = '7daysAgo', $dimensions = array(), ... ).
 		if ( $credential_manager->has_credentials( 'gsc' ) ) {
 			try {
 				$gsc_client         = new GSC_Client();
 				$widget_data['gsc'] = $gsc_client->query_search_analytics(
-					array(
-						'start_date' => gmdate( 'Y-m-d', strtotime( '-7 days' ) ),
-						'end_date'   => gmdate( 'Y-m-d' ),
-					)
+					'7daysAgo',
+					array( 'date' )
 				);
-			} catch ( \Exception $e ) {
+			} catch ( \Throwable $e ) {
 				$widget_data['gsc_error'] = $e->getMessage();
 			}
 		}
 
-		// Fetch Clarity metrics if connected.
+		// Fetch Clarity metrics if connected. Clarity's data export API caps the
+		// window at 3 days, so request 3 (not 7) to get a live response.
 		if ( $credential_manager->has_credentials( 'clarity' ) ) {
 			try {
 				$credentials            = $credential_manager->get_credentials( 'clarity' );
 				$clarity_client         = new Clarity_Client( $credentials['api_token'], $credentials['project_id'] );
-				$widget_data['clarity'] = $clarity_client->get_insights( 7 );
-			} catch ( \Exception $e ) {
+				$widget_data['clarity'] = $clarity_client->get_insights( 3 );
+			} catch ( \Throwable $e ) {
 				$widget_data['clarity_error'] = $e->getMessage();
 			}
 		}

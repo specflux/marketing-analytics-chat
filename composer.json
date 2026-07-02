@@ -55,9 +55,7 @@
     "google/apiclient-services": [
       "GoogleAnalyticsAdmin",
       "AnalyticsData",
-      "Drive",
-      "SearchConsole",
-      "Sheets"
+      "SearchConsole"
     ]
   }
 }

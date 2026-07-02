@@ -28,6 +28,6 @@ jobs:
           SVN_PASSWORD: ${{ secrets.WPORG_SVN_PASSWORD }}
           SLUG: specflux-marketing-analytics-chat
           VERSION: ${{ github.event.release.tag_name }}
-          ASSETS_DIR: .wordpress-org
+          ASSETS_DIR: assets
         with:
           generate-zip: true

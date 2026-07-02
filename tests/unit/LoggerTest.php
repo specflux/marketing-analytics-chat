@@ -78,4 +78,51 @@ class LoggerTest extends TestCase {
 		$this->expectNotToPerformAssertions();
 		Logger::warning( 'Test warning message' );
 	}
+
+	/**
+	 * Test redact() masks credential-like keys and preserves benign values.
+	 */
+	public function test_redact_masks_sensitive_keys(): void {
+		$input = array(
+			'platform'      => 'clarity',
+			'api_token'     => 'super-secret-token-value',
+			'client_secret' => 'GOCSPX-abc123',
+			'password'      => 'hunter2',
+			'access_token'  => 'ya29.aaa',
+			'nonce'         => 'abc',
+		);
+
+		$redacted = Logger::redact( $input );
+
+		// Benign values are untouched.
+		$this->assertSame( 'clarity', $redacted['platform'] );
+		$this->assertSame( 'abc', $redacted['nonce'] );
+
+		// Sensitive values are masked.
+		$this->assertSame( '[redacted]', $redacted['api_token'] );
+		$this->assertSame( '[redacted]', $redacted['client_secret'] );
+		$this->assertSame( '[redacted]', $redacted['password'] );
+		$this->assertSame( '[redacted]', $redacted['access_token'] );
+
+		// The original secret never survives serialization of the redacted copy.
+		$this->assertStringNotContainsString( 'super-secret-token-value', wp_json_encode( $redacted ) );
+		$this->assertStringNotContainsString( 'GOCSPX-abc123', wp_json_encode( $redacted ) );
+	}
+
+	/**
+	 * Test redact() recurses into nested arrays.
+	 */
+	public function test_redact_recurses_into_nested_arrays(): void {
+		$input = array(
+			'credentials' => array(
+				'api_key' => 'nested-secret',
+				'label'   => 'My connection',
+			),
+		);
+
+		$redacted = Logger::redact( $input );
+
+		$this->assertSame( '[redacted]', $redacted['credentials']['api_key'] );
+		$this->assertSame( 'My connection', $redacted['credentials']['label'] );
+	}
 }

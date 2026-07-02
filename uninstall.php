@@ -32,6 +32,12 @@ function specflux_mac_uninstall() {
 	delete_option( 'specflux_mac_credentials_clarity' );
 	delete_option( 'specflux_mac_credentials_ga4' );
 	delete_option( 'specflux_mac_credentials_gsc' );
+	delete_option( 'specflux_mac_credentials_claude' );
+	delete_option( 'specflux_mac_credentials_openai' );
+	delete_option( 'specflux_mac_credentials_gemini' );
+
+	// Delete standalone debug-mode flag.
+	delete_option( 'specflux_mac_debug_mode' );
 
 	// Delete OAuth tokens.
 	delete_option( 'specflux_mac_oauth_tokens' );

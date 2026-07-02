@@ -41,6 +41,12 @@ class Logger {
 	 * @return void
 	 */
 	public static function error( $message ) {
+		// Gate error logging behind the plugin debug toggle / WP_DEBUG so the
+		// plugin never writes to error_log during normal operation.
+		if ( ! self::is_debug_enabled() ) {
+			return;
+		}
+
 		if ( is_array( $message ) || is_object( $message ) ) {
 			$message = print_r( $message, true ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 		}
@@ -64,6 +70,39 @@ class Logger {
 		}
 
 		error_log( '[Specflux Marketing Analytics Chat WARNING] ' . $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+	}
+
+	/**
+	 * Redact credential-like values from an array before logging.
+	 *
+	 * Replaces any value whose key looks like a secret (token, key, secret,
+	 * password, credential) with a fixed placeholder, recursing into nested
+	 * arrays. Use this on any request/response payload before passing it to a
+	 * log method so credentials never reach error_log (which is often web
+	 * readable).
+	 *
+	 * @param array $data Associative array that may contain secrets.
+	 * @return array Copy of $data with sensitive values redacted.
+	 */
+	public static function redact( $data ) {
+		if ( ! is_array( $data ) ) {
+			return $data;
+		}
+
+		$sensitive = '/(token|api[_-]?key|secret|password|passwd|credential|client[_-]?secret|refresh[_-]?token|access[_-]?token)/i';
+
+		$redacted = array();
+		foreach ( $data as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$redacted[ $key ] = self::redact( $value );
+			} elseif ( is_string( $key ) && preg_match( $sensitive, $key ) ) {
+				$redacted[ $key ] = '[redacted]';
+			} else {
+				$redacted[ $key ] = $value;
+			}
+		}
+
+		return $redacted;
 	}
 
 	/**
