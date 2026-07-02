@@ -137,11 +137,22 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 
 == Changelog ==
 
-= 0.2.0 - 2026-06-11 =
+= 0.2.0 - 2026-07-02 =
 * Added: Native WordPress AI Client chat provider - use the AI provider configured in WordPress core (Settings > Connectors) without entering an API key in the plugin
 * Added: Behavior annotations (read-only, non-destructive, idempotent) on all registered abilities for better AI agent safety hints
+* Security: Settings page (role permissions, Google OAuth client, AI provider keys, debug mode) now requires the manage_options capability instead of plugin access alone
+* Security: The chat view now verifies conversation ownership, preventing users from reading another user's chat history by ID
+* Security: Credential values (API tokens and keys) are redacted before any debug logging, and error logging is gated behind debug mode
+* Security: New conversations are always owned by the current user; a client-supplied user ID is ignored
+* Fixed: Dashboard widget refresh no longer triggers a fatal error caused by mismatched analytics client arguments
+* Fixed: AI chat tool-category filtering now matches abilities correctly instead of disabling all tools
+* Fixed: Google Gemini function calling (invalid tool names and message roles previously caused API errors)
+* Fixed: Chat history now sends the most recent messages to the AI instead of the oldest, keeping long conversations coherent
+* Fixed: A plaintext AI key is only removed after its encrypted copy is verified, preventing key loss on encryption failure
+* Fixed: The debug-mode toggle now takes effect
 * Changed: Minimum required WordPress version is now 7.0 (Abilities API and AI Client in core)
 * Changed: Admin notices now use the wp_admin_notice() core function
+* Changed: Trimmed unused Google API service classes and refreshed bundled libraries to reduce package size
 
 = 0.1.6 - 2026-05-09 =
 * Fixed: Downgraded PHPUnit to ^10.5 for PHP 8.1 compatibility in CI
@@ -184,6 +195,9 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 * Smart caching system
 
 == Upgrade Notice ==
+
+= 0.2.0 =
+Important security and reliability update: sensitive settings now require admin capability, chat history is private per user, and several chat and dashboard bugs are fixed. Requires WordPress 7.0+. Recommended for all users.
 
 = 0.1.2 =
 New onboarding wizard, dashboard widget, and abilities catalog. Recommended update for all users.
