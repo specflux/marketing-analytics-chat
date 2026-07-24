@@ -13,7 +13,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 use Specflux_Marketing_Analytics\Credentials\Encryption;
 use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
+// This template is reached through Admin::render_connections_page(), which
+// already gates on the plugin capability. The check is repeated here so that the
+// authorisation guard sits directly above the request handling it protects.
+if ( ! current_user_can( Permission_Manager::get_capability() ) ) {
+	wp_die( esc_html__( 'You do not have permission to manage analytics connections.', 'specflux-marketing-analytics-chat' ) );
+}
+
+// phpcs:ignore WordPress.Security.NonceVerification.Recieved -- Read-only tab selection; changes no state.
 $active_tab      = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'clarity';
 $success_message = '';
 $error_message   = '';
@@ -22,8 +31,18 @@ $error_message   = '';
 $oauth_handler      = new OAuth_Handler();
 $credential_manager = new Credential_Manager();
 
-// Handle OAuth callback.
-if ( isset( $_GET['oauth_callback'] ) && isset( $_GET['code'] ) && isset( $_GET['state'] ) ) {
+// Handle the Google OAuth redirect back to this page.
+//
+// A WordPress nonce is not applicable to this branch: the request is issued by
+// Google's authorisation server rather than by a form this plugin rendered, so
+// there is no nonce to carry through the round trip. The OAuth 2.0 `state`
+// parameter is the CSRF defence here — OAuth_Handler generates it with
+// wp_generate_password() and stores it before redirecting, then compares the
+// returned value using hash_equals() in handle_callback(). A mismatched or
+// absent state aborts the exchange. The capability check above restricts this
+// branch to users allowed to manage connections.
+// phpcs:ignore WordPress.Security.NonceVerification.Recieved -- OAuth callback; CSRF is enforced by the `state` parameter validated in OAuth_Handler::handle_callback().
+if ( isset( $_GET['oauth_callback'], $_GET['code'], $_GET['state'] ) ) {
 	$code          = sanitize_text_field( wp_unslash( $_GET['code'] ) );
 	$state         = sanitize_text_field( wp_unslash( $_GET['state'] ) );
 	$callback_type = sanitize_text_field( wp_unslash( $_GET['oauth_callback'] ) );

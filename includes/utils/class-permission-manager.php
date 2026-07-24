@@ -33,6 +33,15 @@ class Permission_Manager {
 	private static $capability = 'access_specflux_mac';
 
 	/**
+	 * Get the custom capability that guards plugin access
+	 *
+	 * @return string Capability name.
+	 */
+	public static function get_capability() {
+		return self::$capability;
+	}
+
+	/**
 	 * Check if current user can access plugin
 	 *
 	 * @param int|null $user_id User ID (default: current user).

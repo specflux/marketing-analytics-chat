@@ -11,7 +11,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 	use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
-	use Specflux_Marketing_Analytics\Credentials\Encryption;
 	use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 	$active_tab      = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
@@ -48,55 +47,11 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 	$existing_settings = get_option( 'specflux_mac_settings', array() );
 	$new_settings      = array();
 
-	// AI Chat Settings.
-	$new_settings['ai_provider']    = sanitize_text_field( wp_unslash( $_POST['ai_provider'] ?? 'wp-ai' ) );
-	$new_settings['claude_model']   = sanitize_text_field( wp_unslash( $_POST['claude_model'] ?? 'claude-sonnet-4-20250514' ) );
-	$new_settings['openai_model']   = sanitize_text_field( wp_unslash( $_POST['openai_model'] ?? 'gpt-5.1' ) );
-	$new_settings['gemini_model']   = sanitize_text_field( wp_unslash( $_POST['gemini_model'] ?? 'gemini-2.5-pro' ) );
+	// AI Chat Settings. Chat is served by the WordPress core AI Client, so the
+	// model provider and its credentials live at the site level under
+	// Settings > Connectors. This plugin stores no provider choice or API key.
 	$new_settings['ai_temperature'] = floatval( $_POST['ai_temperature'] ?? 0.7 );
 	$new_settings['ai_max_tokens']  = absint( $_POST['ai_max_tokens'] ?? 4096 );
-
-	// Provider API keys are stored encrypted (libsodium) via the credential
-	// store, never as plaintext in the settings option. Only a newly entered
-	// key is persisted; an empty field leaves the saved key intact. A
-	// pre-existing plaintext key from an older install is migrated to encrypted
-	// storage on first save.
-	// The encrypted copy is verified via a round-trip before the plaintext
-	// original is dropped, so a failed encrypt can never destroy the key.
-	$ai_platforms       = array( 'claude', 'openai', 'gemini' );
-	$migration_failures = array();
-
-	foreach ( $ai_platforms as $ai_platform ) {
-		$key_field  = $ai_platform . '_api_key';
-		$posted_key = isset( $_POST[ $key_field ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key_field ] ) ) : '';
-
-		$key_to_store = '';
-		if ( '' !== $posted_key ) {
-			$key_to_store = $posted_key;
-		} elseif ( ! empty( $existing_settings[ $key_field ] ) && ! Encryption::get_credentials( $ai_platform ) ) {
-			// Migrate a legacy plaintext key to encrypted storage.
-			$key_to_store = (string) $existing_settings[ $key_field ];
-		}
-
-		if ( '' === $key_to_store ) {
-			continue;
-		}
-
-		$saved  = Encryption::save_credentials( $ai_platform, array( 'api_key' => $key_to_store ) );
-		$stored = Encryption::get_credentials( $ai_platform );
-
-		$verified = $saved
-			&& is_array( $stored )
-			&& isset( $stored['api_key'] )
-			&& hash_equals( $key_to_store, (string) $stored['api_key'] );
-
-		if ( ! $verified ) {
-			// Encryption failed: keep the plaintext key in settings so it is
-			// not lost, and flag the platform so its legacy key is preserved.
-			$migration_failures[]       = $ai_platform;
-			$new_settings[ $key_field ] = $key_to_store;
-		}
-	}
 
 	// Tool Categories.
 	$enabled_categories                      = isset( $_POST['enabled_tool_categories'] ) && is_array( $_POST['enabled_tool_categories'] )
@@ -115,42 +70,18 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 	// Preserve keys not present in the form (e.g. platforms, version).
 	$new_settings = array_merge( $existing_settings, $new_settings );
 
-	// Drop a legacy plaintext API key only where its encrypted copy verified.
-	// Platforms whose migration failed keep their plaintext key (set above).
-	foreach ( $ai_platforms as $ai_platform ) {
-		if ( ! in_array( $ai_platform, $migration_failures, true ) ) {
-			unset( $new_settings[ $ai_platform . '_api_key' ] );
-		}
-	}
-
 	update_option( 'specflux_mac_settings', $new_settings );
 
 	// Keep the standalone debug-mode option (read by Logger) in sync with the
 	// form so toggling debug actually takes effect.
 	update_option( 'specflux_mac_debug_mode', $new_settings['debug_mode'] ? 1 : 0 );
 
-	if ( ! empty( $migration_failures ) ) {
-		$error_message = sprintf(
-			/* translators: %s: comma-separated list of AI provider names. */
-			__( 'Settings saved, but the API key for these provider(s) could not be encrypted and was left in place: %s. Check that the server supports libsodium and re-save.', 'specflux-marketing-analytics-chat' ),
-			implode( ', ', $migration_failures )
-		);
-	} else {
-		$success_message = __( 'Settings saved successfully.', 'specflux-marketing-analytics-chat' );
-	}
+	$success_message = __( 'Settings saved successfully.', 'specflux-marketing-analytics-chat' );
 }
 
 	$settings              = get_option( 'specflux_mac_settings', array() );
 	$has_oauth_credentials = $oauth_handler->has_oauth_credentials();
-
-	// Whether an encrypted API key is on file for each direct provider. The key
-	// itself is never rendered back to the browser.
-	$ai_key_saved = array(
-		'claude' => (bool) Encryption::get_credentials( 'claude' ),
-		'openai' => (bool) Encryption::get_credentials( 'openai' ),
-		'gemini' => (bool) Encryption::get_credentials( 'gemini' ),
-	);
-	?>
+?>
 
 <div class="wrap specflux-mac-settings">
 	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
@@ -209,205 +140,12 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 					<table class="form-table">
 						<tr>
 							<th scope="row">
-								<label for="ai_provider"><?php esc_html_e( 'AI Provider', 'specflux-marketing-analytics-chat' ); ?></label>
+								<?php esc_html_e( 'AI Provider', 'specflux-marketing-analytics-chat' ); ?>
 							</th>
 							<td>
-								<select id="ai_provider" name="ai_provider">
-									<option value="wp-ai" <?php selected( isset( $settings['ai_provider'] ) ? $settings['ai_provider'] : 'wp-ai', 'wp-ai' ); ?>>
-									<?php esc_html_e( 'WordPress AI (Core) - No API key needed', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-									<option value="claude"									                       <?php selected( isset( $settings['ai_provider'] ) ? $settings['ai_provider'] : 'wp-ai', 'claude' ); ?>>
-									<?php esc_html_e( 'Claude (Anthropic)', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-									<option value="openai"									                       <?php selected( isset( $settings['ai_provider'] ) ? $settings['ai_provider'] : '', 'openai' ); ?>>
-									<?php esc_html_e( 'OpenAI GPT', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-									<option value="gemini"									                       <?php selected( isset( $settings['ai_provider'] ) ? $settings['ai_provider'] : '', 'gemini' ); ?>>
-									<?php esc_html_e( 'Google Gemini', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-								</select>
-								<p class="description"><?php esc_html_e( 'Select the AI provider for chat responses. "WordPress AI (Core)" uses the provider configured in WordPress under Settings > Connectors - no API key is stored in this plugin.', 'specflux-marketing-analytics-chat' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="claude_api_key"><?php esc_html_e( 'Claude API Key', 'specflux-marketing-analytics-chat' ); ?></label>
-							</th>
-							<td>
-								<input type="password" id="claude_api_key" name="claude_api_key"
-									value="" autocomplete="new-password"
-									class="regular-text" placeholder="<?php echo esc_attr( $ai_key_saved['claude'] ? __( 'Saved — leave blank to keep current key', 'specflux-marketing-analytics-chat' ) : 'sk-ant-...' ); ?>" />
 								<p class="description">
-								<?php
-									printf(
-												/* translators: %s: URL to Anthropic API keys page */
-										wp_kses_post( __( 'Get your API key from <a href="%s" target="_blank">Anthropic Console</a>.', 'specflux-marketing-analytics-chat' ) ),
-										esc_url( 'https://console.anthropic.com/settings/keys' )
-									);
-								?>
+									<?php esc_html_e( 'Chat responses are generated through the AI Client built into WordPress. Choose your AI provider and enter its credentials once under Settings > Connectors; this plugin stores no provider keys of its own.', 'specflux-marketing-analytics-chat' ); ?>
 								</p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="claude_model"><?php esc_html_e( 'Claude Model', 'specflux-marketing-analytics-chat' ); ?></label>
-							</th>
-							<td>
-								<select id="claude_model" name="claude_model">
-									<option value="claude-sonnet-4-5-20250929"									                                           <?php selected( isset( $settings['claude_model'] ) ? $settings['claude_model'] : 'claude-sonnet-4-20250514', 'claude-sonnet-4-5-20250929' ); ?>>
-										<?php esc_html_e( 'Claude Sonnet 4.5 (Latest & Best)', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-									<option value="claude-sonnet-4-20250514"									                                         <?php selected( isset( $settings['claude_model'] ) ? $settings['claude_model'] : 'claude-sonnet-4-20250514', 'claude-sonnet-4-20250514' ); ?>>
-										<?php esc_html_e( 'Claude Sonnet 4 (Recommended)', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-									<option value="claude-opus-4-1-20250805"									                                         <?php selected( isset( $settings['claude_model'] ) ? $settings['claude_model'] : '', 'claude-opus-4-1-20250805' ); ?>>
-										<?php esc_html_e( 'Claude Opus 4.1 (Most Capable)', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-									<option value="claude-opus-4-20250514"									                                       <?php selected( isset( $settings['claude_model'] ) ? $settings['claude_model'] : '', 'claude-opus-4-20250514' ); ?>>
-										<?php esc_html_e( 'Claude Opus 4', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-									<option value="claude-haiku-4-5-20251001"									                                          <?php selected( isset( $settings['claude_model'] ) ? $settings['claude_model'] : '', 'claude-haiku-4-5-20251001' ); ?>>
-										<?php esc_html_e( 'Claude Haiku 4.5 (Fastest)', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-									<option value="claude-3-haiku-20240307"									                                        <?php selected( isset( $settings['claude_model'] ) ? $settings['claude_model'] : '', 'claude-3-haiku-20240307' ); ?>>
-										<?php esc_html_e( 'Claude 3 Haiku (Legacy)', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-								</select>
-								<p class="description"><?php esc_html_e( 'Select the Claude model to use for chat responses.', 'specflux-marketing-analytics-chat' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="openai_api_key"><?php esc_html_e( 'OpenAI API Key', 'specflux-marketing-analytics-chat' ); ?></label>
-							</th>
-							<td>
-								<input type="password" id="openai_api_key" name="openai_api_key"
-									value="" autocomplete="new-password"
-									class="regular-text" placeholder="<?php echo esc_attr( $ai_key_saved['openai'] ? __( 'Saved — leave blank to keep current key', 'specflux-marketing-analytics-chat' ) : 'sk-...' ); ?>" />
-								<p class="description">
-									<?php
-									printf(
-												/* translators: %s: URL to OpenAI API keys page */
-										wp_kses_post( __( 'Get your API key from <a href="%s" target="_blank">OpenAI Platform</a>.', 'specflux-marketing-analytics-chat' ) ),
-										esc_html( 'https://platform.openai.com/api-keys' )
-									);
-									?>
-								</p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="openai_model"><?php esc_html_e( 'OpenAI Model', 'specflux-marketing-analytics-chat' ); ?></label>
-							</th>
-							<td>
-								<select id="openai_model" name="openai_model">
-									<optgroup label="<?php esc_attr_e( 'GPT-5 Series (Reasoning)', 'specflux-marketing-analytics-chat' ); ?>">
-										<option value="gpt-5.1"										                        <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : 'gpt-5.1', 'gpt-5.1' ); ?>>
-											<?php esc_html_e( 'GPT-5.1 - Flagship reasoning model (Recommended)', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-										<option value="gpt-5"										                      <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'gpt-5' ); ?>>
-											<?php esc_html_e( 'GPT-5 - Superseded by GPT-5.1', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-										<option value="gpt-5-mini"										                           <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'gpt-5-mini' ); ?>>
-											<?php esc_html_e( 'GPT-5 mini - Faster & cheaper reasoning', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-										<option value="gpt-5-nano"										                           <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'gpt-5-nano' ); ?>>
-											<?php esc_html_e( 'GPT-5 nano - Budget reasoning', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-										<option value="gpt-5.1-chat"										                             <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'gpt-5.1-chat' ); ?>>
-											<?php esc_html_e( 'GPT-5.1 Chat - ChatGPT reasoning', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-										<option value="gpt-5.1-codex"										                              <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'gpt-5.1-codex' ); ?>>
-											<?php esc_html_e( 'GPT-5.1 Codex - Advanced coding', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-										<option value="gpt-5.1-codex-mini"										                                   <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'gpt-5.1-codex-mini' ); ?>>
-											<?php esc_html_e( 'GPT-5.1 Codex mini - Cost-efficient coding', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-									</optgroup>
-									<optgroup label="<?php esc_attr_e( 'GPT-4.1 Series', 'specflux-marketing-analytics-chat' ); ?>">
-										<option value="gpt-4.1"										                        <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'gpt-4.1' ); ?>>
-											<?php esc_html_e( 'GPT-4.1 - Versatile general model', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-										<option value="gpt-4.1-mini"										                             <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'gpt-4.1-mini' ); ?>>
-											<?php esc_html_e( 'GPT-4.1 mini - Balanced performance', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-										<option value="gpt-4.1-nano"										                             <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'gpt-4.1-nano' ); ?>>
-											<?php esc_html_e( 'GPT-4.1 nano - Fast & cheap', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-									</optgroup>
-									<optgroup label="<?php esc_attr_e( 'GPT-4o Series (Multimodal)', 'specflux-marketing-analytics-chat' ); ?>">
-										<option value="gpt-4o"										                       <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'gpt-4o' ); ?>>
-											<?php esc_html_e( 'GPT-4o - Text, images, audio', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-										<option value="gpt-4o-mini"										                            <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'gpt-4o-mini' ); ?>>
-											<?php esc_html_e( 'GPT-4o mini - Budget multimodal', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-									</optgroup>
-									<optgroup label="<?php esc_attr_e( 'o-series (Legacy Reasoning)', 'specflux-marketing-analytics-chat' ); ?>">
-										<option value="o3"										                   <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'o3' ); ?>>
-											<?php esc_html_e( 'o3 - Superseded by GPT-5', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-										<option value="o3-pro"										                       <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'o3-pro' ); ?>>
-											<?php esc_html_e( 'o3-pro - Advanced reasoning', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-										<option value="o4-mini"										                        <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'o4-mini' ); ?>>
-											<?php esc_html_e( 'o4-mini - Superseded by GPT-5 mini', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-									</optgroup>
-									<optgroup label="<?php esc_attr_e( 'Open Weight Models', 'specflux-marketing-analytics-chat' ); ?>">
-										<option value="gpt-oss-120b"										                             <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'gpt-oss-120b' ); ?>>
-											<?php esc_html_e( 'GPT-OSS-120B - Open weight (117B params)', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-										<option value="gpt-oss-20b"										                            <?php selected( isset( $settings['openai_model'] ) ? $settings['openai_model'] : '', 'gpt-oss-20b' ); ?>>
-											<?php esc_html_e( 'GPT-OSS-20B - Medium open weight (21B params)', 'specflux-marketing-analytics-chat' ); ?>
-										</option>
-									</optgroup>
-								</select>
-								<p class="description"><?php esc_html_e( 'Select the OpenAI model to use for chat responses.', 'specflux-marketing-analytics-chat' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="gemini_api_key"><?php esc_html_e( 'Gemini API Key', 'specflux-marketing-analytics-chat' ); ?></label>
-							</th>
-							<td>
-								<input type="password" id="gemini_api_key" name="gemini_api_key"
-									value="" autocomplete="new-password"
-									class="regular-text" placeholder="<?php echo esc_attr( $ai_key_saved['gemini'] ? __( 'Saved — leave blank to keep current key', 'specflux-marketing-analytics-chat' ) : 'AIza...' ); ?>" />
-								<p class="description">
-									<?php
-									printf(
-												/* translators: %s: URL to Google AI Studio */
-										wp_kses_post( __( 'Get your API key from <a href="%s" target="_blank">Google AI Studio</a>.', 'specflux-marketing-analytics-chat' ) ),
-										esc_html( 'https://aistudio.google.com/apikey' )
-									);
-									?>
-								</p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="gemini_model"><?php esc_html_e( 'Gemini Model', 'specflux-marketing-analytics-chat' ); ?></label>
-							</th>
-							<td>
-								<select id="gemini_model" name="gemini_model">
-									<option value="gemini-3-pro-preview"									                                     <?php selected( isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : 'gemini-2.5-pro', 'gemini-3-pro-preview' ); ?>>
-										<?php esc_html_e( 'Gemini 3 Pro (Preview - Latest)', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-									<option value="gemini-2.5-pro"									                               <?php selected( isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : 'gemini-2.5-pro', 'gemini-2.5-pro' ); ?>>
-										<?php esc_html_e( 'Gemini 2.5 Pro (Recommended)', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-									<option value="gemini-2.5-flash"									                                 <?php selected( isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : '', 'gemini-2.5-flash' ); ?>>
-										<?php esc_html_e( 'Gemini 2.5 Flash (Fast)', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-									<option value="gemini-2.5-flash-lite"									                                      <?php selected( isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : '', 'gemini-2.5-flash-lite' ); ?>>
-										<?php esc_html_e( 'Gemini 2.5 Flash Lite (Budget)', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-									<option value="gemini-2.0-flash"									                                 <?php selected( isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : '', 'gemini-2.0-flash' ); ?>>
-										<?php esc_html_e( 'Gemini 2.0 Flash (Legacy)', 'specflux-marketing-analytics-chat' ); ?>
-									</option>
-								</select>
-								<p class="description"><?php esc_html_e( 'Select the Gemini model to use for chat responses.', 'specflux-marketing-analytics-chat' ); ?></p>
 							</td>
 						</tr>
 						<tr>
@@ -989,7 +727,6 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 					<?php wp_nonce_field( 'specflux_mac_save_settings', 'settings_nonce' ); ?>
 
 					<!-- Preserve other settings -->
-					<input type="hidden" name="ai_provider" value="<?php echo esc_attr( $settings['ai_provider'] ?? 'wp-ai' ); ?>" />					<input type="hidden" name="claude_model" value="<?php echo esc_attr( $settings['claude_model'] ?? 'claude-sonnet-4-20250514' ); ?>" />					<input type="hidden" name="openai_model" value="<?php echo esc_attr( $settings['openai_model'] ?? 'gpt-5.1' ); ?>" />					<input type="hidden" name="gemini_model" value="<?php echo esc_attr( $settings['gemini_model'] ?? 'gemini-2.5-pro' ); ?>" />
 					<input type="hidden" name="ai_temperature" value="<?php echo esc_attr( $settings['ai_temperature'] ?? '0.7' ); ?>" />
 					<input type="hidden" name="ai_max_tokens" value="<?php echo esc_attr( $settings['ai_max_tokens'] ?? '4096' ); ?>" />
 					<?php
@@ -1068,7 +805,6 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 				<?php wp_nonce_field( 'specflux_mac_save_settings', 'settings_nonce' ); ?>
 
 					<!-- Preserve other settings -->
-					<input type="hidden" name="ai_provider" value="<?php echo esc_attr( $settings['ai_provider'] ?? 'wp-ai' ); ?>" />					<input type="hidden" name="claude_model" value="<?php echo esc_attr( $settings['claude_model'] ?? 'claude-sonnet-4-20250514' ); ?>" />					<input type="hidden" name="openai_model" value="<?php echo esc_attr( $settings['openai_model'] ?? 'gpt-5.1' ); ?>" />					<input type="hidden" name="gemini_model" value="<?php echo esc_attr( $settings['gemini_model'] ?? 'gemini-2.5-pro' ); ?>" />
 					<input type="hidden" name="ai_temperature" value="<?php echo esc_attr( $settings['ai_temperature'] ?? '0.7' ); ?>" />
 					<input type="hidden" name="ai_max_tokens" value="<?php echo esc_attr( $settings['ai_max_tokens'] ?? '4096' ); ?>" />
 						<?php
