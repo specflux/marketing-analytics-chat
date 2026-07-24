@@ -32,6 +32,9 @@ function specflux_mac_uninstall() {
 	delete_option( 'specflux_mac_credentials_clarity' );
 	delete_option( 'specflux_mac_credentials_ga4' );
 	delete_option( 'specflux_mac_credentials_gsc' );
+
+	// Left over from pre-release builds that stored AI provider keys directly.
+	// The plugin no longer writes these; removing them keeps uninstall complete.
 	delete_option( 'specflux_mac_credentials_claude' );
 	delete_option( 'specflux_mac_credentials_openai' );
 	delete_option( 'specflux_mac_credentials_gemini' );

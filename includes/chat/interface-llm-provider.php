@@ -2,7 +2,7 @@
 /**
  * LLM Provider Interface
  *
- * Interface for AI language model providers (Claude, OpenAI, etc.).
+ * Interface for AI language model providers backed by the WordPress core AI Client.
  *
  * @package Specflux_Marketing_Analytics
  */
@@ -35,14 +35,14 @@ interface LLM_Provider_Interface {
 	/**
 	 * Get provider name
 	 *
-	 * @return string Provider name (e.g., 'claude', 'openai').
+	 * @return string Provider slug (e.g., 'wp-ai').
 	 */
 	public function get_name();
 
 	/**
 	 * Get provider display name
 	 *
-	 * @return string Provider display name (e.g., 'Claude (Anthropic)', 'OpenAI GPT-4').
+	 * @return string Provider display name (e.g., 'WordPress AI').
 	 */
 	public function get_display_name();
 

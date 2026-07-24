@@ -173,9 +173,7 @@ class PluginBootstrapTest extends TestCase {
 			'Specflux_Marketing_Analytics\Chat\Chat_Manager',
 			'Specflux_Marketing_Analytics\Chat\MCP_Client',
 			'Specflux_Marketing_Analytics\Chat\Chat_Ajax_Handler',
-			'Specflux_Marketing_Analytics\Chat\Claude_Provider',
-			'Specflux_Marketing_Analytics\Chat\OpenAI_Provider',
-			'Specflux_Marketing_Analytics\Chat\Gemini_Provider',
+			'Specflux_Marketing_Analytics\Chat\WP_AI_Provider',
 		);
 
 		foreach ( $classes as $class ) {
@@ -220,9 +218,7 @@ class PluginBootstrapTest extends TestCase {
 	 */
 	public function test_llm_providers_implement_interface(): void {
 		$providers = array(
-			'Specflux_Marketing_Analytics\Chat\Claude_Provider',
-			'Specflux_Marketing_Analytics\Chat\OpenAI_Provider',
-			'Specflux_Marketing_Analytics\Chat\Gemini_Provider',
+			'Specflux_Marketing_Analytics\Chat\WP_AI_Provider',
 		);
 
 		foreach ( $providers as $provider ) {

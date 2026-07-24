@@ -10,7 +10,6 @@
 namespace Specflux_Marketing_Analytics\Chat;
 
 use Specflux_Marketing_Analytics\Utils\Permission_Manager;
-use Specflux_Marketing_Analytics\Credentials\Encryption;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -274,72 +273,21 @@ class Chat_Ajax_Handler {
 	/**
 	 * Get LLM provider instance
 	 *
+	 * Chat is served exclusively by the WordPress core AI Client, so the model
+	 * provider and its credentials are chosen once at the site level under
+	 * Settings > Connectors rather than being configured per plugin.
+	 *
 	 * @return LLM_Provider_Interface|null LLM provider or null if not configured.
 	 */
 	private function get_llm_provider() {
 		$settings = get_option( 'specflux_mac_settings', array() );
-		$provider = $settings['ai_provider'] ?? 'wp-ai';
 
-		if ( 'wp-ai' === $provider ) {
-			$config = array(
+		return new WP_AI_Provider(
+			array(
 				'temperature' => $settings['ai_temperature'] ?? 0.7,
 				'max_tokens'  => $settings['ai_max_tokens'] ?? 4096,
-			);
-			return new WP_AI_Provider( $config );
-		}
-
-		if ( 'claude' === $provider ) {
-			$config = array(
-				'api_key'     => $this->get_provider_api_key( 'claude', $settings ),
-				'model'       => $settings['claude_model'] ?? 'claude-sonnet-4-20250514',
-				'temperature' => $settings['ai_temperature'] ?? 0.7,
-				'max_tokens'  => $settings['ai_max_tokens'] ?? 4096,
-			);
-			return new Claude_Provider( $config );
-		}
-
-		if ( 'openai' === $provider ) {
-			$config = array(
-				'api_key'     => $this->get_provider_api_key( 'openai', $settings ),
-				'model'       => $settings['openai_model'] ?? 'gpt-5.1',
-				'temperature' => $settings['ai_temperature'] ?? 0.7,
-				'max_tokens'  => $settings['ai_max_tokens'] ?? 4096,
-			);
-			return new OpenAI_Provider( $config );
-		}
-
-		if ( 'gemini' === $provider ) {
-			$config = array(
-				'api_key'     => $this->get_provider_api_key( 'gemini', $settings ),
-				'model'       => $settings['gemini_model'] ?? 'gemini-2.5-pro',
-				'temperature' => $settings['ai_temperature'] ?? 0.7,
-				'max_tokens'  => $settings['ai_max_tokens'] ?? 4096,
-			);
-			return new Gemini_Provider( $config );
-		}
-
-		return null;
-	}
-
-	/**
-	 * Resolve a direct provider's API key.
-	 *
-	 * Keys are stored encrypted via the credential store. Falls back to a
-	 * legacy plaintext key in the settings option for installs upgraded
-	 * before encrypted storage was introduced (migrated on next settings save).
-	 *
-	 * @param string $platform Provider platform identifier (claude|openai|gemini).
-	 * @param array  $settings Plugin settings array.
-	 * @return string The API key, or an empty string if none is set.
-	 */
-	private function get_provider_api_key( $platform, $settings ) {
-		$credentials = Encryption::get_credentials( $platform );
-
-		if ( is_array( $credentials ) && ! empty( $credentials['api_key'] ) ) {
-			return $credentials['api_key'];
-		}
-
-		return $settings[ $platform . '_api_key' ] ?? '';
+			)
+		);
 	}
 
 	/**

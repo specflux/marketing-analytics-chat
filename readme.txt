@@ -1,5 +1,5 @@
 === Specflux Marketing Analytics Chat ===
-Contributors: stephen1204paul
+Contributors: specflux, stephen1204paul
 Donate link: https://www.specflux.com/
 Tags: marketing analytics, ai, chat, mcp
 Requires at least: 7.0
@@ -23,7 +23,7 @@ Specflux Marketing Analytics Chat lets you have conversations with your marketin
 
 = Key Features =
 
-* **Built-in AI Chat** - Chat with your analytics data using the native WordPress AI Client (no API key setup in the plugin), or bring your own Claude, OpenAI, or Google Gemini key
+* **Built-in AI Chat** - Chat with your analytics data through the WordPress AI Client built into core. You pick your AI provider once under Settings > Connectors; this plugin stores no AI keys of its own
 * **MCP-Native Architecture** - Exposes analytics as MCP abilities for any compatible AI assistant
 * **Interactive Onboarding Wizard** - Step-by-step setup with guided configuration
 * **Analytics at a Glance Dashboard** - Dashboard widget with sparkline trends
@@ -55,17 +55,58 @@ Prefer to use an external AI client (Claude Desktop, ChatGPT, Cursor)? Install t
 
 = External Services =
 
-This plugin connects to the following third-party services when you configure the corresponding platform connections:
+This plugin sends data to the external services listed below. Each service is
+contacted only after you connect the corresponding platform on the plugin's
+Connections screen. A site with no connections configured makes no external
+requests.
 
-* **Google Analytics Data API** (https://developers.google.com/analytics/devguides/reporting/data/v1) - Retrieves traffic metrics, user behavior, and conversion data from your GA4 property. Your GA4 property ID and OAuth tokens are sent to Google servers. [Google Privacy Policy](https://policies.google.com/privacy)
-* **Google Analytics Admin API** (https://developers.google.com/analytics/devguides/config/admin/v1) - Lists your GA4 properties during connection setup. [Google Privacy Policy](https://policies.google.com/privacy)
-* **Google Search Console API** (https://developers.google.com/webmaster-tools/search-console-api-original) - Retrieves search performance data including queries, clicks, and impressions. Your site URL and OAuth tokens are sent to Google servers. [Google Privacy Policy](https://policies.google.com/privacy)
-* **Microsoft Clarity Data Export API** (https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-data-export-api) - Retrieves session recordings, heatmap data, and user behavior insights. Your Clarity API token and project ID are sent to Microsoft servers. [Microsoft Privacy Statement](https://privacy.microsoft.com/privacystatement)
-* **Anthropic API** (https://docs.anthropic.com/en/api) - When Claude is selected as the AI provider, your analytics data and chat messages are sent to Anthropic's servers for AI responses. Requires your own API key. [Anthropic Privacy Policy](https://www.anthropic.com/privacy)
-* **OpenAI API** (https://platform.openai.com/docs) - When OpenAI is selected as the AI provider, your analytics data and chat messages are sent to OpenAI's servers for AI responses. Requires your own API key. [OpenAI Privacy Policy](https://openai.com/policies/privacy-policy)
-* **Google Gemini API** (https://ai.google.dev/docs) - When Gemini is selected as the AI provider, your analytics data and chat messages are sent to Google's servers for AI responses. Requires your own API key. [Google Privacy Policy](https://policies.google.com/privacy)
+**Google Analytics 4 and Google Search Console** (provided by Google LLC)
 
-When "WordPress AI" is selected as the AI provider, requests are routed through the WordPress core AI Client to whichever AI provider you have configured under Settings > Connectors in WordPress. The privacy policy of that provider applies.
+What it is used for: reading your own analytics and search-performance data so
+it can be shown in the plugin dashboard, exposed as MCP abilities, and used to
+answer questions in chat.
+
+What is sent and when: connecting an account sends your authorisation request to
+accounts.google.com, and access and refresh tokens are exchanged against
+oauth2.googleapis.com. Once connected, report requests go to
+analyticsdata.googleapis.com (GA4 traffic, behaviour, and conversion metrics),
+analyticsadmin.googleapis.com (the list of your GA4 properties, requested during
+connection setup), and searchconsole.googleapis.com (search queries, clicks,
+impressions, and indexing status). Each request carries your OAuth access token,
+the GA4 property ID or Search Console site URL being queried, and the date range
+and metrics requested. Requests are made when you open a plugin screen whose
+cached data has expired, when you refresh the dashboard widget, and when an
+ability is run from the built-in chat or an external MCP client. No post
+content, visitor records, or other personal data from your WordPress site is
+sent.
+
+Terms of service: https://developers.google.com/terms
+Privacy policy: https://policies.google.com/privacy
+
+**Microsoft Clarity** (provided by Microsoft Corporation)
+
+What it is used for: reading your own Clarity project's behavioural metrics,
+including session counts, engagement and scroll data, and the insights Clarity
+derives from session recordings and heatmaps.
+
+What is sent and when: the plugin calls the Clarity Data Export API at
+www.clarity.ms. Each request carries your Clarity API token and project ID,
+together with the number of days and the dimensions requested. Requests are made
+when cached Clarity data has expired and a plugin screen, a dashboard widget
+refresh, or an MCP ability asks for it. Clarity permits ten export requests per
+project per day, so responses are cached for one hour.
+
+Terms of use: https://clarity.microsoft.com/terms
+Privacy statement: https://privacy.microsoft.com/privacystatement
+
+**AI chat responses**
+
+This plugin does not contact any AI provider directly and stores no AI provider
+credentials. The built-in chat calls the AI Client included in WordPress 7.0,
+which sends your chat messages and the analytics results described above to
+whichever provider you have configured for your site under Settings >
+Connectors. That provider's own terms of service and privacy policy govern that
+transfer, and WordPress stores its credentials.
 
 == Installation ==
 
@@ -138,20 +179,21 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 == Changelog ==
 
 = 0.2.0 - 2026-07-02 =
-* Added: Native WordPress AI Client chat provider - use the AI provider configured in WordPress core (Settings > Connectors) without entering an API key in the plugin
+* Added: Chat is powered by the WordPress AI Client in core - the AI provider is configured once under Settings > Connectors and no AI provider key is stored by this plugin
 * Added: Behavior annotations (read-only, non-destructive, idempotent) on all registered abilities for better AI agent safety hints
-* Security: Settings page (role permissions, Google OAuth client, AI provider keys, debug mode) now requires the manage_options capability instead of plugin access alone
+* Security: Settings page (role permissions, Google OAuth client, debug mode) now requires the manage_options capability instead of plugin access alone
+* Security: The Connections screen checks the plugin capability directly before handling the Google OAuth redirect, in addition to the existing OAuth state validation
 * Security: The chat view now verifies conversation ownership, preventing users from reading another user's chat history by ID
 * Security: Credential values (API tokens and keys) are redacted before any debug logging, and error logging is gated behind debug mode
 * Security: New conversations are always owned by the current user; a client-supplied user ID is ignored
 * Fixed: Dashboard widget refresh no longer triggers a fatal error caused by mismatched analytics client arguments
 * Fixed: AI chat tool-category filtering now matches abilities correctly instead of disabling all tools
-* Fixed: Google Gemini function calling (invalid tool names and message roles previously caused API errors)
 * Fixed: Chat history now sends the most recent messages to the AI instead of the oldest, keeping long conversations coherent
-* Fixed: A plaintext AI key is only removed after its encrypted copy is verified, preventing key loss on encryption failure
 * Fixed: The debug-mode toggle now takes effect
 * Changed: Minimum required WordPress version is now 7.0 (Abilities API and AI Client in core)
 * Changed: Admin notices now use the wp_admin_notice() core function
+* Changed: Removed the direct Claude, OpenAI, and Google Gemini chat integrations. Chat now runs solely through the WordPress AI Client, so provider choice and credentials are managed by WordPress at the site level
+* Changed: Documented every external service the plugin contacts, including the exact domains, the data sent, and links to each provider's terms and privacy policy
 * Changed: Trimmed unused Google API service classes and refreshed bundled libraries to reduce package size
 
 = 0.1.6 - 2026-05-09 =
@@ -208,9 +250,8 @@ Initial release. Please backup your site before installing.
 == Privacy Policy ==
 
 This plugin:
-* Stores encrypted API credentials in your WordPress database
-* Connects to third-party analytics services you configure
-* Does not track users or send data to the plugin author
-* Does not store analytics data permanently (fetched on demand)
-
-For full privacy information, see the plugin documentation.
+* Stores encrypted API credentials for the analytics platforms you connect in your WordPress database
+* Connects only to the analytics services you configure, as detailed under External Services above
+* Does not track your site's visitors and sends no data to the plugin author
+* Does not store analytics data permanently; results are fetched on demand and cached temporarily
+* Stores no AI provider credentials; chat is handled by the WordPress AI Client using the provider configured for your site
