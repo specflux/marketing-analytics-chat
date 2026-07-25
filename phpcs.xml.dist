@@ -19,10 +19,10 @@
     <rule ref="WordPress-Core"/>
     <rule ref="WordPress-Docs"/>
     <rule ref="WordPress-Extra"/>
-    <rule ref="WordPress.WP.Capabilities.Unknown">
+    <rule ref="WordPress.WP.Capabilities">
         <properties>
             <property name="custom_capabilities" type="array">
-                <element value="access_marketing_analytics"/>
+                <element value="access_specflux_mac"/>
             </property>
         </properties>
     </rule>
