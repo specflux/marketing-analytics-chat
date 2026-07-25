@@ -389,7 +389,7 @@ $gsc_connected      = $credential_manager->has_credentials( 'gsc' );
 				printf(
 					/* translators: %s: link to documentation */
 					esc_html__( 'Learn how to configure Claude Desktop and other MCP clients in our %s.', 'specflux-marketing-analytics-chat' ),
-					'<a href="https://github.com/specflux/specflux-marketing-analytics-chat/blob/main/docs/setup-guides/" target="_blank">' . esc_html__( 'documentation', 'specflux-marketing-analytics-chat' ) . '</a>'
+					'<a href="https://github.com/specflux/marketing-analytics-chat#configuration" target="_blank" rel="noopener noreferrer">' . esc_html__( 'documentation', 'specflux-marketing-analytics-chat' ) . '</a>'
 				);
 				?>
 			</p>
