@@ -4,7 +4,7 @@ Donate link: https://www.specflux.com/
 Tags: marketing analytics, ai, chat, mcp
 Requires at least: 7.0
 Tested up to: 7.0
-Stable tag: 0.2.1
+Stable tag: 0.2.2
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -178,6 +178,9 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 
 == Changelog ==
 
+= 0.2.2 - 2026-07-25 =
+* Fixed: The "documentation" links on the dashboard and the abilities catalog led to a page that does not exist; they now open the plugin's setup documentation
+
 = 0.2.1 - 2026-07-25 =
 * Changed: Removed the direct Claude, OpenAI, and Google Gemini chat integrations. Chat now runs solely through the WordPress AI Client, so the provider and its credentials are managed by WordPress at the site level and this plugin stores no AI keys of its own
 * Changed: Documented every external service the plugin contacts, including the exact domains, the data sent, when it is sent, and links to each provider's terms of service and privacy policy
@@ -240,6 +243,9 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 * Smart caching system
 
 == Upgrade Notice ==
+
+= 0.2.2 =
+Repairs the broken documentation links on the dashboard and abilities catalog. No functional changes otherwise.
 
 = 0.2.1 =
 Chat now runs entirely through the WordPress AI Client, so no AI provider keys are stored by this plugin. Every external service the plugin contacts is documented in the readme. Requires WordPress 7.0+.
