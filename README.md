@@ -62,7 +62,7 @@ Chat with your analytics data directly in WordPress. Use the native WordPress AI
 
 ```bash
 cd wp-content/plugins/
-git clone https://github.com/specflux/specflux-marketing-analytics-chat.git
+git clone https://github.com/specflux/marketing-analytics-chat.git specflux-marketing-analytics-chat
 cd specflux-marketing-analytics-chat
 composer install --no-dev
 wp plugin activate specflux-marketing-analytics-chat
@@ -136,7 +136,13 @@ Built with:
 - [WordPress MCP Adapter](https://wordpress.org/plugins/mcp-adapter/)
 - [Google API PHP Client](https://github.com/googleapis/google-api-php-client)
 
+## Repository
+
+The canonical repository is [specflux/marketing-analytics-chat](https://github.com/specflux/marketing-analytics-chat).
+
+Development previously took place at `stephen1204paul/marketing-analytics-chat` before the project moved to the Specflux organisation. That repository is no longer maintained — it was last updated in March 2026, before the Specflux rename — so please clone from, open issues on, and send pull requests to the repository above.
+
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/specflux/specflux-marketing-analytics-chat/issues)
+- **Issues**: [GitHub Issues](https://github.com/specflux/marketing-analytics-chat/issues)
 - **Website**: [specflux.com](https://www.specflux.com/)
