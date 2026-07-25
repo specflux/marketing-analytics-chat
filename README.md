@@ -8,7 +8,7 @@
 
 ## Overview
 
-This WordPress plugin bridges your marketing analytics platforms with AI assistants using the **Model Context Protocol (MCP)**. Built on the WordPress 7.0+ Abilities API and the MCP Adapter plugin, it exposes analytics data as MCP abilities that any compatible AI client can use.
+This WordPress plugin bridges your marketing analytics platforms with AI assistants using the **Model Context Protocol (MCP)**. Built on the WordPress 7.0+ Abilities API, it exposes analytics data as MCP abilities that any compatible AI client can use through the optional MCP Adapter plugin.
 
 ### Supported Platforms
 
@@ -27,7 +27,7 @@ This WordPress plugin bridges your marketing analytics platforms with AI assista
 
 ### Built-in AI Chat
 
-Chat with your analytics data directly in WordPress. Use the native WordPress AI Client (WordPress 7.0+, configured under Settings > Connectors — no API key stored in the plugin), or bring your own key for Claude (Anthropic), OpenAI GPT, or Google Gemini. The plugin connects the AI to the MCP abilities and lets it analyze your data conversationally.
+Chat with your analytics data directly in WordPress. Chat runs through the WordPress AI Client built into core (WordPress 7.0+) — pick your provider once under Settings > Connectors, and this plugin stores no AI keys of its own. It connects the AI to the MCP abilities and lets it analyze your data conversationally.
 
 ### Additional Features
 
@@ -46,7 +46,7 @@ Chat with your analytics data directly in WordPress. Use the native WordPress AI
 - **WordPress**: 7.0+
 - **PHP**: 8.1+
 - **PHP Extensions**: `json`, `curl`, `openssl`, `sodium`
-- **Required Plugin**: [MCP Adapter](https://wordpress.org/plugins/mcp-adapter/)
+- **Optional Plugin**: [MCP Adapter](https://wordpress.org/plugins/mcp-adapter/) — only needed to connect external AI clients such as Claude Desktop or Cursor. The built-in chat works without it.
 
 ## Installation
 
@@ -106,7 +106,7 @@ Works with Claude Desktop, ChatGPT, Cursor, and any MCP-compatible client.
 
 By default, only **Administrators** can access the plugin. Grant access to other roles via **Marketing Analytics > Settings > Access Control**.
 
-The plugin uses the custom capability `access_marketing_analytics` assigned to selected roles, with nonce verification on all endpoints.
+The plugin uses the custom capability `access_specflux_mac` assigned to selected roles, with nonce verification on all endpoints.
 
 ## Development
 
