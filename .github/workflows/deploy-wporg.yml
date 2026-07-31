@@ -3,14 +3,31 @@ name: Deploy to WordPress.org
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Git tag to deploy (e.g. v0.2.2)'
+        required: true
 
 jobs:
   deploy:
     name: Deploy to WordPress.org SVN
     runs-on: ubuntu-latest
     steps:
+      # WordPress.org matches the SVN tag against readme.txt's Stable tag, which
+      # carries no leading "v". The 10up action only strips it when VERSION is unset.
+      - name: Resolve tag and version
+        id: resolve
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.resolve.outputs.tag }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -27,7 +44,7 @@ jobs:
           SVN_USERNAME: ${{ secrets.WPORG_SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.WPORG_SVN_PASSWORD }}
           SLUG: specflux-marketing-analytics-chat
-          VERSION: ${{ github.event.release.tag_name }}
+          VERSION: ${{ steps.resolve.outputs.version }}
           ASSETS_DIR: assets
         with:
           generate-zip: true
