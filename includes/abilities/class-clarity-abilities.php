@@ -9,7 +9,6 @@ namespace Specflux_Marketing_Analytics\Abilities;
 
 use Specflux_Marketing_Analytics\API_Clients\Clarity_Client;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
-use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -91,7 +90,7 @@ class Clarity_Abilities {
 				),
 
 				'execute_callback'    => array( $this, 'execute_get_clarity_insights' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -160,7 +159,7 @@ class Clarity_Abilities {
 				),
 
 				'execute_callback'    => array( $this, 'execute_get_clarity_recordings' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -215,7 +214,7 @@ class Clarity_Abilities {
 				),
 
 				'execute_callback'    => array( $this, 'execute_analyze_clarity_heatmaps' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -249,7 +248,7 @@ class Clarity_Abilities {
 				),
 
 				'execute_callback'    => array( $this, 'execute_clarity_dashboard' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -268,14 +267,7 @@ class Clarity_Abilities {
 	 * @throws \Exception If credentials are not configured.
 	 */
 	private function get_clarity_client() {
-		$credential_manager = new Credential_Manager();
-		$credentials        = $credential_manager->get_credentials( 'clarity' );
-
-		if ( empty( $credentials ) || ! isset( $credentials['api_token'] ) || ! isset( $credentials['project_id'] ) ) {
-			throw new \Exception( 'Clarity credentials not configured. Please configure your Microsoft Clarity API token and project ID in the plugin settings.' );
-		}
-
-		return new Clarity_Client( $credentials['api_token'], $credentials['project_id'] );
+		return new Clarity_Client();
 	}
 
 	/**
@@ -285,42 +277,25 @@ class Clarity_Abilities {
 	 * @return array Tool result.
 	 */
 	public function execute_get_clarity_insights( $args ) {
-		try {
-			$client = $this->get_clarity_client();
+		return Ability_Response::tool(
+			function () use ( $args ) {
+				$client = $this->get_clarity_client();
 
-			// Build dimensions array.
-			$dimensions = array();
-			if ( ! empty( $args['dimension1'] ) ) {
-				$dimensions[] = $args['dimension1'];
-			}
-			if ( ! empty( $args['dimension2'] ) ) {
-				$dimensions[] = $args['dimension2'];
-			}
-			if ( ! empty( $args['dimension3'] ) ) {
-				$dimensions[] = $args['dimension3'];
-			}
+				// Build dimensions array.
+				$dimensions = array();
+				if ( ! empty( $args['dimension1'] ) ) {
+					$dimensions[] = $args['dimension1'];
+				}
+				if ( ! empty( $args['dimension2'] ) ) {
+					$dimensions[] = $args['dimension2'];
+				}
+				if ( ! empty( $args['dimension3'] ) ) {
+					$dimensions[] = $args['dimension3'];
+				}
 
-			$data = $client->get_insights( $args['num_of_days'], $dimensions );
-
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => wp_json_encode( $data, JSON_PRETTY_PRINT ),
-					),
-				),
-			);
-		} catch ( \Exception $e ) {
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => 'Error: ' . $e->getMessage(),
-					),
-				),
-				'isError' => true,
-			);
-		}
+				return $client->get_insights( $args['num_of_days'], $dimensions );
+			}
+		);
 	}
 
 	/**
@@ -330,34 +305,17 @@ class Clarity_Abilities {
 	 * @return array Tool result.
 	 */
 	public function execute_get_clarity_recordings( $args ) {
-		try {
-			$client = $this->get_clarity_client();
+		return Ability_Response::tool(
+			function () use ( $args ) {
+				$client = $this->get_clarity_client();
 
-			$recordings = $client->get_session_recordings(
-				$args['filters'] ?? array(),
-				$args['limit'] ?? 10,
-				$args['sort_by'] ?? 'date'
-			);
-
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => wp_json_encode( $recordings, JSON_PRETTY_PRINT ),
-					),
-				),
-			);
-		} catch ( \Exception $e ) {
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => 'Error: ' . $e->getMessage(),
-					),
-				),
-				'isError' => true,
-			);
-		}
+				return $client->get_session_recordings(
+					$args['filters'] ?? array(),
+					$args['limit'] ?? 10,
+					$args['sort_by'] ?? 'date'
+				);
+			}
+		);
 	}
 
 	/**
@@ -367,36 +325,19 @@ class Clarity_Abilities {
 	 * @return array Tool result.
 	 */
 	public function execute_analyze_clarity_heatmaps( $args ) {
-		try {
-			$client = $this->get_clarity_client();
+		return Ability_Response::tool(
+			function () use ( $args ) {
+				$this->get_clarity_client();
 
-			// Note: This is a placeholder - Clarity API may not directly support heatmap data export.
-			// You may need to use their web interface or alternative methods.
-			$heatmap_data = array(
-				'page_url'     => $args['page_url'],
-				'heatmap_type' => $args['heatmap_type'] ?? 'click',
-				'note'         => 'Heatmap data retrieval may require Clarity web interface access',
-			);
-
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => wp_json_encode( $heatmap_data, JSON_PRETTY_PRINT ),
-					),
-				),
-			);
-		} catch ( \Exception $e ) {
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => 'Error: ' . $e->getMessage(),
-					),
-				),
-				'isError' => true,
-			);
-		}
+				// Note: This is a placeholder - Clarity API may not directly support heatmap data export.
+				// You may need to use their web interface or alternative methods.
+				return array(
+					'page_url'     => $args['page_url'],
+					'heatmap_type' => $args['heatmap_type'] ?? 'click',
+					'note'         => 'Heatmap data retrieval may require Clarity web interface access',
+				);
+			}
+		);
 	}
 
 	/**
@@ -406,46 +347,20 @@ class Clarity_Abilities {
 	 * @return array Resource result.
 	 */
 	public function execute_clarity_dashboard( $args = array() ) {
-		try {
-			$client = $this->get_clarity_client();
+		return Ability_Response::resource(
+			'clarity://dashboard',
+			function () {
+				$client = $this->get_clarity_client();
 
-			// Get 1-day insights for dashboard summary.
-			$data = $client->get_insights( 1 );
+				// Get 1-day insights for dashboard summary.
+				$data = $client->get_insights( 1 );
 
-			$summary = array(
-				'project_id' => get_option( 'specflux_mac_clarity_project_id', 'Not configured' ),
-				'period'     => 'Last 24 hours',
-				'data'       => $data,
-			);
-
-			return array(
-				'contents' => array(
-					array(
-						'uri'      => 'clarity://dashboard',
-						'mimeType' => 'application/json',
-						'text'     => wp_json_encode( $summary, JSON_PRETTY_PRINT ),
-					),
-				),
-			);
-		} catch ( \Exception $e ) {
-			return array(
-				'contents' => array(
-					array(
-						'uri'      => 'clarity://dashboard',
-						'mimeType' => 'text/plain',
-						'text'     => 'Error: ' . $e->getMessage(),
-					),
-				),
-			);
-		}
-	}
-
-	/**
-	 * Permission callback for all Clarity abilities
-	 *
-	 * @return bool True if user has permission, false otherwise.
-	 */
-	public function check_permissions() {
-		return Permission_Manager::can_access_plugin();
+				return array(
+					'project_id' => get_option( 'specflux_mac_clarity_project_id', 'Not configured' ),
+					'period'     => 'Last 24 hours',
+					'data'       => $data,
+				);
+			}
+		);
 	}
 }

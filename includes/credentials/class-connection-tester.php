@@ -63,12 +63,14 @@ class Connection_Tester {
 		}
 
 		try {
-			$client = new Clarity_Client( $credentials['api_token'], $credentials['project_id'] );
+			$client = new Clarity_Client();
 
-			// Try to fetch insights for 1 day (minimal request).
-			$result = $client->get_insights( 1 );
+			// Reads are cached for an hour to protect the 10-requests-per-day quota,
+			// so the test uses the client's uncached path — a cached hit would report
+			// a revoked token as working.
+			$result = $client->test_connection();
 
-			if ( ! empty( $result ) ) {
+			if ( ! empty( $result['success'] ) ) {
 				return array(
 					'success' => true,
 					'message' => __( 'Successfully connected to Microsoft Clarity.', 'specflux-marketing-analytics-chat' ),
@@ -78,9 +80,20 @@ class Connection_Tester {
 				);
 			}
 
+			if ( empty( $result['message'] ) ) {
+				return array(
+					'success' => false,
+					'message' => __( 'Clarity API returned empty response.', 'specflux-marketing-analytics-chat' ),
+				);
+			}
+
 			return array(
 				'success' => false,
-				'message' => __( 'Clarity API returned empty response.', 'specflux-marketing-analytics-chat' ),
+				'message' => sprintf(
+					/* translators: %s: error message */
+					__( 'Clarity connection failed: %s', 'specflux-marketing-analytics-chat' ),
+					$result['message']
+				),
 			);
 		} catch ( \Exception $e ) {
 			return array(

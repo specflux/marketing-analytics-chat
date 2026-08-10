@@ -50,18 +50,10 @@ class ClarityIntegrationTest extends TestCase {
 	#[Group('integration')]
 	#[Group('external-api')]
 	public function test_get_insights_real_api_call(): void {
-		$result = $this->client->get_insights( array(
-			'num_of_days' => 7,
-			'dimension1'  => 'Device',
-		) );
+		// Clarity caps the window at 3 days.
+		$result = $this->client->get_insights( 3, array( 'Device' ) );
 
-		// Should return array of insights
 		$this->assertIsArray( $result );
-
-		// Should have expected structure
-		if ( ! empty( $result ) ) {
-			$this->assertArrayHasKey( 'data', $result );
-		}
 	}
 
 	/**
@@ -69,24 +61,28 @@ class ClarityIntegrationTest extends TestCase {
 	 */
 	#[Group('integration')]
 	public function test_caching_with_real_api(): void {
-		$args = array(
-			'num_of_days' => 3,
-			'dimension1'  => 'Country',
-		);
+		$dimensions = array( 'Country' );
 
-		// First call - should hit API
-		$result1 = $this->client->get_insights( $args );
+		// First call - should hit API.
+		$result1 = $this->client->get_insights( 3, $dimensions );
 
-		// Second call - should use cache
-		$result2 = $this->client->get_insights( $args );
+		// Second call - should use cache.
+		$result2 = $this->client->get_insights( 3, $dimensions );
 
-		// Results should be identical
+		// Results should be identical.
 		$this->assertEquals( $result1, $result2 );
 
-		// Verify cache was used (implementation-specific)
-		$cache_key = Cache_Manager::generate_cache_key( 'clarity', 'insights', $args );
-		$cached    = Cache_Manager::get( $cache_key );
-		$this->assertNotFalse( $cached );
+		$cache_manager = new Cache_Manager();
+		$cache_key     = $cache_manager->generate_key(
+			'clarity',
+			'project_live_insights',
+			array(
+				'project_id'  => $this->client->get_project_id(),
+				'num_of_days' => 3,
+				'dimensions'  => $dimensions,
+			)
+		);
+		$this->assertNotFalse( $cache_manager->get( $cache_key ) );
 	}
 
 	/**

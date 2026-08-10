@@ -9,7 +9,6 @@ namespace Specflux_Marketing_Analytics\Abilities;
 
 use Specflux_Marketing_Analytics\API_Clients\GSC_Client;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
-use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -90,7 +89,7 @@ class GSC_Abilities {
 				),
 
 				'execute_callback'    => array( $this, 'execute_get_search_performance' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -152,7 +151,7 @@ class GSC_Abilities {
 				),
 
 				'execute_callback'    => array( $this, 'execute_get_top_queries' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -204,7 +203,7 @@ class GSC_Abilities {
 				),
 
 				'execute_callback'    => array( $this, 'execute_get_indexing_status' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -237,7 +236,7 @@ class GSC_Abilities {
 				),
 
 				'execute_callback'    => array( $this, 'execute_gsc_overview' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -256,35 +255,18 @@ class GSC_Abilities {
 	 * @return array Tool result.
 	 */
 	public function execute_get_search_performance( $args ) {
-		try {
-			$client = new GSC_Client();
+		return Ability_Response::tool(
+			function () use ( $args ) {
+				$client = new GSC_Client();
 
-			$data = $client->query_search_analytics(
-				$args['date_range'] ?? '7daysAgo',
-				$args['dimensions'] ?? array(),
-				$args['filters'] ?? array(),
-				array( 'row_limit' => $args['limit'] ?? 100 )
-			);
-
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => wp_json_encode( $data, JSON_PRETTY_PRINT ),
-					),
-				),
-			);
-		} catch ( \Exception $e ) {
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => 'Error: ' . $e->getMessage(),
-					),
-				),
-				'isError' => true,
-			);
-		}
+				return $client->query_search_analytics(
+					$args['date_range'] ?? '7daysAgo',
+					$args['dimensions'] ?? array(),
+					$args['filters'] ?? array(),
+					array( 'row_limit' => $args['limit'] ?? 100 )
+				);
+			}
+		);
 	}
 
 	/**
@@ -294,34 +276,17 @@ class GSC_Abilities {
 	 * @return array Tool result.
 	 */
 	public function execute_get_top_queries( $args ) {
-		try {
-			$client = new GSC_Client();
+		return Ability_Response::tool(
+			function () use ( $args ) {
+				$client = new GSC_Client();
 
-			$data = $client->get_top_queries(
-				$args['date_range'] ?? '7daysAgo',
-				$args['limit'] ?? 100,
-				$args['min_impressions'] ?? 10
-			);
-
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => wp_json_encode( $data, JSON_PRETTY_PRINT ),
-					),
-				),
-			);
-		} catch ( \Exception $e ) {
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => 'Error: ' . $e->getMessage(),
-					),
-				),
-				'isError' => true,
-			);
-		}
+				return $client->get_top_queries(
+					$args['date_range'] ?? '7daysAgo',
+					$args['limit'] ?? 100,
+					$args['min_impressions'] ?? 10
+				);
+			}
+		);
 	}
 
 	/**
@@ -331,36 +296,19 @@ class GSC_Abilities {
 	 * @return array Tool result.
 	 */
 	public function execute_get_indexing_status( $args ) {
-		try {
-			$client = new GSC_Client();
+		return Ability_Response::tool(
+			function () use ( $args ) {
+				$client = new GSC_Client();
 
-			if ( ! empty( $args['page_url'] ) ) {
-				// Get URL inspection data.
-				$data = $client->get_url_inspection( $args['page_url'] );
-			} else {
+				if ( ! empty( $args['page_url'] ) ) {
+					// Get URL inspection data.
+					return $client->get_url_inspection( $args['page_url'] );
+				}
+
 				// Get sitemap status.
-				$data = $client->get_sitemap_status();
+				return $client->get_sitemap_status();
 			}
-
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => wp_json_encode( $data, JSON_PRETTY_PRINT ),
-					),
-				),
-			);
-		} catch ( \Exception $e ) {
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => 'Error: ' . $e->getMessage(),
-					),
-				),
-				'isError' => true,
-			);
-		}
+		);
 	}
 
 	/**
@@ -370,50 +318,24 @@ class GSC_Abilities {
 	 * @return array Resource result.
 	 */
 	public function execute_gsc_overview( $args ) {
-		try {
-			$client = new GSC_Client();
+		return Ability_Response::resource(
+			'gsc://overview',
+			function () {
+				$client = new GSC_Client();
 
-			// Get top queries for overview.
-			$top_queries = $client->get_top_queries( '7daysAgo', 10, 5 );
+				// Get top queries for overview.
+				$top_queries = $client->get_top_queries( '7daysAgo', 10, 5 );
 
-			// Get search performance summary.
-			$performance = $client->query_search_analytics( '7daysAgo', array(), array(), array( 'row_limit' => 1 ) );
+				// Get search performance summary.
+				$performance = $client->query_search_analytics( '7daysAgo', array(), array(), array( 'row_limit' => 1 ) );
 
-			$summary = array(
-				'site_url'    => $client->get_site_url(),
-				'period'      => 'Last 7 days',
-				'top_queries' => $top_queries,
-				'performance' => $performance,
-			);
-
-			return array(
-				'contents' => array(
-					array(
-						'uri'      => 'gsc://overview',
-						'mimeType' => 'application/json',
-						'text'     => wp_json_encode( $summary, JSON_PRETTY_PRINT ),
-					),
-				),
-			);
-		} catch ( \Exception $e ) {
-			return array(
-				'contents' => array(
-					array(
-						'uri'      => 'gsc://overview',
-						'mimeType' => 'text/plain',
-						'text'     => 'Error: ' . $e->getMessage(),
-					),
-				),
-			);
-		}
-	}
-
-	/**
-	 * Permission callback for all GSC abilities
-	 *
-	 * @return bool True if user has permission, false otherwise.
-	 */
-	public function check_permissions() {
-		return Permission_Manager::can_access_plugin();
+				return array(
+					'site_url'    => $client->get_site_url(),
+					'period'      => 'Last 7 days',
+					'top_queries' => $top_queries,
+					'performance' => $performance,
+				);
+			}
+		);
 	}
 }

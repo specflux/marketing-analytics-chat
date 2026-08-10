@@ -9,7 +9,6 @@ namespace Specflux_Marketing_Analytics\Abilities;
 
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 use Specflux_Marketing_Analytics\Prompts\Prompt_Manager;
-use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -97,7 +96,7 @@ class Prompts {
 				'execute_callback'    => function ( $args ) use ( $prompt_data ) {
 					return $this->execute_prompt( $prompt_data, $args );
 				},
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -143,14 +142,5 @@ class Prompts {
 				),
 			),
 		);
-	}
-
-	/**
-	 * Permission callback for all prompts
-	 *
-	 * @return bool True if user has permission, false otherwise.
-	 */
-	public function check_permissions() {
-		return Permission_Manager::can_access_plugin();
 	}
 }
