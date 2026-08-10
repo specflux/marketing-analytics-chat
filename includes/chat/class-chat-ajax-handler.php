@@ -41,11 +41,19 @@ class Chat_Ajax_Handler {
 
 	/**
 	 * Constructor
+	 *
+	 * Collaborators are injected so the chat flow can be exercised offline;
+	 * each argument defaults to exactly the production collaborator, so no
+	 * existing caller needs to change.
+	 *
+	 * @param Chat_Manager|null           $chat_manager Chat manager instance.
+	 * @param MCP_Client|null             $mcp_client   MCP client instance.
+	 * @param LLM_Provider_Interface|null $llm_provider LLM provider instance.
 	 */
-	public function __construct() {
-		$this->chat_manager = new Chat_Manager();
-		$this->mcp_client   = new MCP_Client();
-		$this->llm_provider = $this->get_llm_provider();
+	public function __construct( $chat_manager = null, $mcp_client = null, $llm_provider = null ) {
+		$this->chat_manager = null !== $chat_manager ? $chat_manager : new Chat_Manager();
+		$this->mcp_client   = null !== $mcp_client ? $mcp_client : new MCP_Client();
+		$this->llm_provider = null !== $llm_provider ? $llm_provider : $this->get_llm_provider();
 	}
 
 	/**
@@ -338,10 +346,14 @@ class Chat_Ajax_Handler {
 	 * ('wpab__marketing-analytics__get-ga4-metrics'); both reduce to the final
 	 * segment ('get-ga4-metrics').
 	 *
+	 * This is the source of truth for the rule; admin/views/chat.php calls it
+	 * directly and admin/js/chat-interface.js mirrors it in
+	 * ChatInterface.normalizeAbilityName().
+	 *
 	 * @param string $name Raw ability/tool name.
 	 * @return string Short ability name.
 	 */
-	private static function normalize_ability_name( $name ) {
+	public static function normalize_ability_name( $name ) {
 		$name = (string) $name;
 
 		if ( false !== strpos( $name, '__' ) ) {
@@ -393,6 +405,28 @@ class Chat_Ajax_Handler {
 	}
 
 	/**
+	 * Map stored message rows into the LLM provider message format.
+	 *
+	 * @param array $history_messages Message rows from the chat manager.
+	 * @return array Messages formatted for the LLM provider.
+	 */
+	private function format_messages_for_llm( $history_messages ) {
+		$formatted_messages = array();
+
+		foreach ( $history_messages as $msg ) {
+			$formatted_messages[] = array(
+				'role'         => $msg->role,
+				'content'      => $msg->content,
+				'tool_calls'   => ! empty( $msg->tool_calls ) ? $msg->tool_calls : null,
+				'tool_call_id' => $msg->tool_call_id ?? null,
+				'tool_name'    => $msg->tool_name ?? null,
+			);
+		}
+
+		return $formatted_messages;
+	}
+
+	/**
 	 * Get AI response for a message
 	 *
 	 * @param int    $conversation_id Conversation ID.
@@ -409,18 +443,9 @@ class Chat_Ajax_Handler {
 		}
 
 		// Get conversation history.
-		$history_messages   = $this->chat_manager->get_messages( $conversation_id );
-		$formatted_messages = array();
-
-		foreach ( $history_messages as $msg ) {
-			$formatted_messages[] = array(
-				'role'         => $msg->role,
-				'content'      => $msg->content,
-				'tool_calls'   => ! empty( $msg->tool_calls ) ? $msg->tool_calls : null,
-				'tool_call_id' => $msg->tool_call_id ?? null,
-				'tool_name'    => $msg->tool_name ?? null,
-			);
-		}
+		$formatted_messages = $this->format_messages_for_llm(
+			$this->chat_manager->get_messages( $conversation_id )
+		);
 
 		// Get available MCP tools.
 		$mcp_tools = $this->mcp_client->list_tools();
@@ -497,18 +522,9 @@ class Chat_Ajax_Handler {
 		}
 
 		// Get updated conversation history with tool results.
-		$history_messages   = $this->chat_manager->get_messages( $conversation_id );
-		$formatted_messages = array();
-
-		foreach ( $history_messages as $msg ) {
-			$formatted_messages[] = array(
-				'role'         => $msg->role,
-				'content'      => $msg->content,
-				'tool_calls'   => ! empty( $msg->tool_calls ) ? $msg->tool_calls : null,
-				'tool_call_id' => $msg->tool_call_id ?? null,
-				'tool_name'    => $msg->tool_name ?? null,
-			);
-		}
+		$formatted_messages = $this->format_messages_for_llm(
+			$this->chat_manager->get_messages( $conversation_id )
+		);
 
 		// Get final response from AI with tool results.
 		$final_response = $this->llm_provider->send_message( $formatted_messages, array() );
