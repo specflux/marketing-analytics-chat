@@ -194,7 +194,7 @@ $ga4_connected = isset( $platforms['ga4']['connected'] ) && $platforms['ga4']['c
 		<p>
 			<strong><?php esc_html_e( 'OAuth Client ID:', 'specflux-marketing-analytics-chat' ); ?></strong>
 			<?php echo esc_html( substr( $client_id, 0, 20 ) . '...' ); ?>
-			<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections&tab=ga4&reset_oauth=1' ), 'reset_oauth' ) ); ?>" style="margin-left: 10px;" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to reset OAuth credentials? This will disconnect all Google services.', 'specflux-marketing-analytics-chat' ) ); ?>');">
+			<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=ga4&reset_oauth=1' ), 'reset_oauth' ) ); ?>" style="margin-left: 10px;" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to reset OAuth credentials? This will disconnect all Google services.', 'specflux-marketing-analytics-chat' ) ); ?>');">
 				<?php esc_html_e( 'Reset OAuth Credentials', 'specflux-marketing-analytics-chat' ); ?>
 			</a>
 		</p>
@@ -232,7 +232,7 @@ $ga4_connected = isset( $platforms['ga4']['connected'] ) && $platforms['ga4']['c
 			<button type="button" id="save-ga4-property" class="button button-primary">
 				<?php esc_html_e( 'Save Property Selection', 'specflux-marketing-analytics-chat' ); ?>
 			</button>
-			<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections&tab=ga4&disconnect=1' ), 'disconnect_ga4' ) ); ?>" class="button button-secondary" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to disconnect from Google Analytics 4?', 'specflux-marketing-analytics-chat' ) ); ?>');">
+			<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=ga4&disconnect=1' ), 'disconnect_ga4' ) ); ?>" class="button button-secondary" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to disconnect from Google Analytics 4?', 'specflux-marketing-analytics-chat' ) ); ?>');">
 				<?php esc_html_e( 'Disconnect', 'specflux-marketing-analytics-chat' ); ?>
 			</a>
 		</p>
