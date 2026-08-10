@@ -164,6 +164,14 @@ class Admin {
 			);
 		}
 
+		// Command Palette commands. Core loads the palette on every admin screen
+		// (since WP 6.9), so these must register outside the plugin-page gate
+		// below — otherwise the commands only exist on pages the user has
+		// already navigated to.
+		if ( Permission_Manager::can_access_plugin() ) {
+			$this->enqueue_command_palette_script();
+		}
+
 		// Only load remaining scripts on our admin pages.
 		if ( strpos( $hook, 'specflux-mac' ) === false ) {
 			return;
@@ -318,6 +326,60 @@ class Admin {
 		if ( strpos( $hook, 'specflux-mac-connections' ) !== false ) {
 			$this->enqueue_connection_scripts();
 		}
+	}
+
+	/**
+	 * Enqueue the Command Palette integration script.
+	 *
+	 * Registers plugin commands with core's admin-wide Command Palette. The
+	 * 'wp-commands' handle is only registered from WP 6.9 onward, so guard on
+	 * it rather than on a version number.
+	 */
+	private function enqueue_command_palette_script() {
+		if ( ! wp_script_is( 'wp-commands', 'registered' ) ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			'specflux-mac-command-palette',
+			SPECFLUX_MAC_URL . 'admin/js/command-palette.js',
+			array( 'wp-commands', 'wp-data', 'wp-dom-ready', 'wp-element', 'wp-primitives', 'wp-a11y' ),
+			SPECFLUX_MAC_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'specflux-mac-command-palette',
+			'specfluxMacCommands',
+			array(
+				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+				'nonce'        => wp_create_nonce( 'specflux_mac_admin' ),
+				'dashboardUrl' => admin_url( 'admin.php?page=specflux-mac' ),
+				'chatUrl'      => admin_url( 'admin.php?page=specflux-mac-ai-assistant' ),
+				'strings'      => array(
+					// Core already derives "Go to: Marketing Analytics > …" commands
+					// from the admin menu. These labels are deliberately
+					// intent-led rather than page-named so they read as
+					// shortcuts, not duplicates of those.
+					//
+					// The *Keywords entries are extra match terms, not replacements:
+					// core matches on `searchLabel ?? label`, so setting searchLabel
+					// makes the visible label itself unsearchable. They are passed as
+					// the palette's `keywords`, which adds to the label instead.
+					// Spell the platforms out in full — people type "google analytics",
+					// not "GA4".
+					'openDashboard'         => __( 'Marketing Analytics: View my metrics', 'specflux-marketing-analytics-chat' ),
+					'openDashboardKeywords' => __( 'dashboard metrics traffic GA4 Google Analytics Clarity Microsoft Clarity GSC Google Search Console', 'specflux-marketing-analytics-chat' ),
+					'askAi'                 => __( 'Marketing Analytics: Ask AI about my data', 'specflux-marketing-analytics-chat' ),
+					'askAiKeywords'         => __( 'ask AI assistant chat question GA4 Google Analytics Clarity Microsoft Clarity GSC Google Search Console', 'specflux-marketing-analytics-chat' ),
+					'refreshData'           => __( 'Marketing Analytics: Refresh data', 'specflux-marketing-analytics-chat' ),
+					'refreshDataKeywords'   => __( 'refresh reload cache GA4 Google Analytics Clarity Microsoft Clarity GSC Google Search Console', 'specflux-marketing-analytics-chat' ),
+					'refreshing'            => __( 'Refreshing marketing analytics data…', 'specflux-marketing-analytics-chat' ),
+					'refreshed'             => __( 'Marketing analytics data refreshed.', 'specflux-marketing-analytics-chat' ),
+					'refreshFailed'         => __( 'Could not refresh marketing analytics data.', 'specflux-marketing-analytics-chat' ),
+				),
+			)
+		);
 	}
 
 	/**
