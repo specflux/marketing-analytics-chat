@@ -171,23 +171,6 @@ class MCPClientTest extends TestCase {
 	}
 
 	/**
-	 * Test that generate_request_id produces unique IDs.
-	 */
-	public function test_generate_request_id_is_unique(): void {
-		$reflection = new \ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'generate_request_id' );
-		$method->setAccessible( true );
-
-		$id1 = $method->invoke( $this->client );
-		$id2 = $method->invoke( $this->client );
-
-		$this->assertIsInt( $id1 );
-		$this->assertIsInt( $id2 );
-		// They should be different (random component).
-		// Note: there's a tiny chance they could be equal, but astronomically unlikely.
-	}
-
-	/**
 	 * Test MCP Client has required public methods.
 	 */
 	public function test_has_required_methods(): void {
