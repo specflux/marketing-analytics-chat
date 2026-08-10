@@ -518,13 +518,6 @@ input:checked + .slider:before {
 }
 
 /* MCP Configuration */
-.specflux-marketing-analytics-chat-info {
-	background: #fff;
-	border: 1px solid #c3c4c7;
-	padding: 20px;
-	margin: 30px 0;
-}
-
 .mcp-endpoint-box {
 	display: flex;
 	align-items: center;
@@ -613,7 +606,7 @@ input:checked + .slider:before {
 }
 
 /* Connections Page */
-.specflux-marketing-analytics-chat-connections .nav-tab-wrapper {
+.specflux-mac-connections .nav-tab-wrapper {
 	margin: 20px 0;
 }
 
@@ -633,13 +626,13 @@ input:checked + .slider:before {
 }
 
 /* Settings Page */
-.specflux-marketing-analytics-chat-settings h2 {
+.specflux-mac-settings h2 {
 	margin-top: 30px;
 	padding-top: 20px;
 	border-top: 1px solid #c3c4c7;
 }
 
-.specflux-marketing-analytics-chat-settings h2:first-of-type {
+.specflux-mac-settings h2:first-of-type {
 	border-top: none;
 	padding-top: 0;
 }
@@ -705,27 +698,29 @@ input:checked + .slider:before {
 	}
 }
 
-.specflux-marketing-analytics-chat-prompts-container .chat{
+.specflux-mac-prompts-container .chat{
 	max-width: 100%;
 }
 
-.specflux-marketing-analytics-chat-prompts-container .card {
+.specflux-mac-prompts-container .card {
 	padding: 20px;
+	/* Core's forms.css caps .card at 520px, which is far too narrow for a table. */
+	max-width: 100%;
 }
 
-.specflux-marketing-analytics-chat-prompts-container table th {
+.specflux-mac-prompts-container table th {
 	font-weight: 600;
 }
 
-.specflux-marketing-analytics-chat-prompts-container .button-link-delete {
+.specflux-mac-prompts-container .button-link-delete {
 	color: #b32d2e;
 }
 
-.specflux-marketing-analytics-chat-prompts-container .button-link-delete:hover {
+.specflux-mac-prompts-container .button-link-delete:hover {
 	color: #d63638;
 }
 
-.specflux-marketing-analytics-chat-prompts-container textarea.code {
+.specflux-mac-prompts-container textarea.code {
 	font-family: Consolas, Monaco, monospace;
 	font-size: 13px;
 }
