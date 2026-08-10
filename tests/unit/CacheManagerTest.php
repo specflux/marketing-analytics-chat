@@ -144,4 +144,55 @@ class CacheManagerTest extends TestCase {
 		// GSC: 24 hours (86400s)
 		$this->assertEquals( 86400, $ttl_gsc );
 	}
+
+	/**
+	 * Test remember() computes on a miss and serves the stored value afterwards.
+	 */
+	public function test_remember_computes_once_then_serves_cache(): void {
+		$cache_manager = new Cache_Manager();
+		$calls         = 0;
+
+		$callback = function () use ( &$calls ) {
+			++$calls;
+			return array( 'sessions' => 42 );
+		};
+
+		$first  = $cache_manager->remember( 'ga4', 'run_report', array( 'range' => '7d' ), $callback );
+		$second = $cache_manager->remember( 'ga4', 'run_report', array( 'range' => '7d' ), $callback );
+
+		$this->assertEquals( array( 'sessions' => 42 ), $first );
+		$this->assertEquals( $first, $second );
+		$this->assertSame( 1, $calls, 'Callback should run only on a cache miss.' );
+	}
+
+	/**
+	 * Test remember() keys on the parameters, not just the endpoint.
+	 */
+	public function test_remember_separates_entries_by_params(): void {
+		$cache_manager = new Cache_Manager();
+
+		$a = $cache_manager->remember( 'gsc', 'search_analytics', array( 'range' => '7d' ), fn() => 'seven' );
+		$b = $cache_manager->remember( 'gsc', 'search_analytics', array( 'range' => '28d' ), fn() => 'twentyeight' );
+
+		$this->assertSame( 'seven', $a );
+		$this->assertSame( 'twentyeight', $b );
+	}
+
+	/**
+	 * Test remember() does not cache a failed fetch.
+	 */
+	public function test_remember_does_not_cache_failure(): void {
+		$cache_manager = new Cache_Manager();
+		$calls         = 0;
+
+		$failing = function () use ( &$calls ) {
+			++$calls;
+			return false;
+		};
+
+		$cache_manager->remember( 'clarity', 'project_live_insights', array( 'days' => 1 ), $failing );
+		$cache_manager->remember( 'clarity', 'project_live_insights', array( 'days' => 1 ), $failing );
+
+		$this->assertSame( 2, $calls, 'A false result must not be cached.' );
+	}
 }

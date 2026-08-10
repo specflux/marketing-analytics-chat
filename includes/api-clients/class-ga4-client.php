@@ -42,11 +42,22 @@ class GA4_Client {
 	private $property_id;
 
 	/**
-	 * Constructor
+	 * Injected Analytics Data service
+	 *
+	 * @var object|null
 	 */
-	public function __construct() {
-		$this->oauth_handler = new OAuth_Handler();
-		$this->cache_manager = new Cache_Manager();
+	private $analytics_service;
+
+	/**
+	 * Constructor
+	 *
+	 * @param object|null $analytics_service Analytics Data service to use; defaults to a
+	 *                                       live OAuth-backed service. Tests pass a double.
+	 */
+	public function __construct( $analytics_service = null ) {
+		$this->oauth_handler     = new OAuth_Handler();
+		$this->cache_manager     = new Cache_Manager();
+		$this->analytics_service = $analytics_service;
 
 		// Get configured property ID from options.
 		$this->property_id = get_option( 'specflux_mac_ga4_property_id' );
@@ -55,9 +66,13 @@ class GA4_Client {
 	/**
 	 * Initialize Google Analytics Data API client
 	 *
-	 * @return \Google\Service\AnalyticsData|null Analytics Data service or null on failure.
+	 * @return \Google\Service\AnalyticsData|object|null Analytics Data service or null on failure.
 	 */
 	private function init_analytics_client() {
+		if ( null !== $this->analytics_service ) {
+			return $this->analytics_service;
+		}
+
 		$access_token = $this->oauth_handler->get_access_token( 'ga4' );
 
 		if ( empty( $access_token ) ) {
@@ -89,8 +104,7 @@ class GA4_Client {
 			throw new \Exception( 'GA4 property ID not configured' );
 		}
 
-		// Check cache first.
-		$cache_key = $this->cache_manager->generate_key(
+		return $this->cache_manager->remember(
 			'ga4',
 			'run_report',
 			array(
@@ -98,14 +112,24 @@ class GA4_Client {
 				'dimensions' => $dimensions,
 				'date_range' => $date_range,
 				'options'    => $options,
-			)
+			),
+			function () use ( $metrics, $dimensions, $date_range, $options ) {
+				return $this->fetch_report( $metrics, $dimensions, $date_range, $options );
+			}
 		);
+	}
 
-		$cached = $this->cache_manager->get( $cache_key );
-		if ( false !== $cached ) {
-			return $cached;
-		}
-
+	/**
+	 * Fetch a report from the GA4 API
+	 *
+	 * @param array  $metrics    Metrics to fetch.
+	 * @param array  $dimensions Dimensions to group by.
+	 * @param string $date_range Date range identifier.
+	 * @param array  $options    Additional request options.
+	 * @return array Report data.
+	 * @throws \Exception If the client cannot be initialised or the API call fails.
+	 */
+	private function fetch_report( $metrics, $dimensions, $date_range, $options ) {
 		$analytics = $this->init_analytics_client();
 
 		if ( null === $analytics ) {
@@ -161,13 +185,7 @@ class GA4_Client {
 			// Run report.
 			$response = $analytics->properties->runReport( 'properties/' . $this->property_id, $request );
 
-			// Parse response.
-			$data = $this->parse_report_response( $response );
-
-			// Cache for 30 minutes.
-			$this->cache_manager->set( $cache_key, $data, $this->cache_manager->get_default_ttl( 'ga4' ) );
-
-			return $data;
+			return $this->parse_report_response( $response );
 		} catch ( \Exception $e ) {
 			throw new \Exception( 'GA4 API error: ' . esc_html( $e->getMessage() ) );
 		}

@@ -98,7 +98,7 @@ class Cross_Platform_Abilities {
 					'required'   => array( 'period_a', 'period_b' ),
 				),
 				'execute_callback'    => array( $this, 'handle_compare_periods' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -134,7 +134,7 @@ class Cross_Platform_Abilities {
 					),
 				),
 				'execute_callback'    => array( $this, 'handle_get_top_content' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -171,7 +171,7 @@ class Cross_Platform_Abilities {
 					),
 				),
 				'execute_callback'    => array( $this, 'handle_generate_summary_report' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -190,7 +190,7 @@ class Cross_Platform_Abilities {
 	 * @return array Result data.
 	 */
 	public function handle_compare_periods( $args ) {
-		if ( ! $this->check_permissions() ) {
+		if ( ! Permission_Manager::can_access_plugin() ) {
 			return array( 'error' => __( 'Insufficient permissions.', 'specflux-marketing-analytics-chat' ) );
 		}
 
@@ -198,21 +198,29 @@ class Cross_Platform_Abilities {
 		$period_b  = $args['period_b'];
 		$platforms = isset( $args['platforms'] ) ? $args['platforms'] : $this->get_available_platforms();
 
-		$cache_key = $this->cache_manager->generate_key(
+		return $this->cache_manager->remember(
 			'cross_platform',
 			'compare_periods',
 			array(
 				'period_a'  => $period_a,
 				'period_b'  => $period_b,
 				'platforms' => $platforms,
-			)
+			),
+			function () use ( $period_a, $period_b, $platforms ) {
+				return $this->build_period_comparison( $period_a, $period_b, $platforms );
+			}
 		);
+	}
 
-		$cached = $this->cache_manager->get( $cache_key );
-		if ( false !== $cached ) {
-			return $cached;
-		}
-
+	/**
+	 * Build the period comparison across platforms
+	 *
+	 * @param string $period_a  First period identifier.
+	 * @param string $period_b  Second period identifier.
+	 * @param array  $platforms Platforms to compare.
+	 * @return array Comparison data.
+	 */
+	private function build_period_comparison( $period_a, $period_b, $platforms ) {
 		$results = array();
 
 		foreach ( $platforms as $platform ) {
@@ -229,16 +237,12 @@ class Cross_Platform_Abilities {
 			}
 		}
 
-		$result = array(
+		return array(
 			'period_a'    => $period_a,
 			'period_b'    => $period_b,
 			'platforms'   => $platforms,
 			'comparisons' => $results,
 		);
-
-		$this->cache_manager->set( $cache_key, $result, 30 * MINUTE_IN_SECONDS );
-
-		return $result;
 	}
 
 	/**
@@ -248,26 +252,34 @@ class Cross_Platform_Abilities {
 	 * @return array Result data.
 	 */
 	public function handle_get_top_content( $args ) {
-		if ( ! $this->check_permissions() ) {
+		if ( ! Permission_Manager::can_access_plugin() ) {
 			return array( 'error' => __( 'Insufficient permissions.', 'specflux-marketing-analytics-chat' ) );
 		}
 
 		$date_range = isset( $args['date_range'] ) ? $args['date_range'] : '7daysAgo';
 		$limit      = isset( $args['limit'] ) ? absint( $args['limit'] ) : 20;
 
-		$cache_key = $this->cache_manager->generate_key(
+		return $this->cache_manager->remember(
 			'cross_platform',
 			'top_content',
 			array(
 				'date_range' => $date_range,
 				'limit'      => $limit,
-			)
+			),
+			function () use ( $date_range, $limit ) {
+				return $this->build_top_content( $date_range, $limit );
+			}
 		);
+	}
 
-		$cached = $this->cache_manager->get( $cache_key );
-		if ( false !== $cached ) {
-			return $cached;
-		}
+	/**
+	 * Build the merged top-content list across platforms
+	 *
+	 * @param string $date_range Date range identifier.
+	 * @param int    $limit      Maximum number of pages to return.
+	 * @return array Top content data.
+	 */
+	private function build_top_content( $date_range, $limit ) {
 
 		$ga4_data = array();
 		$gsc_data = array();
@@ -316,15 +328,11 @@ class Cross_Platform_Abilities {
 			}
 		);
 
-		$result = array(
+		return array(
 			'date_range' => $date_range,
 			'pages'      => array_slice( $merged, 0, $limit ),
 			'total'      => count( $merged ),
 		);
-
-		$this->cache_manager->set( $cache_key, $result, 30 * MINUTE_IN_SECONDS );
-
-		return $result;
 	}
 
 	/**
@@ -334,27 +342,34 @@ class Cross_Platform_Abilities {
 	 * @return array|string Result data.
 	 */
 	public function handle_generate_summary_report( $args ) {
-		if ( ! $this->check_permissions() ) {
+		if ( ! Permission_Manager::can_access_plugin() ) {
 			return array( 'error' => __( 'Insufficient permissions.', 'specflux-marketing-analytics-chat' ) );
 		}
 
 		$date_range = isset( $args['date_range'] ) ? $args['date_range'] : '7daysAgo';
 		$format     = isset( $args['format'] ) ? $args['format'] : 'markdown';
 
-		$cache_key = $this->cache_manager->generate_key(
+		return $this->cache_manager->remember(
 			'cross_platform',
 			'summary_report',
 			array(
 				'date_range' => $date_range,
 				'format'     => $format,
-			)
+			),
+			function () use ( $date_range, $format ) {
+				return $this->build_summary_report( $date_range, $format );
+			}
 		);
+	}
 
-		$cached = $this->cache_manager->get( $cache_key );
-		if ( false !== $cached ) {
-			return $cached;
-		}
-
+	/**
+	 * Build the cross-platform summary report
+	 *
+	 * @param string $date_range Date range identifier.
+	 * @param string $format     Output format ('markdown' or 'array').
+	 * @return array|string Report data.
+	 */
+	private function build_summary_report( $date_range, $format ) {
 		$platforms = $this->get_available_platforms();
 		$report    = array(
 			'date_range'    => $date_range,
@@ -378,14 +393,10 @@ class Cross_Platform_Abilities {
 		$report['key_takeaways'] = $this->generate_takeaways( $report['platform_data'] );
 
 		if ( 'markdown' === $format ) {
-			$result = $this->format_report_markdown( $report );
-		} else {
-			$result = $report;
+			return $this->format_report_markdown( $report );
 		}
 
-		$this->cache_manager->set( $cache_key, $result, 30 * MINUTE_IN_SECONDS );
-
-		return $result;
+		return $report;
 	}
 
 	/**
@@ -412,30 +423,13 @@ class Cross_Platform_Abilities {
 	}
 
 	/**
-	 * Check user permissions
-	 *
-	 * Public so it can serve as the ability permission_callback.
-	 *
-	 * @return bool True if user has permission.
-	 */
-	public function check_permissions() {
-		return Permission_Manager::can_access_plugin();
-	}
-
-	/**
 	 * Get Clarity client instance
 	 *
 	 * @return Clarity_Client Client instance.
 	 * @throws \Exception If credentials not found.
 	 */
 	private function get_clarity_client() {
-		$credentials = $this->credential_manager->get_credentials( 'clarity' );
-
-		if ( empty( $credentials['api_token'] ) || empty( $credentials['project_id'] ) ) {
-			throw new \Exception( 'Clarity credentials not configured' );
-		}
-
-		return new Clarity_Client( $credentials['api_token'], $credentials['project_id'] );
+		return new Clarity_Client();
 	}
 
 	/**

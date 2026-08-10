@@ -438,15 +438,21 @@ if ( ! function_exists( 'has_filter' ) ) {
     }
 }
 
+// Capability toggle for tests. Default true keeps the historic "always admin"
+// behaviour; set to false to exercise insufficient-permission paths.
+$mock_user_can = true;
+
 if ( ! function_exists( 'current_user_can' ) ) {
     function current_user_can( $capability ) {
-        return true; // Mock as admin for tests
+        global $mock_user_can;
+        return ( null === $mock_user_can ) ? true : (bool) $mock_user_can;
     }
 }
 
 if ( ! function_exists( 'user_can' ) ) {
     function user_can( $user_id, $capability ) {
-        return true; // Mock as admin for tests
+        global $mock_user_can;
+        return ( null === $mock_user_can ) ? true : (bool) $mock_user_can;
     }
 }
 
@@ -456,9 +462,14 @@ if ( ! function_exists( 'get_current_user_id' ) ) {
     }
 }
 
+// Nonce toggle for tests. Default true keeps the historic "always valid"
+// behaviour; set to false to exercise failed-nonce paths.
+$mock_nonce_valid = true;
+
 if ( ! function_exists( 'wp_verify_nonce' ) ) {
     function wp_verify_nonce( $nonce, $action = -1 ) {
-        return true; // Mock nonce verification
+        global $mock_nonce_valid;
+        return ( null === $mock_nonce_valid ) ? true : (bool) $mock_nonce_valid;
     }
 }
 
@@ -756,7 +767,15 @@ if ( ! isset( $wpdb ) ) {
         public $options = 'wp_options';
         public $insert_id = 0;
 
+        /**
+         * Every SQL string passed to query(), so tests can assert side effects.
+         *
+         * @var array
+         */
+        public $queries = array();
+
         public function query( $query ) {
+            $this->queries[] = $query;
             return true;
         }
 
@@ -974,7 +993,34 @@ if ( ! function_exists( '_n' ) ) {
 
 if ( ! function_exists( 'wp_unslash' ) ) {
 	function wp_unslash( $value ) {
+		if ( is_array( $value ) ) {
+			return array_map( 'wp_unslash', $value );
+		}
 		return is_string( $value ) ? stripslashes( $value ) : $value;
+	}
+}
+
+if ( ! function_exists( 'map_deep' ) ) {
+	function map_deep( $value, $callback ) {
+		if ( is_array( $value ) ) {
+			foreach ( $value as $index => $item ) {
+				$value[ $index ] = map_deep( $item, $callback );
+			}
+			return $value;
+		}
+		if ( is_object( $value ) ) {
+			foreach ( get_object_vars( $value ) as $property => $item ) {
+				$value->$property = map_deep( $item, $callback );
+			}
+			return $value;
+		}
+		return call_user_func( $callback, $value );
+	}
+}
+
+if ( ! function_exists( 'number_format_i18n' ) ) {
+	function number_format_i18n( $number, $decimals = 0 ) {
+		return number_format( (float) $number, (int) $decimals );
 	}
 }
 
@@ -1022,13 +1068,43 @@ if ( ! function_exists( 'wp_remote_retrieve_body' ) ) {
 
 if ( ! function_exists( 'wp_send_json_success' ) ) {
 	function wp_send_json_success( $data = null, $status_code = null ) {
-		// In tests, do nothing (would normally exit).
+		// Would normally exit; record the payload so tests can inspect it.
+		global $mock_json_responses;
+		if ( ! is_array( $mock_json_responses ) ) {
+			$mock_json_responses = array();
+		}
+		$mock_json_responses[] = array(
+			'success' => true,
+			'data'    => $data,
+			'status'  => $status_code,
+		);
 	}
 }
 
 if ( ! function_exists( 'wp_send_json_error' ) ) {
 	function wp_send_json_error( $data = null, $status_code = null ) {
-		// In tests, do nothing (would normally exit).
+		// Would normally exit; record the payload so tests can inspect it.
+		global $mock_json_responses;
+		if ( ! is_array( $mock_json_responses ) ) {
+			$mock_json_responses = array();
+		}
+		$mock_json_responses[] = array(
+			'success' => false,
+			'data'    => $data,
+			'status'  => $status_code,
+		);
+	}
+}
+
+if ( ! function_exists( 'check_ajax_referer' ) ) {
+	function check_ajax_referer( $action = -1, $query_arg = false, $stop = true ) {
+		return 1; // Mock as a valid, freshly generated nonce.
+	}
+}
+
+if ( ! function_exists( 'sanitize_textarea_field' ) ) {
+	function sanitize_textarea_field( $str ) {
+		return trim( strip_tags( (string) $str ) );
 	}
 }
 

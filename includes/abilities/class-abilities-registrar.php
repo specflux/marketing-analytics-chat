@@ -8,6 +8,7 @@
 namespace Specflux_Marketing_Analytics\Abilities;
 
 use Specflux_Marketing_Analytics\Utils\Logger;
+use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -111,6 +112,18 @@ class Abilities_Registrar {
 				)
 			);
 		}
+	}
+
+	/**
+	 * Shared permission callback for every ability registered by this plugin
+	 *
+	 * Declared without parameters so it safely ignores the input payload the
+	 * Abilities API passes to permission callbacks.
+	 *
+	 * @return bool True if the current user has permission, false otherwise.
+	 */
+	public static function can_access() {
+		return Permission_Manager::can_access_plugin();
 	}
 
 	/**

@@ -42,11 +42,22 @@ class GSC_Client {
 	private $site_url;
 
 	/**
-	 * Constructor
+	 * Injected Search Console service
+	 *
+	 * @var object|null
 	 */
-	public function __construct() {
-		$this->oauth_handler = new OAuth_Handler();
-		$this->cache_manager = new Cache_Manager();
+	private $search_console_service;
+
+	/**
+	 * Constructor
+	 *
+	 * @param object|null $search_console_service Search Console service to use; defaults to a
+	 *                                            live OAuth-backed service. Tests pass a double.
+	 */
+	public function __construct( $search_console_service = null ) {
+		$this->oauth_handler          = new OAuth_Handler();
+		$this->cache_manager          = new Cache_Manager();
+		$this->search_console_service = $search_console_service;
 
 		// Get configured site URL from options.
 		$this->site_url = get_option( 'specflux_mac_gsc_site_url' );
@@ -55,9 +66,13 @@ class GSC_Client {
 	/**
 	 * Initialize Google Search Console API client
 	 *
-	 * @return \Google\Service\SearchConsole|null Search Console service or null on failure.
+	 * @return \Google\Service\SearchConsole|object|null Search Console service or null on failure.
 	 */
 	private function init_search_console_client() {
+		if ( null !== $this->search_console_service ) {
+			return $this->search_console_service;
+		}
+
 		$access_token = $this->oauth_handler->get_access_token( 'gsc' );
 
 		if ( empty( $access_token ) ) {
@@ -89,8 +104,7 @@ class GSC_Client {
 			throw new \Exception( 'GSC site URL not configured' );
 		}
 
-		// Check cache first.
-		$cache_key = $this->cache_manager->generate_key(
+		return $this->cache_manager->remember(
 			'gsc',
 			'search_analytics',
 			array(
@@ -98,14 +112,24 @@ class GSC_Client {
 				'dimensions' => $dimensions,
 				'filters'    => $filters,
 				'options'    => $options,
-			)
+			),
+			function () use ( $date_range, $dimensions, $filters, $options ) {
+				return $this->fetch_search_analytics( $date_range, $dimensions, $filters, $options );
+			}
 		);
+	}
 
-		$cached = $this->cache_manager->get( $cache_key );
-		if ( false !== $cached ) {
-			return $cached;
-		}
-
+	/**
+	 * Fetch search analytics from the Search Console API
+	 *
+	 * @param string $date_range Date range identifier.
+	 * @param array  $dimensions Dimensions to group by.
+	 * @param array  $filters    Dimension filters.
+	 * @param array  $options    Additional request options.
+	 * @return array Search analytics data.
+	 * @throws \Exception If the client cannot be initialised or the API call fails.
+	 */
+	private function fetch_search_analytics( $date_range, $dimensions, $filters, $options ) {
 		$search_console = $this->init_search_console_client();
 
 		if ( null === $search_console ) {
@@ -146,13 +170,7 @@ class GSC_Client {
 			// Execute query.
 			$response = $search_console->searchanalytics->query( $this->site_url, $request );
 
-			// Parse response.
-			$data = $this->parse_search_analytics_response( $response );
-
-			// Cache for 24 hours (GSC data has 2-3 day delay).
-			$this->cache_manager->set( $cache_key, $data, $this->cache_manager->get_default_ttl( 'gsc' ) );
-
-			return $data;
+			return $this->parse_search_analytics_response( $response );
 		} catch ( \Exception $e ) {
 			throw new \Exception( 'GSC API error: ' . esc_html( $e->getMessage() ) );
 		}

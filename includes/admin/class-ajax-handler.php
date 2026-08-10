@@ -10,7 +10,6 @@ namespace Specflux_Marketing_Analytics\Admin;
 use Specflux_Marketing_Analytics\API_Clients\Clarity_Client;
 use Specflux_Marketing_Analytics\API_Clients\GA4_Client;
 use Specflux_Marketing_Analytics\API_Clients\GSC_Client;
-use Specflux_Marketing_Analytics\Credentials\Encryption;
 use Specflux_Marketing_Analytics\Credentials\Connection_Tester;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
@@ -21,11 +20,18 @@ use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 defined( 'ABSPATH' ) || exit;
 /**
  * Handles AJAX requests from admin interface
+ *
+ * Every public callback follows the same shape: verify the request with
+ * verify_request(), then delegate the real work to a private do_* method that
+ * either returns the success payload or throws with the user-facing message.
+ * Only the public callbacks emit JSON.
  */
 class Ajax_Handler {
 
 	/**
 	 * Register AJAX hooks
+	 *
+	 * @return void
 	 */
 	public function register_hooks() {
 		Logger::debug( 'Registering AJAX hooks' );
@@ -54,72 +60,105 @@ class Ajax_Handler {
 	}
 
 	/**
-	 * Test platform connection
+	 * Verify an incoming AJAX request.
+	 *
+	 * Runs the nonce check followed by the plugin capability check. On either
+	 * failure a JSON error response is emitted and false is returned, so every
+	 * caller can bail with a plain `return`.
+	 *
+	 * @param string $nonce_action Nonce action the request must be signed with.
+	 * @return bool True when the request is authorised, false otherwise.
 	 */
-	public function test_connection() {
-		Logger::debug( '===== AJAX TEST CONNECTION REQUEST =====' );
-
-		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
+	private function verify_request( $nonce_action = 'specflux_mac_admin' ) {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), $nonce_action ) ) {
 			Logger::error( 'Nonce verification failed' );
 			wp_send_json_error(
 				array(
 					'message' => 'Security check failed. Please refresh the page and try again.',
 				)
 			);
-			return;
+			return false;
 		}
 
-		// Check permissions.
 		if ( ! Permission_Manager::can_access_plugin() ) {
-			Logger::error( 'User lacks manage_options capability' );
+			Logger::error( 'User lacks permissions' );
 			wp_send_json_error(
 				array(
 					'message' => 'You do not have permission to perform this action.',
 				)
 			);
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Test platform connection
+	 *
+	 * @return void
+	 */
+	public function test_connection() {
+		Logger::debug( '===== AJAX TEST CONNECTION REQUEST =====' );
+
+		if ( ! $this->verify_request() ) {
 			return;
 		}
 
+		try {
+			wp_send_json_success( $this->do_test_connection() );
+		} catch ( \Throwable $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * Dispatch a connection test to the platform-specific tester.
+	 *
+	 * @return array Success payload for the JSON response.
+	 */
+	private function do_test_connection() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in verify_request().
 		$request_data = map_deep( wp_unslash( $_POST ), 'sanitize_text_field' );
 		Logger::debug( sprintf( 'Request data: %s', wp_json_encode( Logger::redact( $request_data ) ) ) );
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in verify_request().
 		$platform = isset( $_POST['platform'] ) ? sanitize_text_field( wp_unslash( $_POST['platform'] ) ) : '';
 		Logger::debug( sprintf( 'Testing connection for platform: %s', $platform ) );
 
 		// Use Connection_Tester for OAuth-based platforms (GA4, GSC).
 		if ( in_array( $platform, array( 'ga4', 'gsc' ), true ) ) {
-			$this->test_oauth_platform_connection( $platform );
-		} elseif ( 'clarity' === $platform ) {
-			$this->test_clarity_connection();
-		} else {
-			Logger::debug( sprintf( 'ERROR: Unsupported platform: %s', $platform ) );
-			wp_send_json_error(
-				array(
-					'message' => 'Unsupported platform: ' . $platform,
-				)
-			);
-			return;
+			return $this->test_oauth_platform_connection( $platform );
 		}
+
+		if ( 'clarity' === $platform ) {
+			return $this->test_clarity_connection();
+		}
+
+		Logger::debug( sprintf( 'ERROR: Unsupported platform: %s', $platform ) );
+		throw new \RuntimeException( 'Unsupported platform: ' . esc_html( $platform ) );
 	}
 
 	/**
 	 * Test Clarity connection
+	 *
+	 * @return array Success payload for the JSON response.
 	 */
 	private function test_clarity_connection() {
 		Logger::debug( 'Testing Clarity connection' );
 
 		// Get credentials from POST.
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in test_connection().
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in verify_request().
 		$api_token = isset( $_POST['api_token'] ) ? sanitize_text_field( wp_unslash( $_POST['api_token'] ) ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in test_connection().
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in verify_request().
 		$project_id = isset( $_POST['project_id'] ) ? sanitize_text_field( wp_unslash( $_POST['project_id'] ) ) : '';
 
 		// The token field renders a masked value (first/last chars joined by "...")
 		// once a token is stored, so a Test click after saving posts the mask, not
 		// the real token. Fall back to the stored token when the field is empty or
 		// still showing the mask, mirroring the save form's behavior.
-		$existing_credentials = Encryption::get_credentials( 'clarity' );
+		$credential_manager   = new Credential_Manager();
+		$existing_credentials = $credential_manager->get_credentials( 'clarity' );
 		if ( $existing_credentials && ! empty( $existing_credentials['api_token'] )
 			&& ( empty( $api_token ) || false !== strpos( $api_token, '...' ) ) ) {
 			$api_token = $existing_credentials['api_token'];
@@ -134,33 +173,18 @@ class Ajax_Handler {
 		// Validate inputs.
 		if ( empty( $api_token ) ) {
 			Logger::error( 'API token is empty' );
-			wp_send_json_error(
-				array(
-					'message' => 'API Token is required. Please enter your Clarity API token.',
-				)
-			);
-			return;
+			throw new \RuntimeException( 'API Token is required. Please enter your Clarity API token.' );
 		}
 
 		if ( empty( $project_id ) ) {
 			Logger::error( 'Project ID is empty' );
-			wp_send_json_error(
-				array(
-					'message' => 'Project ID is required. Please enter your Clarity project ID.',
-				)
-			);
-			return;
+			throw new \RuntimeException( 'Project ID is required. Please enter your Clarity project ID.' );
 		}
 
 		// Validate token format (should be a non-empty string).
 		if ( strlen( $api_token ) < 10 ) {
 			Logger::debug( sprintf( 'ERROR: API token too short (length: %d)', strlen( $api_token ) ) );
-			wp_send_json_error(
-				array(
-					'message' => 'API Token appears to be invalid (too short). Please check your token.',
-				)
-			);
-			return;
+			throw new \RuntimeException( 'API Token appears to be invalid (too short). Please check your token.' );
 		}
 
 		// Create client and test connection.
@@ -170,43 +194,35 @@ class Ajax_Handler {
 
 			Logger::debug( 'Calling test_connection()' );
 			$result = $client->test_connection();
-
-			Logger::debug( sprintf( 'Connection test result: %s', wp_json_encode( $result ) ) );
-
-			if ( $result['success'] ) {
-				Logger::debug( '===== CONNECTION TEST SUCCESSFUL =====' );
-				wp_send_json_success(
-					array(
-						'message' => $result['message'],
-						'data'    => $result['data'] ?? null,
-					)
-				);
-			} else {
-				Logger::debug( sprintf( '===== CONNECTION TEST FAILED: %s =====', $result['message'] ) );
-				wp_send_json_error(
-					array(
-						'message' => $result['message'],
-					)
-				);
-			}
 		} catch ( \Exception $e ) {
 			Logger::debug( '===== CONNECTION TEST EXCEPTION =====' );
 			Logger::debug( sprintf( 'Exception class: %s', get_class( $e ) ) );
 			Logger::debug( sprintf( 'Exception message: %s', $e->getMessage() ) );
 			Logger::debug( sprintf( 'Exception trace: %s', $e->getTraceAsString() ) );
 
-			wp_send_json_error(
-				array(
-					'message' => 'Connection test failed: ' . $e->getMessage(),
-				)
-			);
+			throw new \RuntimeException( 'Connection test failed: ' . esc_html( $e->getMessage() ) );
 		}
+
+		Logger::debug( sprintf( 'Connection test result: %s', wp_json_encode( $result ) ) );
+
+		if ( ! $result['success'] ) {
+			Logger::debug( sprintf( '===== CONNECTION TEST FAILED: %s =====', $result['message'] ) );
+			throw new \RuntimeException( esc_html( $result['message'] ) );
+		}
+
+		Logger::debug( '===== CONNECTION TEST SUCCESSFUL =====' );
+
+		return array(
+			'message' => $result['message'],
+			'data'    => $result['data'] ?? null,
+		);
 	}
 
 	/**
 	 * Test OAuth platform connection (GA4 or GSC)
 	 *
 	 * @param string $platform Platform key.
+	 * @return array Success payload for the JSON response.
 	 */
 	private function test_oauth_platform_connection( $platform ) {
 		Logger::debug( sprintf( 'Testing OAuth connection for: %s', $platform ) );
@@ -219,143 +235,125 @@ class Ajax_Handler {
 			} elseif ( 'gsc' === $platform ) {
 				$result = $connection_tester->test_gsc_connection();
 			} else {
-				wp_send_json_error(
-					array(
-						'message' => 'Invalid platform for OAuth testing',
-					)
-				);
-				return;
-			}
-
-			Logger::debug( sprintf( 'OAuth connection test result: %s', wp_json_encode( $result ) ) );
-
-			if ( $result['success'] ) {
-				Logger::debug( '===== OAUTH CONNECTION TEST SUCCESSFUL =====' );
-				wp_send_json_success(
-					array(
-						'message' => $result['message'],
-						'data'    => $result['data'] ?? null,
-					)
-				);
-			} else {
-				Logger::debug( sprintf( '===== OAUTH CONNECTION TEST FAILED: %s =====', $result['message'] ) );
-				wp_send_json_error(
-					array(
-						'message' => $result['message'],
-					)
-				);
+				$result = null;
 			}
 		} catch ( \Exception $e ) {
 			Logger::debug( '===== OAUTH CONNECTION TEST EXCEPTION =====' );
 			Logger::debug( sprintf( 'Exception: %s', $e->getMessage() ) );
 
-			wp_send_json_error(
-				array(
-					'message' => 'Connection test failed: ' . $e->getMessage(),
-				)
-			);
+			throw new \RuntimeException( 'Connection test failed: ' . esc_html( $e->getMessage() ) );
 		}
+
+		if ( null === $result ) {
+			throw new \RuntimeException( 'Invalid platform for OAuth testing' );
+		}
+
+		Logger::debug( sprintf( 'OAuth connection test result: %s', wp_json_encode( $result ) ) );
+
+		if ( ! $result['success'] ) {
+			Logger::debug( sprintf( '===== OAUTH CONNECTION TEST FAILED: %s =====', $result['message'] ) );
+			throw new \RuntimeException( esc_html( $result['message'] ) );
+		}
+
+		Logger::debug( '===== OAUTH CONNECTION TEST SUCCESSFUL =====' );
+
+		return array(
+			'message' => $result['message'],
+			'data'    => $result['data'] ?? null,
+		);
 	}
 
 	/**
 	 * Save platform credentials
+	 *
+	 * @return void
 	 */
 	public function save_credentials() {
 		Logger::debug( '===== AJAX SAVE CREDENTIALS REQUEST =====' );
 
-		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
-			Logger::error( 'Nonce verification failed' );
-			wp_send_json_error(
-				array(
-					'message' => 'Security check failed.',
-				)
-			);
+		if ( ! $this->verify_request() ) {
+			return;
 		}
 
-		// Check permissions.
-		if ( ! Permission_Manager::can_access_plugin() ) {
-			Logger::error( 'User lacks permissions' );
-			wp_send_json_error(
-				array(
-					'message' => 'Insufficient permissions.',
-				)
-			);
-		}
-
-		$platform = isset( $_POST['platform'] ) ? sanitize_text_field( wp_unslash( $_POST['platform'] ) ) : '';
-		Logger::debug( sprintf( 'Saving credentials for platform: %s', $platform ) );
-
-		if ( 'clarity' === $platform ) {
-			$api_token  = isset( $_POST['api_token'] ) ? sanitize_text_field( wp_unslash( $_POST['api_token'] ) ) : '';
-			$project_id = isset( $_POST['project_id'] ) ? sanitize_text_field( wp_unslash( $_POST['project_id'] ) ) : '';
-
-			$credentials = array(
-				'api_token'  => $api_token,
-				'project_id' => $project_id,
-			);
-
-			$result = Encryption::save_credentials( $platform, $credentials );
-
-			if ( $result ) {
-				Logger::debug( 'Credentials saved successfully' );
-
-				/**
-				 * Fires when a platform connection is saved.
-				 *
-				 * @param string $platform The platform that was connected (e.g., 'clarity').
-				 */
-				do_action( 'specflux_mac_platform_connected', $platform );
-
-				wp_send_json_success(
-					array(
-						'message' => 'Credentials saved successfully!',
-					)
-				);
-			} else {
-				Logger::error( 'Failed to save credentials' );
-				wp_send_json_error(
-					array(
-						'message' => 'Failed to save credentials.',
-					)
-				);
-			}
-		} else {
-			Logger::debug( sprintf( 'ERROR: Unsupported platform: %s', $platform ) );
-			wp_send_json_error(
-				array(
-					'message' => 'Unsupported platform.',
-				)
-			);
+		try {
+			wp_send_json_success( $this->do_save_credentials() );
+		} catch ( \Throwable $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
 	}
 
 	/**
+	 * Persist the posted platform credentials.
+	 *
+	 * @return array Success payload for the JSON response.
+	 */
+	private function do_save_credentials() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in verify_request().
+		$platform = isset( $_POST['platform'] ) ? sanitize_text_field( wp_unslash( $_POST['platform'] ) ) : '';
+		Logger::debug( sprintf( 'Saving credentials for platform: %s', $platform ) );
+
+		if ( 'clarity' !== $platform ) {
+			Logger::debug( sprintf( 'ERROR: Unsupported platform: %s', $platform ) );
+			throw new \RuntimeException( 'Unsupported platform.' );
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in verify_request().
+		$api_token = isset( $_POST['api_token'] ) ? sanitize_text_field( wp_unslash( $_POST['api_token'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in verify_request().
+		$project_id = isset( $_POST['project_id'] ) ? sanitize_text_field( wp_unslash( $_POST['project_id'] ) ) : '';
+
+		$credentials = array(
+			'api_token'  => $api_token,
+			'project_id' => $project_id,
+		);
+
+		$credential_manager = new Credential_Manager();
+		$result             = $credential_manager->save_credentials( $platform, $credentials );
+
+		if ( ! $result ) {
+			Logger::error( 'Failed to save credentials' );
+			throw new \RuntimeException( 'Failed to save credentials.' );
+		}
+
+		Logger::debug( 'Credentials saved successfully' );
+
+		/**
+		 * Fires when a platform connection is saved.
+		 *
+		 * @param string $platform The platform that was connected (e.g., 'clarity').
+		 */
+		do_action( 'specflux_mac_platform_connected', $platform );
+
+		return array(
+			'message' => 'Credentials saved successfully!',
+		);
+	}
+
+	/**
 	 * Clear all caches
+	 *
+	 * @return void
 	 */
 	public function clear_caches() {
 		Logger::debug( '===== AJAX CLEAR CACHES REQUEST =====' );
 
-		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
-			Logger::error( 'Nonce verification failed' );
-			wp_send_json_error(
-				array(
-					'message' => 'Security check failed.',
-				)
-			);
+		if ( ! $this->verify_request() ) {
+			return;
 		}
 
-		// Check permissions.
-		if ( ! Permission_Manager::can_access_plugin() ) {
-			Logger::error( 'User lacks permissions' );
-			wp_send_json_error(
-				array(
-					'message' => 'Insufficient permissions.',
-				)
-			);
+		try {
+			wp_send_json_success( $this->do_clear_caches() );
+		} catch ( \Throwable $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+	}
 
+	/**
+	 * Purge every plugin transient from the options table.
+	 *
+	 * @return array Success payload for the JSON response.
+	 */
+	private function do_clear_caches() {
 		global $wpdb;
 		// Use proper escaping for LIKE patterns with wpdb.
 		$pattern = $wpdb->esc_like( '_transient_specflux_mac_' ) . '%';
@@ -369,315 +367,256 @@ class Ajax_Handler {
 
 		Logger::debug( sprintf( 'Cleared %d cache entries', $deleted ) );
 
-		wp_send_json_success(
-			array(
-				'message' => sprintf( 'Cleared %d cache entries', $deleted ),
-			)
+		return array(
+			'message' => sprintf( 'Cleared %d cache entries', $deleted ),
 		);
 	}
 
 	/**
 	 * List GA4 properties
+	 *
+	 * @return void
 	 */
 	public function list_ga4_properties() {
 		Logger::debug( '===== AJAX LIST GA4 PROPERTIES REQUEST =====' );
 
-		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
-			Logger::error( 'Nonce verification failed' );
-			wp_send_json_error(
-				array(
-					'message' => 'Security check failed.',
-				)
-			);
-		}
-
-		// Check permissions.
-		if ( ! Permission_Manager::can_access_plugin() ) {
-			Logger::error( 'User lacks permissions' );
-			wp_send_json_error(
-				array(
-					'message' => 'Insufficient permissions.',
-				)
-			);
+		if ( ! $this->verify_request() ) {
+			return;
 		}
 
 		try {
-			$client     = new GA4_Client();
-			$properties = $client->list_properties();
-
-			if ( null === $properties ) {
-				Logger::error( 'Failed to retrieve properties' );
-				wp_send_json_error(
-					array(
-						'message' => 'Failed to retrieve properties. Please ensure you are connected to Google Analytics.',
-					)
-				);
-			}
-
-			if ( empty( $properties ) ) {
-				Logger::debug( 'No properties found' );
-				wp_send_json_error(
-					array(
-						'message' => 'No GA4 properties found for your account.',
-					)
-				);
-			}
-
-			Logger::debug( sprintf( 'Found %d properties', count( $properties ) ) );
-			wp_send_json_success(
-				array(
-					'properties' => $properties,
-				)
-			);
-		} catch ( \Exception $e ) {
-			Logger::error( '===== LIST PROPERTIES EXCEPTION =====' );
-			Logger::error( sprintf( 'Exception: %s', $e->getMessage() ) );
-
-			wp_send_json_error(
-				array(
-					'message' => $e->getMessage(),
-				)
-			);
+			wp_send_json_success( $this->do_list_ga4_properties() );
+		} catch ( \Throwable $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
 	}
 
 	/**
+	 * Fetch the GA4 properties available to the connected account.
+	 *
+	 * @return array Success payload for the JSON response.
+	 */
+	private function do_list_ga4_properties() {
+		try {
+			$client     = new GA4_Client();
+			$properties = $client->list_properties();
+		} catch ( \Exception $e ) {
+			Logger::error( '===== LIST PROPERTIES EXCEPTION =====' );
+			Logger::error( sprintf( 'Exception: %s', $e->getMessage() ) );
+
+			throw new \RuntimeException( esc_html( $e->getMessage() ) );
+		}
+
+		if ( null === $properties ) {
+			Logger::error( 'Failed to retrieve properties' );
+			throw new \RuntimeException( 'Failed to retrieve properties. Please ensure you are connected to Google Analytics.' );
+		}
+
+		if ( empty( $properties ) ) {
+			Logger::debug( 'No properties found' );
+			throw new \RuntimeException( 'No GA4 properties found for your account.' );
+		}
+
+		Logger::debug( sprintf( 'Found %d properties', count( $properties ) ) );
+
+		return array(
+			'properties' => $properties,
+		);
+	}
+
+	/**
 	 * Save GA4 property ID
+	 *
+	 * @return void
 	 */
 	public function save_ga4_property() {
 		Logger::debug( '===== AJAX SAVE GA4 PROPERTY REQUEST =====' );
 
-		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
-			Logger::error( 'Nonce verification failed' );
-			wp_send_json_error(
-				array(
-					'message' => 'Security check failed.',
-				)
-			);
+		if ( ! $this->verify_request() ) {
+			return;
 		}
 
-		// Check permissions.
-		if ( ! Permission_Manager::can_access_plugin() ) {
-			Logger::error( 'User lacks permissions' );
-			wp_send_json_error(
-				array(
-					'message' => 'Insufficient permissions.',
-				)
-			);
+		try {
+			wp_send_json_success( $this->do_save_ga4_property() );
+		} catch ( \Throwable $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+	}
 
+	/**
+	 * Persist the selected GA4 property ID.
+	 *
+	 * @return array Success payload for the JSON response.
+	 */
+	private function do_save_ga4_property() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in verify_request().
 		$property_id = isset( $_POST['property_id'] ) ? sanitize_text_field( wp_unslash( $_POST['property_id'] ) ) : '';
 
 		if ( empty( $property_id ) ) {
 			Logger::error( 'Property ID is empty' );
-			wp_send_json_error(
-				array(
-					'message' => 'Please select a property.',
-				)
-			);
+			throw new \RuntimeException( 'Please select a property.' );
 		}
 
 		try {
 			$client = new GA4_Client();
 			$result = $client->set_property_id( $property_id );
-
-			if ( $result ) {
-				Logger::debug( sprintf( 'Property ID saved: %s', $property_id ) );
-
-				/** This action is documented in class-ajax-handler.php */
-				do_action( 'specflux_mac_platform_connected', 'ga4' );
-
-				wp_send_json_success(
-					array(
-						'message'     => 'Property saved successfully!',
-						'property_id' => $property_id,
-					)
-				);
-			} else {
-				Logger::error( 'Failed to save property ID' );
-				wp_send_json_error(
-					array(
-						'message' => 'Failed to save property.',
-					)
-				);
-			}
 		} catch ( \Exception $e ) {
 			Logger::debug( '===== SAVE PROPERTY EXCEPTION =====' );
 			Logger::debug( sprintf( 'Exception: %s', $e->getMessage() ) );
 
-			wp_send_json_error(
-				array(
-					'message' => 'Error saving property: ' . $e->getMessage(),
-				)
-			);
+			throw new \RuntimeException( 'Error saving property: ' . esc_html( $e->getMessage() ) );
 		}
+
+		if ( ! $result ) {
+			Logger::error( 'Failed to save property ID' );
+			throw new \RuntimeException( 'Failed to save property.' );
+		}
+
+		Logger::debug( sprintf( 'Property ID saved: %s', $property_id ) );
+
+		/** This action is documented in class-ajax-handler.php */
+		do_action( 'specflux_mac_platform_connected', 'ga4' );
+
+		return array(
+			'message'     => 'Property saved successfully!',
+			'property_id' => $property_id,
+		);
 	}
 
 	/**
 	 * List GSC sites
+	 *
+	 * @return void
 	 */
 	public function list_gsc_sites() {
 		Logger::debug( '===== AJAX LIST GSC SITES REQUEST =====' );
 
-		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
-			Logger::error( 'Nonce verification failed' );
-			wp_send_json_error(
-				array(
-					'message' => 'Security check failed.',
-				)
-			);
-		}
-
-		// Check permissions.
-		if ( ! Permission_Manager::can_access_plugin() ) {
-			Logger::error( 'User lacks permissions' );
-			wp_send_json_error(
-				array(
-					'message' => 'Insufficient permissions.',
-				)
-			);
+		if ( ! $this->verify_request() ) {
+			return;
 		}
 
 		try {
-			$client = new GSC_Client();
-			$sites  = $client->list_sites();
-
-			if ( null === $sites ) {
-				Logger::error( 'Failed to retrieve sites' );
-				wp_send_json_error(
-					array(
-						'message' => 'Failed to retrieve sites. Please ensure you are connected to Google Search Console.',
-					)
-				);
-			}
-
-			if ( empty( $sites ) ) {
-				Logger::debug( 'No sites found' );
-				wp_send_json_error(
-					array(
-						'message' => 'No Search Console sites found for your account.',
-					)
-				);
-			}
-
-			Logger::debug( sprintf( 'Found %d sites', count( $sites ) ) );
-			wp_send_json_success(
-				array(
-					'sites' => $sites,
-				)
-			);
-		} catch ( \Exception $e ) {
-			Logger::debug( '===== LIST SITES EXCEPTION =====' );
-			Logger::debug( sprintf( 'Exception: %s', $e->getMessage() ) );
-
-			wp_send_json_error(
-				array(
-					'message' => 'Error fetching sites: ' . $e->getMessage(),
-				)
-			);
+			wp_send_json_success( $this->do_list_gsc_sites() );
+		} catch ( \Throwable $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
 	}
 
 	/**
+	 * Fetch the Search Console sites available to the connected account.
+	 *
+	 * @return array Success payload for the JSON response.
+	 */
+	private function do_list_gsc_sites() {
+		try {
+			$client = new GSC_Client();
+			$sites  = $client->list_sites();
+		} catch ( \Exception $e ) {
+			Logger::debug( '===== LIST SITES EXCEPTION =====' );
+			Logger::debug( sprintf( 'Exception: %s', $e->getMessage() ) );
+
+			throw new \RuntimeException( 'Error fetching sites: ' . esc_html( $e->getMessage() ) );
+		}
+
+		if ( null === $sites ) {
+			Logger::error( 'Failed to retrieve sites' );
+			throw new \RuntimeException( 'Failed to retrieve sites. Please ensure you are connected to Google Search Console.' );
+		}
+
+		if ( empty( $sites ) ) {
+			Logger::debug( 'No sites found' );
+			throw new \RuntimeException( 'No Search Console sites found for your account.' );
+		}
+
+		Logger::debug( sprintf( 'Found %d sites', count( $sites ) ) );
+
+		return array(
+			'sites' => $sites,
+		);
+	}
+
+	/**
 	 * Save GSC site URL
+	 *
+	 * @return void
 	 */
 	public function save_gsc_site() {
 		Logger::debug( '===== AJAX SAVE GSC SITE REQUEST =====' );
 
-		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
-			Logger::error( 'Nonce verification failed' );
-			wp_send_json_error(
-				array(
-					'message' => 'Security check failed.',
-				)
-			);
+		if ( ! $this->verify_request() ) {
+			return;
 		}
 
-		// Check permissions.
-		if ( ! Permission_Manager::can_access_plugin() ) {
-			Logger::error( 'User lacks permissions' );
-			wp_send_json_error(
-				array(
-					'message' => 'Insufficient permissions.',
-				)
-			);
+		try {
+			wp_send_json_success( $this->do_save_gsc_site() );
+		} catch ( \Throwable $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+	}
 
+	/**
+	 * Persist the selected Search Console site URL.
+	 *
+	 * @return array Success payload for the JSON response.
+	 */
+	private function do_save_gsc_site() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in verify_request().
 		$site_url = isset( $_POST['site_url'] ) ? sanitize_text_field( wp_unslash( $_POST['site_url'] ) ) : '';
 
 		if ( empty( $site_url ) ) {
 			Logger::error( 'Site URL is empty' );
-			wp_send_json_error(
-				array(
-					'message' => 'Please select a site.',
-				)
-			);
+			throw new \RuntimeException( 'Please select a site.' );
 		}
 
 		try {
 			$client = new GSC_Client();
 			$result = $client->set_site_url( $site_url );
-
-			if ( $result ) {
-				Logger::debug( sprintf( 'Site URL saved: %s', $site_url ) );
-
-				/** This action is documented in class-ajax-handler.php */
-				do_action( 'specflux_mac_platform_connected', 'gsc' );
-
-				wp_send_json_success(
-					array(
-						'message'  => 'Site saved successfully!',
-						'site_url' => $site_url,
-					)
-				);
-			} else {
-				Logger::error( 'Failed to save site URL' );
-				wp_send_json_error(
-					array(
-						'message' => 'Failed to save site.',
-					)
-				);
-			}
 		} catch ( \Exception $e ) {
 			Logger::debug( '===== SAVE SITE EXCEPTION =====' );
 			Logger::debug( sprintf( 'Exception: %s', $e->getMessage() ) );
 
-			wp_send_json_error(
-				array(
-					'message' => 'Error saving site: ' . $e->getMessage(),
-				)
-			);
+			throw new \RuntimeException( 'Error saving site: ' . esc_html( $e->getMessage() ) );
 		}
+
+		if ( ! $result ) {
+			Logger::error( 'Failed to save site URL' );
+			throw new \RuntimeException( 'Failed to save site.' );
+		}
+
+		Logger::debug( sprintf( 'Site URL saved: %s', $site_url ) );
+
+		/** This action is documented in class-ajax-handler.php */
+		do_action( 'specflux_mac_platform_connected', 'gsc' );
+
+		return array(
+			'message'  => 'Site saved successfully!',
+			'site_url' => $site_url,
+		);
 	}
 
 	/**
 	 * Handle dashboard widget data refresh
+	 *
+	 * @return void
 	 */
 	public function handle_refresh_widget_data() {
-		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
-			wp_send_json_error(
-				array(
-					'message' => 'Security check failed.',
-				)
-			);
+		if ( ! $this->verify_request() ) {
 			return;
 		}
 
-		// Check permissions.
-		if ( ! Permission_Manager::can_access_plugin() ) {
-			wp_send_json_error(
-				array(
-					'message' => 'Insufficient permissions.',
-				)
-			);
-			return;
+		try {
+			wp_send_json_success( $this->do_refresh_widget_data() );
+		} catch ( \Throwable $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+	}
 
+	/**
+	 * Refresh the dashboard widget transient from the connected platforms.
+	 *
+	 * @return array Success payload for the JSON response.
+	 */
+	private function do_refresh_widget_data() {
 		$widget_data        = array();
 		$credential_manager = new Credential_Manager();
 
@@ -714,8 +653,7 @@ class Ajax_Handler {
 		// window at 3 days, so request 3 (not 7) to get a live response.
 		if ( $credential_manager->has_credentials( 'clarity' ) ) {
 			try {
-				$credentials            = $credential_manager->get_credentials( 'clarity' );
-				$clarity_client         = new Clarity_Client( $credentials['api_token'], $credentials['project_id'] );
+				$clarity_client         = new Clarity_Client();
 				$widget_data['clarity'] = $clarity_client->get_insights( 3 );
 			} catch ( \Throwable $e ) {
 				$widget_data['clarity_error'] = $e->getMessage();
@@ -725,11 +663,9 @@ class Ajax_Handler {
 		// Store in transient with 30 minute TTL.
 		set_transient( 'specflux_mac_widget_data', $widget_data, 30 * MINUTE_IN_SECONDS );
 
-		wp_send_json_success(
-			array(
-				'message' => 'Widget data refreshed successfully.',
-				'data'    => $widget_data,
-			)
+		return array(
+			'message' => 'Widget data refreshed successfully.',
+			'data'    => $widget_data,
 		);
 	}
 
@@ -737,28 +673,27 @@ class Ajax_Handler {
 	 * Handle dashboard insights panel metrics refresh.
 	 *
 	 * Reads from existing transients ONLY — no live API calls.
+	 *
+	 * @return void
 	 */
 	public function handle_refresh_dashboard_metrics() {
-		// Check nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_dashboard_insights' ) ) {
-			wp_send_json_error(
-				array(
-					'message' => 'Security check failed.',
-				)
-			);
+		if ( ! $this->verify_request( 'specflux_mac_dashboard_insights' ) ) {
 			return;
 		}
 
-		// Check permissions.
-		if ( ! Permission_Manager::can_access_plugin() ) {
-			wp_send_json_error(
-				array(
-					'message' => 'Insufficient permissions.',
-				)
-			);
-			return;
+		try {
+			wp_send_json_success( $this->do_refresh_dashboard_metrics() );
+		} catch ( \Throwable $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+	}
 
+	/**
+	 * Build the dashboard insights metrics from cached transients.
+	 *
+	 * @return array Success payload for the JSON response.
+	 */
+	private function do_refresh_dashboard_metrics() {
 		$credential_manager = new Credential_Manager();
 		$metrics            = array();
 
@@ -786,11 +721,9 @@ class Ajax_Handler {
 			}
 		}
 
-		wp_send_json_success(
-			array(
-				'message' => 'Metrics refreshed from cache.',
-				'metrics' => $metrics,
-			)
+		return array(
+			'message' => 'Metrics refreshed from cache.',
+			'metrics' => $metrics,
 		);
 	}
 
@@ -1023,32 +956,31 @@ class Ajax_Handler {
 
 	/**
 	 * Dismiss the onboarding wizard
+	 *
+	 * @return void
 	 */
 	public function dismiss_onboarding_wizard() {
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_dismiss_wizard' ) ) {
-			wp_send_json_error(
-				array(
-					'message' => 'Security check failed.',
-				)
-			);
+		if ( ! $this->verify_request( 'specflux_mac_dismiss_wizard' ) ) {
 			return;
 		}
 
-		if ( ! Permission_Manager::can_access_plugin() ) {
-			wp_send_json_error(
-				array(
-					'message' => 'You do not have permission to perform this action.',
-				)
-			);
-			return;
+		try {
+			wp_send_json_success( $this->do_dismiss_onboarding_wizard() );
+		} catch ( \Throwable $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+	}
 
+	/**
+	 * Record the onboarding wizard as dismissed.
+	 *
+	 * @return array Success payload for the JSON response.
+	 */
+	private function do_dismiss_onboarding_wizard() {
 		update_option( 'specflux_mac_onboarding_complete', true );
 
-		wp_send_json_success(
-			array(
-				'message' => 'Onboarding wizard dismissed.',
-			)
+		return array(
+			'message' => 'Onboarding wizard dismissed.',
 		);
 	}
 }

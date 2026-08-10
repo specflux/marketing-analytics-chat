@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use Specflux_Marketing_Analytics\Chat\Chat_Ajax_Handler;
 use Specflux_Marketing_Analytics\Chat\Chat_Manager;
 
 $chat_manager = new Chat_Manager();
@@ -188,7 +189,7 @@ if ( ! function_exists( 'specflux_mac_format_chat_markdown' ) ) {
 											<ul>
 												<?php foreach ( $message->tool_calls as $tool_call ) : ?>
 													<?php $tc_name = (string) ( $tool_call['name'] ?? 'tool' ); ?>
-													<li><?php echo esc_html( false !== strpos( $tc_name, '/' ) ? substr( strrchr( $tc_name, '/' ), 1 ) : $tc_name ); ?></li>
+													<li><?php echo esc_html( Chat_Ajax_Handler::normalize_ability_name( $tc_name ) ); ?></li>
 												<?php endforeach; ?>
 											</ul>
 										</div>

@@ -10,7 +10,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Specflux_Marketing_Analytics\Credentials\Encryption;
 use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 use Specflux_Marketing_Analytics\Utils\Permission_Manager;
@@ -83,7 +82,8 @@ if ( isset( $_POST['save_clarity'] ) && check_admin_referer( 'specflux_mac_save_
 	$project_id = isset( $_POST['clarity_project_id'] ) ? sanitize_text_field( wp_unslash( $_POST['clarity_project_id'] ) ) : '';
 
 	// Get existing credentials.
-	$existing_credentials = Encryption::get_credentials( 'clarity' );
+	$credential_manager   = new Credential_Manager();
+	$existing_credentials = $credential_manager->get_credentials( 'clarity' );
 
 	// If API token is empty or is the masked display value, keep the existing token.
 	if ( empty( $api_token ) || ( $existing_credentials && strpos( $api_token, '...' ) !== false ) ) {
@@ -98,7 +98,7 @@ if ( isset( $_POST['save_clarity'] ) && check_admin_referer( 'specflux_mac_save_
 			'project_id' => $project_id,
 		);
 
-		if ( Encryption::save_credentials( 'clarity', $credentials ) ) {
+		if ( $credential_manager->save_credentials( 'clarity', $credentials ) ) {
 			// Update platform status to connected.
 			$settings = get_option( 'specflux_mac_settings', array() );
 			if ( ! isset( $settings['platforms'] ) ) {
@@ -121,7 +121,7 @@ if ( isset( $_POST['save_clarity'] ) && check_admin_referer( 'specflux_mac_save_
 }
 
 // Get saved credentials for display.
-$saved_clarity      = Encryption::get_credentials( 'clarity' );
+$saved_clarity      = ( new Credential_Manager() )->get_credentials( 'clarity' );
 $clarity_project_id = $saved_clarity && isset( $saved_clarity['project_id'] ) ? $saved_clarity['project_id'] : '';
 $clarity_has_token  = $saved_clarity && isset( $saved_clarity['api_token'] ) && ! empty( $saved_clarity['api_token'] );
 // Show masked token for display (first 10 chars + ... + last 10 chars).
