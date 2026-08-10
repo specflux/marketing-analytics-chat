@@ -245,6 +245,30 @@
 		},
 
 		/**
+		 * Reduce a tool identifier to its short ability name.
+		 *
+		 * Mirrors Chat_Ajax_Handler::normalize_ability_name() in
+		 * includes/chat/class-chat-ajax-handler.php, which is the source of
+		 * truth for this rule. Names arrive either namespaced
+		 * ('marketing-analytics/get-ga4-metrics') or in core's sanitized form
+		 * ('wpab__marketing-analytics__get-ga4-metrics'); both reduce to the
+		 * final segment ('get-ga4-metrics').
+		 */
+		normalizeAbilityName: function(name) {
+			var shortName = String(name);
+
+			if (shortName.indexOf('__') !== -1) {
+				shortName = shortName.split('__').pop();
+			}
+
+			if (shortName.indexOf('/') !== -1) {
+				shortName = shortName.split('/').pop();
+			}
+
+			return shortName;
+		},
+
+		/**
 		 * Add message to UI
 		 */
 		addMessageToUI: function(role, content, usage, toolMetadata, failedTools, toolCalls) {
@@ -315,7 +339,7 @@
 						toolCount + ' tool' + (toolCount !== 1 ? 's' : '') +
 					'</span><ul>';
 				toolCalls.forEach(function(tc) {
-					var shortName = tc && tc.name ? String(tc.name).split('/').pop() : 'tool';
+					var shortName = tc && tc.name ? self.normalizeAbilityName(tc.name) : 'tool';
 					toolCallsHTML += '<li>' + $('<div>').text(shortName).html() + '</li>';
 				});
 				toolCallsHTML += '</ul></div>';
@@ -328,7 +352,7 @@
 					'<div class="failed-tools-header"><span class="dashicons dashicons-warning"></span> Failed Tools:</div>' +
 					'<ul class="failed-tools-list">';
 				failedTools.forEach(function(tool, index) {
-					var toolShortName = tool.name.split('/').pop();
+					var toolShortName = self.normalizeAbilityName(tool.name);
 					failedToolsHTML += '<li class="failed-tool-item">' +
 						'<span class="tool-name">' + toolShortName + '</span>' +
 						'<span class="tool-error">' + tool.error + '</span>' +
@@ -398,7 +422,7 @@
 						$failedItem.removeClass('failed-tool-item').addClass('retry-success-item');
 						$failedItem.html(
 							'<span class="dashicons dashicons-yes-alt"></span> ' +
-							'<span class="tool-name">' + toolName.split('/').pop() + '</span> - Success!'
+							'<span class="tool-name">' + self.normalizeAbilityName(toolName) + '</span> - Success!'
 						);
 
 						// Add the result as a new message
