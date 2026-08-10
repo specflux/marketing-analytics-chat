@@ -40,13 +40,13 @@ free/
 |---|---|---|
 | Script/style handles | `specflux-mac-` | `specflux-mac-admin`, `specflux-mac-sparklines` |
 | JS globals (`wp_localize_script`) | `specfluxMac` | `specfluxMacAdmin`, `specfluxMacChat` |
-| Menu/page slugs (appear in URLs) | `specflux-marketing-analytics-chat-` | `specflux-marketing-analytics-chat-settings` |
+| Menu/page slugs (appear in URLs) | `specflux-mac` / `specflux-mac-` | `specflux-mac`, `specflux-mac-settings` |
 | Options, hooks, AJAX, transients, nonces | `specflux_mac_` | `specflux_mac_settings`, `specflux_mac_save` |
 | PHP constants | `SPECFLUX_MAC_` | `SPECFLUX_MAC_VERSION` |
 | CSS classes / design tokens | `.smac-` / `--smac-` | `.smac-card`, `--smac-primary` |
 | Text domain / plugin slug | `specflux-marketing-analytics-chat` | (fixed, matches WordPress.org slug) |
 
-**Rule of thumb:** use `specflux-mac-` everywhere except where WordPress requires the full slug (menu slugs that appear in admin URLs) or where WordPress.org mandates the exact slug (text domain, plugin directory).
+**Rule of thumb:** use `specflux-mac-` everywhere except where WordPress.org mandates the exact slug (text domain, plugin directory). Menu slugs are `specflux-mac-*` too — the parent menu is the bare `specflux-mac`. Any `admin.php?page=…` link must name a slug that `Admin::add_admin_menu()` actually registers; a slug that is merely plausible renders "Sorry, you are not allowed to access this page."
 
 ## Development Commands
 

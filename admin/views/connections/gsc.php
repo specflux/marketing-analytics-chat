@@ -62,7 +62,7 @@ $gsc_connected = isset( $platforms['gsc']['connected'] ) && $platforms['gsc']['c
 				printf(
 					/* translators: %s: link to GA4 tab */
 					esc_html__( 'Please configure OAuth credentials in the %s tab first. The same credentials are used for both GA4 and Search Console.', 'specflux-marketing-analytics-chat' ),
-					'<a href="?page=specflux-marketing-analytics-chat-connections&tab=ga4">' . esc_html__( 'Google Analytics 4', 'specflux-marketing-analytics-chat' ) . '</a>'
+					'<a href="?page=specflux-mac-connections&tab=ga4">' . esc_html__( 'Google Analytics 4', 'specflux-marketing-analytics-chat' ) . '</a>'
 				);
 				?>
 			</p>
@@ -106,7 +106,7 @@ $gsc_connected = isset( $platforms['gsc']['connected'] ) && $platforms['gsc']['c
 		<p>
 			<strong><?php esc_html_e( 'OAuth Client ID:', 'specflux-marketing-analytics-chat' ); ?></strong>
 			<?php echo esc_html( substr( $client_id, 0, 20 ) . '...' ); ?>
-			<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections&tab=ga4&reset_oauth=1' ), 'reset_oauth' ) ); ?>" style="margin-left: 10px;" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to reset OAuth credentials? This will disconnect all Google services.', 'specflux-marketing-analytics-chat' ) ); ?>');">
+			<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=ga4&reset_oauth=1' ), 'reset_oauth' ) ); ?>" style="margin-left: 10px;" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to reset OAuth credentials? This will disconnect all Google services.', 'specflux-marketing-analytics-chat' ) ); ?>');">
 				<?php esc_html_e( 'Reset OAuth Credentials', 'specflux-marketing-analytics-chat' ); ?>
 			</a>
 		</p>
@@ -144,7 +144,7 @@ $gsc_connected = isset( $platforms['gsc']['connected'] ) && $platforms['gsc']['c
 			<button type="button" id="save-gsc-property" class="button button-primary">
 				<?php esc_html_e( 'Save Property Selection', 'specflux-marketing-analytics-chat' ); ?>
 			</button>
-			<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=specflux-marketing-analytics-chat-connections&tab=gsc&disconnect=1' ), 'disconnect_gsc' ) ); ?>" class="button button-secondary" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to disconnect from Google Search Console?', 'specflux-marketing-analytics-chat' ) ); ?>');">
+			<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=gsc&disconnect=1' ), 'disconnect_gsc' ) ); ?>" class="button button-secondary" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to disconnect from Google Search Console?', 'specflux-marketing-analytics-chat' ) ); ?>');">
 				<?php esc_html_e( 'Disconnect', 'specflux-marketing-analytics-chat' ); ?>
 			</a>
 		</p>
