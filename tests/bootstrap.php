@@ -949,6 +949,20 @@ if ( ! function_exists( 'is_admin' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_current_screen' ) ) {
+	/**
+	 * Mock get_current_screen function.
+	 *
+	 * Tests set $GLOBALS['mock_current_screen'] to an object with an `id`
+	 * property (or leave it null to simulate "no screen").
+	 *
+	 * @return object|null
+	 */
+	function get_current_screen() {
+		return isset( $GLOBALS['mock_current_screen'] ) ? $GLOBALS['mock_current_screen'] : null;
+	}
+}
+
 if ( ! function_exists( 'is_plugin_active' ) ) {
 	function is_plugin_active( $plugin ) {
 		return true;
@@ -997,7 +1011,19 @@ if ( ! function_exists( 'wp_rand' ) ) {
 }
 
 if ( ! function_exists( 'wp_remote_post' ) ) {
+	/**
+	 * Mock wp_remote_post. Tests may set $GLOBALS['mock_http_handler'] to a
+	 * callable( $url, $args ) returning array( 'response' => array( 'code' => int ), 'body' => string )
+	 * or a WP_Error; every call is appended to $GLOBALS['mock_http_requests'].
+	 */
 	function wp_remote_post( $url, $args = array() ) {
+		$GLOBALS['mock_http_requests'][] = array(
+			'url'  => $url,
+			'args' => $args,
+		);
+		if ( ! empty( $GLOBALS['mock_http_handler'] ) && is_callable( $GLOBALS['mock_http_handler'] ) ) {
+			return call_user_func( $GLOBALS['mock_http_handler'], $url, $args );
+		}
 		return new \WP_Error( 'http_request_not_executed', 'Mock: HTTP requests not available in tests' );
 	}
 }
@@ -1007,7 +1033,7 @@ if ( ! function_exists( 'wp_remote_retrieve_response_code' ) ) {
 		if ( is_wp_error( $response ) ) {
 			return '';
 		}
-		return 200;
+		return isset( $response['response']['code'] ) ? (int) $response['response']['code'] : 200;
 	}
 }
 
@@ -1016,7 +1042,30 @@ if ( ! function_exists( 'wp_remote_retrieve_body' ) ) {
 		if ( is_wp_error( $response ) ) {
 			return '';
 		}
-		return '';
+		return isset( $response['body'] ) ? (string) $response['body'] : '';
+	}
+}
+
+if ( ! function_exists( 'wp_generate_password' ) ) {
+	function wp_generate_password( $length = 12, $special_chars = true, $extra_special_chars = false ) {
+		$chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+		$out   = '';
+		for ( $i = 0; $i < $length; $i++ ) {
+			$out .= $chars[ random_int( 0, strlen( $chars ) - 1 ) ];
+		}
+		return $out;
+	}
+}
+
+if ( ! function_exists( 'esc_url_raw' ) ) {
+	function esc_url_raw( $url, $protocols = null ) {
+		return $url;
+	}
+}
+
+if ( ! function_exists( 'untrailingslashit' ) ) {
+	function untrailingslashit( $value ) {
+		return rtrim( $value, '/\\' );
 	}
 }
 

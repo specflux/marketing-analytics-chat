@@ -45,13 +45,19 @@ class Activator {
 		}
 
 		// Check for required PHP extensions.
-		$required_extensions = array( 'json', 'curl', 'openssl', 'sodium' );
+		$required_extensions = array( 'json', 'curl', 'openssl' );
 		$missing_extensions  = array();
 
 		foreach ( $required_extensions as $extension ) {
 			if ( ! extension_loaded( $extension ) ) {
 				$missing_extensions[] = $extension;
 			}
+		}
+
+		// Sodium may come from ext-sodium or from the sodium_compat polyfill
+		// WordPress core loads; either satisfies the credential encryption.
+		if ( ! function_exists( 'sodium_crypto_secretbox' ) ) {
+			$missing_extensions[] = 'sodium';
 		}
 
 		if ( ! empty( $missing_extensions ) ) {

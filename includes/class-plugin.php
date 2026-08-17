@@ -31,6 +31,7 @@ class Plugin {
 		$this->define_admin_hooks();
 		$this->define_ajax_hooks();
 		$this->define_abilities_hooks();
+		$this->define_review_prompt_hooks();
 	}
 
 	/**
@@ -58,6 +59,19 @@ class Plugin {
 		$this->loader->add_action( 'wp_dashboard_setup', $admin, 'register_dashboard_widget' );
 		$this->loader->add_action( 'admin_bar_menu', $admin, 'add_admin_bar_item', 100 );
 		$this->loader->add_action( 'admin_enqueue_scripts', $admin, 'enqueue_admin_bar_styles' );
+	}
+
+	/**
+	 * Register the WordPress.org review prompt
+	 *
+	 * Registered outside the `is_admin()` guard because the fetch counter has
+	 * to observe `specflux_mac_data_fetched` wherever it fires (REST/MCP
+	 * requests included). The notice itself only renders on `admin_notices`,
+	 * and only on this plugin's own screens.
+	 */
+	private function define_review_prompt_hooks() {
+		$review_prompt = new Admin\Review_Prompt();
+		$review_prompt->init();
 	}
 
 	/**

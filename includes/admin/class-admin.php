@@ -197,6 +197,7 @@ class Admin {
 					'success'   => __( 'Connection successful!', 'specflux-marketing-analytics-chat' ),
 					'error'     => __( 'Connection failed', 'specflux-marketing-analytics-chat' ),
 					'saveError' => __( 'Error saving settings', 'specflux-marketing-analytics-chat' ),
+					'redirecting' => __( 'Redirecting to Google…', 'specflux-marketing-analytics-chat' ),
 				),
 			)
 		);
@@ -321,11 +322,6 @@ class Admin {
 				)
 			);
 		}
-
-		// Enqueue connection page scripts.
-		if ( strpos( $hook, 'specflux-mac-connections' ) !== false ) {
-			$this->enqueue_connection_scripts();
-		}
 	}
 
 	/**
@@ -380,80 +376,6 @@ class Admin {
 				),
 			)
 		);
-	}
-
-	/**
-	 * Enqueue scripts for the connections page
-	 */
-	private function enqueue_connection_scripts() {
-		$nonce = wp_create_nonce( 'specflux_mac_admin' );
-
-		// GA4 connection script.
-		$credential_manager = new \Specflux_Marketing_Analytics\Credentials\Credential_Manager();
-		$ga4_credentials    = $credential_manager->get_credentials( 'ga4' );
-		$is_ga4_authed      = ! empty( $ga4_credentials ) && isset( $ga4_credentials['access_token'] );
-
-		if ( $is_ga4_authed ) {
-			wp_enqueue_script(
-				'specflux-mac-ga4-connection',
-				SPECFLUX_MAC_URL . 'admin/js/ga4-connection.js',
-				array( 'jquery' ),
-				SPECFLUX_MAC_VERSION,
-				true
-			);
-
-			wp_localize_script(
-				'specflux-mac-ga4-connection',
-				'specfluxMacGA4Connection',
-				array(
-					'nonce'           => $nonce,
-					'savedPropertyId' => isset( $ga4_credentials['property_id'] ) ? $ga4_credentials['property_id'] : '',
-					'strings'         => array(
-						'loading'        => __( 'Loading properties...', 'specflux-marketing-analytics-chat' ),
-						'selectProperty' => __( '-- Select a property --', 'specflux-marketing-analytics-chat' ),
-						'loadFailed'     => __( 'Failed to load properties', 'specflux-marketing-analytics-chat' ),
-						'loadError'      => __( 'Error loading properties', 'specflux-marketing-analytics-chat' ),
-						'networkError'   => __( 'Network error. Please try again.', 'specflux-marketing-analytics-chat' ),
-						'selectFirst'    => __( 'Please select a property', 'specflux-marketing-analytics-chat' ),
-						'saving'         => __( 'Saving...', 'specflux-marketing-analytics-chat' ),
-						'saveButton'     => __( 'Save Property Selection', 'specflux-marketing-analytics-chat' ),
-					),
-				)
-			);
-		}
-
-		// GSC connection script.
-		$gsc_credentials = $credential_manager->get_credentials( 'gsc' );
-		$is_gsc_authed   = ! empty( $gsc_credentials ) && isset( $gsc_credentials['access_token'] );
-
-		if ( $is_gsc_authed ) {
-			wp_enqueue_script(
-				'specflux-mac-gsc-connection',
-				SPECFLUX_MAC_URL . 'admin/js/gsc-connection.js',
-				array( 'jquery' ),
-				SPECFLUX_MAC_VERSION,
-				true
-			);
-
-			wp_localize_script(
-				'specflux-mac-gsc-connection',
-				'specfluxMacGSCConnection',
-				array(
-					'nonce'        => $nonce,
-					'savedSiteUrl' => isset( $gsc_credentials['site_url'] ) ? $gsc_credentials['site_url'] : '',
-					'strings'      => array(
-						'loading'        => __( 'Loading properties...', 'specflux-marketing-analytics-chat' ),
-						'selectProperty' => __( '-- Select a property --', 'specflux-marketing-analytics-chat' ),
-						'loadFailed'     => __( 'Failed to load properties', 'specflux-marketing-analytics-chat' ),
-						'loadError'      => __( 'Error loading properties', 'specflux-marketing-analytics-chat' ),
-						'networkError'   => __( 'Network error. Please try again.', 'specflux-marketing-analytics-chat' ),
-						'selectFirst'    => __( 'Please select a property', 'specflux-marketing-analytics-chat' ),
-						'saving'         => __( 'Saving...', 'specflux-marketing-analytics-chat' ),
-						'saveButton'     => __( 'Save Property Selection', 'specflux-marketing-analytics-chat' ),
-					),
-				)
-			);
-		}
 	}
 
 	/**

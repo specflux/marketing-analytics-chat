@@ -437,15 +437,122 @@
 	}
 
 	/**
+	 * "Connect with Google" buttons: fetch the consent URL, then redirect
+	 */
+	function initGoogleConnect() {
+		$('.smac-google-connect').on('click', function(e) {
+			e.preventDefault();
+
+			var $button = $(this);
+			var $status = $button.siblings('.smac-google-connect-status');
+
+			if ($button.prop('disabled')) {
+				return;
+			}
+
+			$button.prop('disabled', true);
+			$status.removeClass('error').text(specfluxMacAdmin.strings.redirecting).show();
+
+			$.post(specfluxMacAdmin.ajaxUrl, {
+				action: 'specflux_mac_google_auth_url',
+				nonce: specfluxMacAdmin.nonce,
+				service: $button.data('service')
+			}).done(function(response) {
+				if (response.success && response.data && response.data.url) {
+					window.location.href = response.data.url;
+					return;
+				}
+				$button.prop('disabled', false);
+				$status.addClass('error').text((response.data && response.data.message) || specfluxMacAdmin.strings.error);
+			}).fail(function() {
+				$button.prop('disabled', false);
+				$status.addClass('error').text(specfluxMacAdmin.strings.error);
+			});
+		});
+	}
+
+	/**
+	 * Strip one-time OAuth callback parameters from the address bar
+	 *
+	 * The callback is single-use, so a reload of the landing URL would be
+	 * rejected as a replay. Rewrite the URL to the plain service tab instead.
+	 */
+	function cleanOAuthCallbackUrl() {
+		if (!window.history || !window.history.replaceState || !window.URLSearchParams) {
+			return;
+		}
+
+		var params = new URLSearchParams(window.location.search);
+		if (!params.has('oauth_callback')) {
+			return;
+		}
+
+		// The server already switched to the right tab; mirror it in the URL.
+		var activeHref = $('.nav-tab-wrapper .nav-tab-active').attr('href') || '';
+		var tabMatch   = activeHref.match(/[?&]tab=([a-z0-9_-]+)/);
+
+		['oauth_callback', 'code', 'state', 'scope', 'handoff', 'nonce', 'service', 'smac_oauth_error'].forEach(function(key) {
+			params.delete(key);
+		});
+		if (tabMatch) {
+			params.set('tab', tabMatch[1]);
+		}
+
+		window.history.replaceState({}, document.title, window.location.pathname + '?' + params.toString());
+	}
+
+	/**
+	 * Review notice: record the dismissal choice, then remove the notice
+	 *
+	 * "Maybe later" (and the native WP dismiss "x") snoozes the prompt;
+	 * "Already did / don't ask again" hides it permanently.
+	 */
+	function initReviewNotice() {
+		var $notice = $('.smac-review-notice');
+
+		if (!$notice.length) {
+			return;
+		}
+
+		function dismiss(mode) {
+			$.post(specfluxMacAdmin.ajaxUrl, {
+				action: 'specflux_mac_review_dismiss',
+				nonce: specfluxMacAdmin.nonce,
+				mode: mode
+			});
+
+			$notice.remove();
+		}
+
+		$notice.on('click', '.smac-review-later', function(e) {
+			e.preventDefault();
+			dismiss('later');
+		});
+
+		$notice.on('click', '.smac-review-never', function(e) {
+			e.preventDefault();
+			dismiss('never');
+		});
+
+		// The native WP dismiss button is injected after the notice renders.
+		$notice.on('click', '.notice-dismiss', function() {
+			dismiss('later');
+		});
+	}
+
+	/**
 	 * Initialize all functionality
 	 */
 	$(document).ready(function() {
+		cleanOAuthCallbackUrl();
 		initCopyEndpoint();
 		initTestConnection();
 		initClearCaches();
 		initGA4PropertySelector();
 		initGSCSiteSelector();
 		initCredentialValidation();
+		initGoogleConnect();
+		initReviewNotice();
 	});
 
 })(jQuery);

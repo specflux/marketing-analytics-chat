@@ -1,0 +1,35 @@
+{
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "meta": {
+    "title": "Marketing Analytics Chat",
+    "author": "specflux",
+    "description": "Live preview of the Specflux Marketing Analytics Chat plugin dashboard."
+  },
+  "landingPage": "/wp-admin/admin.php?page=specflux-mac",
+  "preferredVersions": {
+    "php": "8.3",
+    "wp": "latest"
+  },
+  "features": {
+    "networking": true
+  },
+  "siteOptions": {
+    "blogname": "Marketing Analytics Chat Demo"
+  },
+  "steps": [
+    {
+      "step": "login",
+      "username": "admin"
+    },
+    {
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "specflux-marketing-analytics-chat"
+      },
+      "options": {
+        "activate": true
+      }
+    }
+  ]
+}

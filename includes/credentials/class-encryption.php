@@ -22,6 +22,23 @@ class Encryption {
 	const KEY_OPTION = 'specflux_mac_encryption_key';
 
 	/**
+	 * Best-effort wipe of a sensitive string.
+	 *
+	 * The sodium_compat polyfill throws for sodium_memzero() because PHP cannot
+	 * securely zero memory, so only call it when ext-sodium provides it.
+	 *
+	 * @param string $value Value to wipe (passed by reference).
+	 * @return void
+	 */
+	private static function memzero( &$value ) {
+		if ( extension_loaded( 'sodium' ) ) {
+			sodium_memzero( $value );
+		} else {
+			$value = '';
+		}
+	}
+
+	/**
 	 * Get or generate encryption key
 	 *
 	 * @return string The encryption key
@@ -65,8 +82,8 @@ class Encryption {
 		try {
 			Logger::debug( sprintf( 'Starting encryption for platform: %s', $platform ) );
 
-			if ( ! extension_loaded( 'sodium' ) ) {
-				Logger::error( 'Sodium extension not loaded' );
+			if ( ! function_exists( 'sodium_crypto_secretbox' ) ) {
+				Logger::error( 'Sodium functions unavailable (no ext-sodium and no sodium_compat polyfill)' );
 				return false;
 			}
 
@@ -80,8 +97,8 @@ class Encryption {
 			$encrypted  = base64_encode( $nonce . $ciphertext );
 
 			// Clean up.
-			sodium_memzero( $plaintext );
-			sodium_memzero( $key );
+			self::memzero( $plaintext );
+			self::memzero( $key );
 
 			Logger::debug( sprintf( 'Encryption successful for %s (encrypted length: %d bytes)', $platform, strlen( $encrypted ) ) );
 
@@ -105,8 +122,8 @@ class Encryption {
 		try {
 			Logger::debug( sprintf( 'Starting decryption for platform: %s', $platform ) );
 
-			if ( ! extension_loaded( 'sodium' ) ) {
-				Logger::error( 'Sodium extension not loaded' );
+			if ( ! function_exists( 'sodium_crypto_secretbox' ) ) {
+				Logger::error( 'Sodium functions unavailable (no ext-sodium and no sodium_compat polyfill)' );
 				return false;
 			}
 
@@ -126,7 +143,7 @@ class Encryption {
 			$plaintext = sodium_crypto_secretbox_open( $ciphertext, $nonce, $key );
 
 			// Clean up.
-			sodium_memzero( $key );
+			self::memzero( $key );
 
 			if ( false === $plaintext ) {
 				Logger::error( sprintf( 'Decryption failed for %s (invalid key or corrupted data)', $platform ) );
@@ -134,7 +151,7 @@ class Encryption {
 			}
 
 			$credentials = json_decode( $plaintext, true );
-			sodium_memzero( $plaintext );
+			self::memzero( $plaintext );
 
 			if ( null === $credentials ) {
 				Logger::error( sprintf( 'JSON decode failed for %s', $platform ) );

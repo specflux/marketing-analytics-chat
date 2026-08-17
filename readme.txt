@@ -1,7 +1,7 @@
 === Specflux Marketing Analytics Chat ===
 Contributors: specflux, stephen1204paul
 Donate link: https://www.specflux.com/
-Tags: marketing analytics, ai, chat, mcp
+Tags: google analytics, search console, microsoft clarity, ai chat, mcp
 Requires at least: 7.0
 Tested up to: 7.0
 Stable tag: 0.2.2
@@ -9,19 +9,21 @@ Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Expose Google Analytics 4, Search Console, and Microsoft Clarity data to AI assistants via the Model Context Protocol.
+AI chat for your Google Analytics 4, Search Console, and Microsoft Clarity data, powered by MCP.
 
 == Description ==
 
-Specflux Marketing Analytics Chat lets you have conversations with your marketing data using AI. Connect your analytics platforms and ask questions in plain English to get instant insights and recommendations.
+Specflux Marketing Analytics Chat lets you ask questions about your marketing data in plain English, right inside WordPress. Connect Google Analytics 4, Google Search Console, and Microsoft Clarity, then chat with an AI assistant — or any MCP-compatible client — to get instant insights and recommendations.
 
-= Supported Platforms =
+Connecting Google Analytics 4 and Search Console takes one click: sign in with Google through Specflux's hosted OAuth service and there's no need to create your own Google Cloud project or OAuth client. Already have your own OAuth client? It keeps working — the hosted sign-in is just the default. See External Services below for exactly what that involves.
+
+= Google Analytics 4, Search Console & Microsoft Clarity =
 
 * **Google Analytics 4** - Traffic metrics, user behavior, conversions, real-time data
 * **Google Search Console** - Search performance, queries, indexing status
 * **Microsoft Clarity** - Session recordings, heatmaps, user behavior insights
 
-= Key Features =
+= AI Chat & MCP Features =
 
 * **Built-in AI Chat** - Chat with your analytics data through the WordPress AI Client built into core. You pick your AI provider once under Settings > Connectors; this plugin stores no AI keys of its own
 * **MCP-Native Architecture** - Exposes analytics as MCP abilities for any compatible AI assistant
@@ -51,7 +53,7 @@ Prefer to use an external AI client (Claude Desktop, ChatGPT, Cursor)? Install t
 * MCP Adapter plugin (optional; only needed to connect external AI clients such as Claude Desktop or Cursor). It is available from GitHub at https://github.com/WordPress/mcp-adapter and is not required for the built-in chat.
 * PHP 8.1 or higher
 * SSL certificate (HTTPS) for OAuth connections
-* PHP extensions: json, curl, openssl, sodium
+* PHP extensions: json, curl, openssl (sodium via ext-sodium or the polyfill bundled with WordPress)
 
 = External Services =
 
@@ -82,6 +84,29 @@ sent.
 
 Terms of service: https://developers.google.com/terms
 Privacy policy: https://policies.google.com/privacy
+
+**Specflux Google sign-in service** (provided by Specflux Group, api.specflux.com)
+
+What it is used for: letting you connect Google Analytics 4 and Search Console
+with one click, without creating your own Google Cloud project. It holds the
+Google OAuth client credentials so this plugin does not have to ship them. It is
+not used if you enter your own Google OAuth client ID and secret under Settings
+> Google API.
+
+What is sent and when: when you click "Connect with Google", the plugin sends the
+service being connected (GA4 or Search Console), the URL of your Connections
+screen to return to, and a random one-time nonce, and receives the Google
+sign-in link. After you approve access, Google redirects through the service,
+which exchanges the authorisation code with Google, holds the resulting tokens
+for at most five minutes, and hands them to your site once over HTTPS, after
+which they are deleted from the service. Thereafter, whenever your access token
+expires (about once an hour while the connection is in use), your site sends its
+refresh token to the service, which obtains a fresh access token from Google and
+returns it. The service does not receive, proxy, or store any analytics data,
+and does not retain tokens beyond the handoff described above.
+
+Terms of service: https://specflux.com/terms
+Privacy policy: https://specflux.com/privacy-policy
 
 **Microsoft Clarity** (provided by Microsoft Corporation)
 
@@ -147,6 +172,18 @@ Add this to your Claude Desktop configuration:
 
 The plugin exposes your analytics data as MCP abilities. Any MCP-compatible AI assistant (Claude Desktop, ChatGPT, Cursor) can query your data by calling these abilities. Just type a question like "What are my top traffic sources?" and get an instant answer.
 
+= Which AI assistants / MCP clients does it work with? =
+
+Out of the box, you can chat with the built-in AI Chat, which runs through the WordPress AI Client — pick your provider once under Settings > Connectors and this plugin never stores an AI key of its own. If you'd rather use an external client, installing the optional MCP Adapter plugin exposes the same analytics abilities over MCP to Claude Desktop, ChatGPT, Cursor, or any other MCP-compatible client.
+
+= Does this work with Google Analytics 4 (GA4)? =
+
+Yes. Connect your GA4 property from the Connections screen and ask about traffic, user behavior, conversions, and real-time data — through the built-in AI chat or any connected MCP client.
+
+= Do I need a Google Cloud project? =
+
+No. Click "Connect with Google" on the Connections screen and sign in through Specflux's hosted OAuth service to link Google Analytics 4 and Search Console without creating a Google Cloud project or OAuth client. If you prefer to use your own OAuth client, that option is still available under Settings > Google API.
+
 = Do I need to pay for API access? =
 
 The plugin itself is free. However, you may need API access for:
@@ -177,6 +214,15 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 4. Settings page with API configuration
 
 == Changelog ==
+
+= Unreleased =
+* Added: One-click "Connect with Google" for Google Analytics 4 and Search Console through the Specflux sign-in service, so a Google Cloud project and OAuth client are no longer required. Sites that have already configured their own OAuth client keep using it, and the wizard remains available under Settings > Google API as an advanced option
+* Changed: Documented the Specflux Google sign-in service under External Services
+* Readme: clearer platform names and FAQ.
+* Fixed: activation no longer requires ext-sodium when WordPress's bundled sodium_compat polyfill is available (fixes activation on WordPress Playground and hosts without ext-sodium)
+* Fixed: removed legacy connection scripts that fired two failing admin-ajax calls on the Connections screen
+* Fixed: reloading the Connections screen after Google sign-in no longer shows a "possible CSRF" error — the single-use callback parameters are cleared from the address bar
+* Added: a dismissible, non-incentivized review prompt after the plugin has fetched analytics data a few times over at least a week (Maybe later / Don't ask again)
 
 = 0.2.2 - 2026-07-25 =
 * Fixed: The "documentation" links on the dashboard and the abilities catalog led to a page that does not exist; they now open the plugin's setup documentation

@@ -249,6 +249,9 @@ class Clarity_Client {
 
 			Logger::debug( 'Clarity: Insights retrieved successfully' );
 
+			/** This action is documented in includes/api-clients/class-ga4-client.php */
+			do_action( 'specflux_mac_data_fetched', 'clarity' );
+
 			return $data;
 
 		} catch ( \Exception $e ) {
