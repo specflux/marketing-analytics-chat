@@ -55,6 +55,35 @@ if ( isset( $_GET['oauth_callback'], $_GET['code'], $_GET['state'] ) ) {
 	} else {
 		$error_message = $result['message'];
 	}
+} elseif ( isset( $_GET['oauth_callback'], $_GET['handoff'], $_GET['nonce'], $_GET['service'] ) ) {
+	// Hosted flow: the Specflux proxy redirects back with a single-use handoff
+	// code; CSRF is enforced by the nonce stored before redirecting to Google.
+	// phpcs:disable WordPress.Security.NonceVerification.Recieved
+	$handoff = sanitize_text_field( wp_unslash( $_GET['handoff'] ) );
+	$nonce   = sanitize_text_field( wp_unslash( $_GET['nonce'] ) );
+	$service = sanitize_key( wp_unslash( $_GET['service'] ) );
+	// phpcs:enable WordPress.Security.NonceVerification.Recieved
+
+	$result = $oauth_handler->handle_hosted_callback( $handoff, $nonce, $service );
+
+	if ( $result['success'] ) {
+		$success_message = $result['message'];
+		$active_tab      = $result['service'];
+	} else {
+		$error_message = $result['message'];
+		if ( in_array( $service, array( 'ga4', 'gsc' ), true ) ) {
+			$active_tab = $service;
+		}
+	}
+} elseif ( isset( $_GET['oauth_callback'], $_GET['smac_oauth_error'] ) ) {
+	// Hosted flow: Google or the proxy reported a failure before any token was issued.
+	// phpcs:disable WordPress.Security.NonceVerification.Recieved
+	$error_message = $oauth_handler->describe_hosted_error( sanitize_key( wp_unslash( $_GET['smac_oauth_error'] ) ) );
+	$service       = isset( $_GET['service'] ) ? sanitize_key( wp_unslash( $_GET['service'] ) ) : '';
+	// phpcs:enable WordPress.Security.NonceVerification.Recieved
+	if ( in_array( $service, array( 'ga4', 'gsc' ), true ) ) {
+		$active_tab = $service;
+	}
 }
 
 // Note: Google OAuth credentials are now managed in Settings > Google API tab.
@@ -268,8 +297,8 @@ $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 
 			case 'ga4':
 				$has_oauth_credentials = $oauth_handler->has_oauth_credentials();
+				$can_connect_google    = $oauth_handler->can_connect_google();
 				$is_connected          = $credential_manager->has_credentials( 'ga4' );
-				$auth_url              = $has_oauth_credentials ? $oauth_handler->get_auth_url( 'ga4' ) : null;
 				$current_property_id   = get_option( 'specflux_mac_ga4_property_id' );
 				?>
 				<div class="connection-panel">
@@ -289,43 +318,39 @@ $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 					</h3>
 					<p><?php esc_html_e( 'Connect to Google Analytics 4 to access traffic metrics, user behavior, and conversion data.', 'specflux-marketing-analytics-chat' ); ?></p>
 
-					<?php if ( ! $has_oauth_credentials ) : ?>
-						<!-- Step 1: Configure OAuth Credentials -->
-						<div class="notice notice-warning">
-							<p><strong><?php esc_html_e( 'Setup Required:', 'specflux-marketing-analytics-chat' ); ?></strong> <?php esc_html_e( 'You need to configure Google OAuth credentials first.', 'specflux-marketing-analytics-chat' ); ?></p>
-						</div>
-
-						<h4><?php esc_html_e( 'Step 1: Configure Google OAuth Credentials', 'specflux-marketing-analytics-chat' ); ?></h4>
-						<p><?php esc_html_e( 'Google API credentials need to be configured in Settings before you can connect.', 'specflux-marketing-analytics-chat' ); ?></p>
-
-						<p class="submit">
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-settings&tab=google-api' ) ); ?>" class="button button-primary button-large">
-								<span class="dashicons dashicons-admin-settings" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Configure Google API Credentials', 'specflux-marketing-analytics-chat' ); ?>
-							</a>
-						</p>
-
-					<?php elseif ( ! $is_connected ) : ?>
-						<!-- Step 2: Authorize with Google -->
-						<div class="notice notice-info">
-							<p><strong><?php esc_html_e( 'OAuth credentials configured!', 'specflux-marketing-analytics-chat' ); ?></strong> <?php esc_html_e( 'Now authorize access to your Google Analytics account.', 'specflux-marketing-analytics-chat' ); ?></p>
-						</div>
-
-						<h4><?php esc_html_e( 'Step 2: Authorize Google Analytics', 'specflux-marketing-analytics-chat' ); ?></h4>
-						<p><?php esc_html_e( 'Click the button below to connect your Google Analytics 4 account:', 'specflux-marketing-analytics-chat' ); ?></p>
-
-						<?php if ( $auth_url ) : ?>
+					<?php if ( ! $is_connected ) : ?>
+						<?php if ( $can_connect_google ) : ?>
+							<h4><?php esc_html_e( 'Connect your Google Analytics account', 'specflux-marketing-analytics-chat' ); ?></h4>
+							<p>
+								<?php esc_html_e( 'Sign in with Google and grant read-only access to your Google Analytics data.', 'specflux-marketing-analytics-chat' ); ?>
+								<?php if ( ! $has_oauth_credentials ) : ?>
+									<?php esc_html_e( 'No Google Cloud project or API keys are needed.', 'specflux-marketing-analytics-chat' ); ?>
+								<?php endif; ?>
+							</p>
 							<p class="submit">
-								<a href="<?php echo esc_url( $auth_url ); ?>" class="button button-primary button-large">
+								<button type="button" class="button button-primary button-large smac-google-connect" data-service="ga4">
 									<span class="dashicons dashicons-google" style="margin-top: 3px;"></span>
-									<?php esc_html_e( 'Connect to Google Analytics', 'specflux-marketing-analytics-chat' ); ?>
-								</a>
+									<?php esc_html_e( 'Connect with Google', 'specflux-marketing-analytics-chat' ); ?>
+								</button>
+								<span class="smac-google-connect-status description" style="display: none; margin-left: 8px;"></span>
 							</p>
 						<?php else : ?>
-							<p class="description error">
-								<?php esc_html_e( 'Error generating authorization URL. Please check your OAuth credentials.', 'specflux-marketing-analytics-chat' ); ?>
-							</p>
+							<div class="notice notice-warning inline">
+								<p><?php esc_html_e( 'Hosted Google sign-in is disabled on this site, so you need to configure your own Google OAuth client before connecting.', 'specflux-marketing-analytics-chat' ); ?></p>
+							</div>
 						<?php endif; ?>
+
+						<details class="smac-advanced-oauth">
+							<summary><?php esc_html_e( 'Advanced: use your own Google Cloud OAuth client', 'specflux-marketing-analytics-chat' ); ?></summary>
+							<p class="description">
+								<?php if ( $has_oauth_credentials ) : ?>
+									<?php esc_html_e( 'Your own OAuth client is configured and will be used for this connection.', 'specflux-marketing-analytics-chat' ); ?>
+								<?php else : ?>
+									<?php esc_html_e( 'By default, sign-in goes through the Specflux Google OAuth client. If your organisation requires its own Google Cloud project, configure a client ID and secret and it will be used instead.', 'specflux-marketing-analytics-chat' ); ?>
+								<?php endif; ?>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-settings&tab=google-api' ) ); ?>"><?php esc_html_e( 'Google API settings', 'specflux-marketing-analytics-chat' ); ?></a>
+							</p>
+						</details>
 
 					<?php else : ?>
 						<!-- Connected State -->
@@ -405,8 +430,8 @@ $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 
 			case 'gsc':
 				$has_oauth_credentials = $oauth_handler->has_oauth_credentials();
+				$can_connect_google    = $oauth_handler->can_connect_google();
 				$is_connected          = $credential_manager->has_credentials( 'gsc' );
-				$auth_url              = $has_oauth_credentials ? $oauth_handler->get_auth_url( 'gsc' ) : null;
 				$current_site_url      = get_option( 'specflux_mac_gsc_site_url' );
 				?>
 				<div class="connection-panel">
@@ -426,43 +451,39 @@ $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 					</h3>
 					<p><?php esc_html_e( 'Connect to Google Search Console to access search performance data, indexing status, and query analytics.', 'specflux-marketing-analytics-chat' ); ?></p>
 
-					<?php if ( ! $has_oauth_credentials ) : ?>
-						<!-- Step 1: Configure OAuth Credentials -->
-						<div class="notice notice-warning">
-							<p><strong><?php esc_html_e( 'Setup Required:', 'specflux-marketing-analytics-chat' ); ?></strong> <?php esc_html_e( 'You need to configure Google OAuth credentials first.', 'specflux-marketing-analytics-chat' ); ?></p>
-						</div>
-
-						<h4><?php esc_html_e( 'Step 1: Configure Google OAuth Credentials', 'specflux-marketing-analytics-chat' ); ?></h4>
-						<p><?php esc_html_e( 'Google API credentials need to be configured in Settings before you can connect.', 'specflux-marketing-analytics-chat' ); ?></p>
-
-						<p class="submit">
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-settings&tab=google-api' ) ); ?>" class="button button-primary button-large">
-								<span class="dashicons dashicons-admin-settings" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Configure Google API Credentials', 'specflux-marketing-analytics-chat' ); ?>
-							</a>
-						</p>
-
-					<?php elseif ( ! $is_connected ) : ?>
-						<!-- Step 2: Authorize with Google -->
-						<div class="notice notice-info">
-							<p><strong><?php esc_html_e( 'OAuth credentials configured!', 'specflux-marketing-analytics-chat' ); ?></strong> <?php esc_html_e( 'Now authorize access to your Google Search Console account.', 'specflux-marketing-analytics-chat' ); ?></p>
-						</div>
-
-						<h4><?php esc_html_e( 'Step 2: Authorize Google Search Console', 'specflux-marketing-analytics-chat' ); ?></h4>
-						<p><?php esc_html_e( 'Click the button below to connect your Google Search Console account:', 'specflux-marketing-analytics-chat' ); ?></p>
-
-						<?php if ( $auth_url ) : ?>
+					<?php if ( ! $is_connected ) : ?>
+						<?php if ( $can_connect_google ) : ?>
+							<h4><?php esc_html_e( 'Connect your Google Search Console account', 'specflux-marketing-analytics-chat' ); ?></h4>
+							<p>
+								<?php esc_html_e( 'Sign in with Google and grant read-only access to your Google Search Console data.', 'specflux-marketing-analytics-chat' ); ?>
+								<?php if ( ! $has_oauth_credentials ) : ?>
+									<?php esc_html_e( 'No Google Cloud project or API keys are needed.', 'specflux-marketing-analytics-chat' ); ?>
+								<?php endif; ?>
+							</p>
 							<p class="submit">
-								<a href="<?php echo esc_url( $auth_url ); ?>" class="button button-primary button-large">
+								<button type="button" class="button button-primary button-large smac-google-connect" data-service="gsc">
 									<span class="dashicons dashicons-google" style="margin-top: 3px;"></span>
-									<?php esc_html_e( 'Connect to Google Search Console', 'specflux-marketing-analytics-chat' ); ?>
-								</a>
+									<?php esc_html_e( 'Connect with Google', 'specflux-marketing-analytics-chat' ); ?>
+								</button>
+								<span class="smac-google-connect-status description" style="display: none; margin-left: 8px;"></span>
 							</p>
 						<?php else : ?>
-							<p class="description error">
-								<?php esc_html_e( 'Error generating authorization URL. Please check your OAuth credentials.', 'specflux-marketing-analytics-chat' ); ?>
-							</p>
+							<div class="notice notice-warning inline">
+								<p><?php esc_html_e( 'Hosted Google sign-in is disabled on this site, so you need to configure your own Google OAuth client before connecting.', 'specflux-marketing-analytics-chat' ); ?></p>
+							</div>
 						<?php endif; ?>
+
+						<details class="smac-advanced-oauth">
+							<summary><?php esc_html_e( 'Advanced: use your own Google Cloud OAuth client', 'specflux-marketing-analytics-chat' ); ?></summary>
+							<p class="description">
+								<?php if ( $has_oauth_credentials ) : ?>
+									<?php esc_html_e( 'Your own OAuth client is configured and will be used for this connection.', 'specflux-marketing-analytics-chat' ); ?>
+								<?php else : ?>
+									<?php esc_html_e( 'By default, sign-in goes through the Specflux Google OAuth client. If your organisation requires its own Google Cloud project, configure a client ID and secret and it will be used instead.', 'specflux-marketing-analytics-chat' ); ?>
+								<?php endif; ?>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-settings&tab=google-api' ) ); ?>"><?php esc_html_e( 'Google API settings', 'specflux-marketing-analytics-chat' ); ?></a>
+							</p>
+						</details>
 
 					<?php else : ?>
 						<!-- Connected State -->

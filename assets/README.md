@@ -29,3 +29,13 @@ Recommended size: 1200x900 pixels (or similar 4:3 ratio)
 - Keep file sizes optimized (compress PNGs)
 - Banner should represent the plugin's purpose clearly
 - Icon should be recognizable at small sizes
+
+## WordPress Playground Blueprint
+
+`blueprints/blueprint.json` powers the WordPress.org "Live Preview" button (opt-in
+under the plugin's Advanced settings). WordPress.org reads this exact path from the
+plugin's SVN `assets/` directory, so it must stay at `assets/blueprints/blueprint.json`.
+
+It logs in as `admin`, installs and activates this plugin from the WordPress.org
+repository, and lands on the plugin's dashboard page. Schema:
+https://playground.wordpress.net/blueprint-schema.json

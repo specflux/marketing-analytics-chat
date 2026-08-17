@@ -152,6 +152,9 @@ class GSC_Client {
 			// Cache for 24 hours (GSC data has 2-3 day delay).
 			$this->cache_manager->set( $cache_key, $data, $this->cache_manager->get_default_ttl( 'gsc' ) );
 
+			/** This action is documented in includes/api-clients/class-ga4-client.php */
+			do_action( 'specflux_mac_data_fetched', 'gsc' );
+
 			return $data;
 		} catch ( \Exception $e ) {
 			throw new \Exception( 'GSC API error: ' . esc_html( $e->getMessage() ) );

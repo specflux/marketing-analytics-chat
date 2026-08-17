@@ -65,6 +65,12 @@ function specflux_mac_uninstall() {
 	// Delete rate limit counters.
 	delete_option( 'specflux_mac_rate_limits' );
 
+	// Delete review prompt state.
+	delete_option( 'specflux_mac_review_fetch_count' );
+	delete_option( 'specflux_mac_review_first_fetch' );
+	delete_option( 'specflux_mac_review_dismissed' );
+	delete_option( 'specflux_mac_review_snooze_until' );
+
 	// Delete all transients (properly escape LIKE patterns).
 	$transient_pattern = $wpdb->esc_like( '_transient_specflux_mac_' ) . '%';
 	$timeout_pattern   = $wpdb->esc_like( '_transient_timeout_specflux_mac_' ) . '%';

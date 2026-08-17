@@ -37,6 +37,7 @@ class Ajax_Handler {
 		add_action( 'wp_ajax_specflux_mac_save_ga4_property', array( $this, 'save_ga4_property' ) );
 		add_action( 'wp_ajax_specflux_mac_list_gsc_sites', array( $this, 'list_gsc_sites' ) );
 		add_action( 'wp_ajax_specflux_mac_save_gsc_site', array( $this, 'save_gsc_site' ) );
+		add_action( 'wp_ajax_specflux_mac_google_auth_url', array( $this, 'google_auth_url' ) );
 
 		// Dashboard widget refresh.
 		add_action( 'wp_ajax_specflux_mac_refresh_widget', array( $this, 'handle_refresh_widget_data' ) );
@@ -101,6 +102,47 @@ class Ajax_Handler {
 			);
 			return;
 		}
+	}
+
+	/**
+	 * Build the Google consent URL for the "Connect with Google" button
+	 *
+	 * Works for both hosted (Specflux proxy) and custom (site's own OAuth
+	 * client) modes; OAuth_Handler decides which applies.
+	 */
+	public function google_auth_url() {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'specflux_mac_admin' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed. Please refresh the page and try again.', 'specflux-marketing-analytics-chat' ) ) );
+			return;
+		}
+
+		if ( ! Permission_Manager::can_access_plugin() ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'specflux-marketing-analytics-chat' ) ) );
+			return;
+		}
+
+		$service = isset( $_POST['service'] ) ? sanitize_key( wp_unslash( $_POST['service'] ) ) : '';
+
+		if ( ! in_array( $service, array( 'ga4', 'gsc' ), true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unsupported service.', 'specflux-marketing-analytics-chat' ) ) );
+			return;
+		}
+
+		$oauth_handler = new OAuth_Handler();
+		$url           = $oauth_handler->get_auth_url( $service );
+
+		if ( empty( $url ) ) {
+			wp_send_json_error(
+				array(
+					'message' => $oauth_handler->uses_hosted_auth()
+						? __( 'Could not reach the Google sign-in service. Please try again in a moment, or configure your own Google OAuth client under Settings > Google API.', 'specflux-marketing-analytics-chat' )
+						: __( 'Could not build the Google sign-in link. Please check your OAuth client credentials under Settings > Google API.', 'specflux-marketing-analytics-chat' ),
+				)
+			);
+			return;
+		}
+
+		wp_send_json_success( array( 'url' => $url ) );
 	}
 
 	/**

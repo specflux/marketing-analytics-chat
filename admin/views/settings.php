@@ -242,6 +242,16 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 				<?php esc_html_e( 'Follow this step-by-step wizard to set up Google OAuth credentials for Analytics and Search Console.', 'specflux-marketing-analytics-chat' ); ?>
 					</p>
 
+				<?php if ( ! $has_oauth_credentials && $oauth_handler->uses_hosted_auth() ) : ?>
+						<div class="notice notice-info inline" style="margin: 20px 0;">
+							<p>
+								<strong><?php esc_html_e( 'Optional.', 'specflux-marketing-analytics-chat' ); ?></strong>
+								<?php esc_html_e( 'You can connect Google Analytics and Search Console with one click from the Connections page, without a Google Cloud project. Only complete this wizard if your organisation requires its own OAuth client.', 'specflux-marketing-analytics-chat' ); ?>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=ga4' ) ); ?>"><?php esc_html_e( 'Go to Connections', 'specflux-marketing-analytics-chat' ); ?></a>
+							</p>
+						</div>
+					<?php endif; ?>
+
 				<?php if ( $has_oauth_credentials ) : ?>
 						<div class="notice notice-success inline" style="margin: 20px 0;">
 							<p>
