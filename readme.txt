@@ -105,8 +105,8 @@ refresh token to the service, which obtains a fresh access token from Google and
 returns it. The service does not receive, proxy, or store any analytics data,
 and does not retain tokens beyond the handoff described above.
 
-Terms of service: https://specflux.com/terms
-Privacy policy: https://specflux.com/privacy-policy
+Terms of service: https://www.specflux.com/terms-conditions/
+Privacy policy: https://www.specflux.com/privacy-policy/
 
 **Microsoft Clarity** (provided by Microsoft Corporation)
 
