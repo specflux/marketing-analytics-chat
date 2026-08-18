@@ -106,7 +106,7 @@ returns it. The service does not receive, proxy, or store any analytics data,
 and does not retain tokens beyond the handoff described above.
 
 Terms of service: https://www.specflux.com/terms-conditions/
-Privacy policy: https://www.specflux.com/privacy-policy/
+Privacy policy: https://www.specflux.com/marketing-analytics-chat/privacy-policy/
 
 **Microsoft Clarity** (provided by Microsoft Corporation)
 
