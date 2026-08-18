@@ -4,7 +4,7 @@ Donate link: https://www.specflux.com/
 Tags: google analytics, search console, microsoft clarity, ai chat, mcp
 Requires at least: 7.0
 Tested up to: 7.0
-Stable tag: 0.2.2
+Stable tag: 0.3.0
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -215,9 +215,10 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 
 == Changelog ==
 
-= Unreleased =
+= 0.3.0 - 2026-08-18 =
 * Added: One-click "Connect with Google" for Google Analytics 4 and Search Console through the Specflux sign-in service, so a Google Cloud project and OAuth client are no longer required. Sites that have already configured their own OAuth client keep using it, and the wizard remains available under Settings > Google API as an advanced option
 * Changed: Documented the Specflux Google sign-in service under External Services
+* Added: Command Palette commands (Cmd/Ctrl+K) to open the dashboard, refresh analytics data, and ask the AI
 * Readme: clearer platform names and FAQ.
 * Fixed: activation no longer requires ext-sodium when WordPress's bundled sodium_compat polyfill is available (fixes activation on WordPress Playground and hosts without ext-sodium)
 * Fixed: removed legacy connection scripts that fired two failing admin-ajax calls on the Connections screen
@@ -289,6 +290,9 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 * Smart caching system
 
 == Upgrade Notice ==
+
+= 0.3.0 =
+Connecting Google Analytics 4 and Search Console no longer needs your own Google Cloud project — use the new "Connect with Google" button. Existing connections and custom OAuth clients keep working unchanged.
 
 = 0.2.2 =
 Repairs the broken documentation links on the dashboard and abilities catalog. No functional changes otherwise.
