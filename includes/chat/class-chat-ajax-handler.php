@@ -54,6 +54,7 @@ class Chat_Ajax_Handler {
 	public function register_handlers() {
 		add_action( 'wp_ajax_specflux_mac_create_conversation', array( $this, 'create_conversation' ) );
 		add_action( 'wp_ajax_specflux_mac_send_message', array( $this, 'send_message' ) );
+		add_action( 'wp_ajax_specflux_mac_run_decision', array( $this, 'handleRunDecision' ) );
 		add_action( 'wp_ajax_specflux_mac_retry_tool', array( $this, 'retry_tool_call' ) );
 		add_action( 'wp_ajax_specflux_mac_delete_conversation', array( $this, 'delete_conversation' ) );
 	}
@@ -158,6 +159,57 @@ class Chat_Ajax_Handler {
 		if ( 1 === $message_count ) {
 			$new_title = $this->chat_manager->generate_title_from_message( $message );
 			$this->chat_manager->update_conversation_title( $conversation_id, $new_title );
+		}
+
+		// S11 — Multi-step runs via the SenroFlux plugin. Strictly opt-in:
+		// toggle off, or SenroFlux absent/unavailable, and the ORIGINAL
+		// single-round flow below runs untouched.
+		if ( self::multiStepRunsEnabled() ) {
+			$senroflux = new SenroFlux_Integration();
+			if ( $senroflux->isAvailable() ) {
+				$multi = $senroflux->runSendFlow( $conversation_id, $message );
+				if ( ! is_wp_error( $multi ) ) {
+					wp_send_json_success(
+						array(
+							'content'    => (string) ( end( $multi['messages'] )['content'] ?? '' ),
+							'messages'   => $multi['messages'],
+							'new_title'  => $new_title,
+							'usage'      => null,
+							'run_id'     => $multi['run_id'],
+							'step_count' => $multi['step_count'],
+							'run_status' => $multi['run_status'],
+							'multi_step' => true,
+							'approval'   => $multi['approval'] ?? null,
+						)
+					);
+				}
+				// A SenroFlux error falls through to the classic flow so the
+				// chat never dead-ends because of the integration.
+			}
+		}
+
+		// S11 — Multi-step runs via the SenroFlux plugin. Strictly opt-in:
+		// toggle off, or SenroFlux absent/unavailable, and the ORIGINAL
+		// single-round flow below runs untouched.
+		if ( SenroFlux_Integration::multiStepRunsEnabled() ) {
+			$integration = new SenroFlux_Integration();
+			if ( $integration->isAvailable() ) {
+				$multi = $integration->runSendFlow( $conversation_id, $message );
+				if ( ! is_wp_error( $multi ) ) {
+					wp_send_json_success( array(
+						'content'    => (string) ( end( $multi['messages'] )['content'] ?? '' ),
+						'messages'   => $multi['messages'],
+						'new_title'  => $new_title,
+						'usage'      => null,
+						'run_id'     => $multi['run_id'],
+						'run_status' => $multi['run_status'],
+						'multi_step' => true,
+						'approval'   => $multi['approval'] ?? null,
+					) );
+				}
+				// On a SenroFlux error, fall through to the classic flow so the
+				// chat never dead-ends because of the integration.
+			}
 		}
 
 		// Get AI response.
@@ -713,5 +765,39 @@ class Chat_Ajax_Handler {
 				500
 			);
 		}
+	}
+
+	/**
+	 * S11: approve/reject a parked run from the inline chat card.
+	 */
+	public function handleRunDecision(): void {
+		check_ajax_referer( 'specflux_mac_admin', 'nonce' );
+
+		if ( ! Permission_Manager::can_access_plugin() ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'specflux-marketing-analytics-chat' ) ), 403 );
+		}
+
+		$run_id     = isset( $_POST['run_id'] ) ? absint( $_POST['run_id'] ) : 0;
+		$step_count = isset( $_POST['step_count'] ) ? absint( $_POST['step_count'] ) : 0;
+		$decision   = isset( $_POST['decision'] ) ? sanitize_key( wp_unslash( $_POST['decision'] ) ) : '';
+
+		$integration = new SenroFlux_Integration();
+		$result      = $integration->decide( $run_id, $step_count, $decision );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * Is the multi-step toggle ON for this site? (Availability itself is
+	 * checked separately by the integration.)
+	 */
+	public static function multiStepRunsEnabled(): bool {
+		$settings = get_option( 'specflux_mac_settings', array() );
+
+		return ! empty( $settings['multi_step_runs'] );
 	}
 }

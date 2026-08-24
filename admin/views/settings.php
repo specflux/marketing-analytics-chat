@@ -64,6 +64,9 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 	$new_settings['cache_ttl_ga4']     = absint( $_POST['cache_ttl_ga4'] ?? 30 ) * 60;
 	$new_settings['cache_ttl_gsc']     = absint( $_POST['cache_ttl_gsc'] ?? 1440 ) * 60;
 
+	// Multi-step runs (SenroFlux integration, S11).
+	$new_settings['multi_step_runs'] = ! empty( $_POST['multi_step_runs'] ) ? 1 : 0;
+
 	// Debug Settings.
 	$new_settings['debug_mode'] = ! empty( $_POST['debug_mode'] ) ? 1 : 0;
 
@@ -150,6 +153,11 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 						</tr>
 						<tr>
 							<th scope="row">
+								<label for="multi_step_runs" style="display:block;margin-bottom:8px;">
+									<input type="checkbox" id="multi_step_runs" name="multi_step_runs" value="1"
+										<?php checked( ! empty( $settings['multi_step_runs'] ) ); ?> />
+									<?php esc_html_e( 'Multi-step runs (requires the SenroFlux plugin)', 'specflux-marketing-analytics-chat' ); ?>
+								</label>
 								<label for="ai_temperature"><?php esc_html_e( 'Temperature', 'specflux-marketing-analytics-chat' ); ?></label>
 							</th>
 							<td>
