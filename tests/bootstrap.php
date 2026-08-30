@@ -1187,3 +1187,19 @@ if ( ! function_exists( 'wp_add_dashboard_widget' ) ) {
 // We can't require the main file because it re-defines constants without
 // if-defined guards. Instead, we define the namespaced functions here.
 require_once __DIR__ . '/bootstrap-functions.php';
+// Stub for the SenroFlux plugin's global accessor. The plugin is an optional
+// dependency, so it is absent in the test environment: senroflux() resolves to
+// whatever double a test parks in $mock_senroflux, and to null (i.e. "plugin
+// not active") when a test parks nothing.
+if ( ! function_exists( 'senroflux' ) ) {
+	/**
+	 * Mock senroflux() accessor.
+	 *
+	 * @return object|null Test double, or null when no double is registered.
+	 */
+	function senroflux() {
+		global $mock_senroflux;
+
+		return isset( $mock_senroflux ) ? $mock_senroflux : null;
+	}
+}

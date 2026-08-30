@@ -188,30 +188,6 @@ class Chat_Ajax_Handler {
 			}
 		}
 
-		// S11 — Multi-step runs via the SenroFlux plugin. Strictly opt-in:
-		// toggle off, or SenroFlux absent/unavailable, and the ORIGINAL
-		// single-round flow below runs untouched.
-		if ( SenroFlux_Integration::multiStepRunsEnabled() ) {
-			$integration = new SenroFlux_Integration();
-			if ( $integration->isAvailable() ) {
-				$multi = $integration->runSendFlow( $conversation_id, $message );
-				if ( ! is_wp_error( $multi ) ) {
-					wp_send_json_success( array(
-						'content'    => (string) ( end( $multi['messages'] )['content'] ?? '' ),
-						'messages'   => $multi['messages'],
-						'new_title'  => $new_title,
-						'usage'      => null,
-						'run_id'     => $multi['run_id'],
-						'run_status' => $multi['run_status'],
-						'multi_step' => true,
-						'approval'   => $multi['approval'] ?? null,
-					) );
-				}
-				// On a SenroFlux error, fall through to the classic flow so the
-				// chat never dead-ends because of the integration.
-			}
-		}
-
 		// Get AI response.
 		$ai_response_result = $this->get_ai_response( $conversation_id, $message );
 
@@ -775,6 +751,15 @@ class Chat_Ajax_Handler {
 
 		if ( ! Permission_Manager::can_access_plugin() ) {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'specflux-marketing-analytics-chat' ) ), 403 );
+		}
+
+		// Fail closed: with the multi-step toggle off this endpoint refuses
+		// rather than resuming a parked run. SenroFlux_Integration::decide()
+		// re-checks the same flag, so the refusal holds for every caller.
+		if ( ! self::multiStepRunsEnabled() ) {
+			wp_send_json_error( array( 'message' => __( 'Multi-step runs are disabled.', 'specflux-marketing-analytics-chat' ) ), 403 );
+
+			return;
 		}
 
 		$run_id     = isset( $_POST['run_id'] ) ? absint( $_POST['run_id'] ) : 0;

@@ -184,6 +184,14 @@ class SenroFlux_Integration {
 	 * @return array|WP_Error
 	 */
 	public function decide( int $run_id, int $step_count, string $decision ): array|WP_Error {
+		// Fail closed: the decision path is part of the multi-step feature, so
+		// with the site toggle off it refuses instead of quietly resuming a run.
+		// Same gate the send flow uses (Chat_Ajax_Handler::send_message()) and
+		// the same WP_Error shape as the other refusals below.
+		if ( ! Chat_Ajax_Handler::multiStepRunsEnabled() ) {
+			return new WP_Error( 'senroflux_disabled', __( 'Multi-step runs are disabled.', 'specflux-marketing-analytics-chat' ) );
+		}
+
 		if ( ! $this->isAvailable() ) {
 			return new WP_Error( 'senroflux_unavailable', __( 'SenroFlux is not available.', 'specflux-marketing-analytics-chat' ) );
 		}
@@ -194,7 +202,10 @@ class SenroFlux_Integration {
 
 		$messages = array();
 		$ticks    = 0;
-		$state    = senroflux()->tick( $run_id, $step_count, $decision );
+		// SenroFlux 0.2 S5: the park resolution is a resume object whose shape
+		// matches the park kind — an approval park resumes with exactly
+		// { "action": "approve" | "reject" }. The 0.1 string parameter is gone.
+		$state = senroflux()->tick( $run_id, $step_count, array( 'action' => $decision ) );
 
 		if ( is_wp_error( $state ) ) {
 			return $state;
