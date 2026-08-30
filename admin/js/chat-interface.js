@@ -221,6 +221,11 @@
 							this.addMessageToUI('assistant', response.data.content, response.data.usage, response.data.tool_metadata);
 						}
 
+						// S11: inline Agent Safety approval card.
+						if (response.data.approval) {
+							this.renderApprovalCard(response.data);
+						}
+
 						// Update conversation title if this was the first message
 						if (response.data.new_title) {
 							this.updateConversationTitle(response.data.new_title);
@@ -241,6 +246,69 @@
 					$input.prop('disabled', false).focus();
 					$sendButton.prop('disabled', false).html('<span class="dashicons dashicons-arrow-up-alt2"></span> Send');
 				}.bind(this)
+			});
+		},
+
+		/**
+		 * S11: render the inline approval card and wire its buttons.
+		 */
+		renderApprovalCard: function(data) {
+			var self = this;
+			var approval = data.approval || {};
+			var $messages = $('#chat-messages');
+			var cfg = window.specfluxMacChat || {};
+
+			var $card = $(
+				'<div class="senroflux-approval-card">' +
+					'<p><strong>' +
+						((cfg.i18n && cfg.i18n.needsApproval) || 'Needs your approval:') +
+					'</strong> <code>' + String(approval.verb || '') + '</code></p>' +
+					'<p class="senroflux-card-actions">' +
+						'<button type="button" class="button button-primary senroflux-decide" data-decision="approve">' +
+							((cfg.i18n && cfg.i18n.approve) || 'Approve') + '</button> ' +
+						'<button type="button" class="button senroflux-decide" data-decision="reject">' +
+							((cfg.i18n && cfg.i18n.reject) || 'Reject') + '</button> ' +
+						'<a href="' + String(approval.review_url || '#') + '" target="_blank" rel="noopener">' +
+							((cfg.i18n && cfg.i18n.reviewInAgentSafety) || 'Review in Agent Safety') + '</a>' +
+					'</p>' +
+				'</div>'
+			);
+
+			$messages.append($card);
+			$messages.scrollTop($messages[0].scrollHeight);
+
+			$card.find('.senroflux-decide').on('click', function () {
+				var decision = $(this).data('decision');
+				$card.find('.senroflux-card-actions').html('<em>Sending…</em>');
+
+				$.post(
+					specfluxMacChat.ajaxUrl,
+					{
+						action: 'specflux_mac_run_decision',
+						nonce: specfluxMacChat.nonce,
+						run_id: data.run_id,
+						step_count: data.step_count || 0,
+						decision: decision
+					}
+				).done(function (resp) {
+					if (resp.success && resp.data) {
+						$card.remove();
+						if (resp.data.messages && resp.data.messages.length) {
+							resp.data.messages.forEach(function (msg) {
+								if (msg.content) {
+									self.addMessageToUI('assistant', msg.content);
+								}
+							});
+						}
+						if (resp.data.approval) {
+							self.renderApprovalCard(resp.data);
+						}
+					} else {
+						$card.find('.senroflux-card-actions').html('<em>Error</em>');
+					}
+				}).fail(function () {
+					$card.find('.senroflux-card-actions').html('<em>Error</em>');
+				});
 			});
 		},
 

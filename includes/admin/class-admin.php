@@ -126,6 +126,12 @@ class Admin {
 				array(),
 				SPECFLUX_MAC_VERSION
 			);
+			wp_enqueue_style(
+				'senroflux-card',
+				SPECFLUX_MAC_URL . 'admin/css/senroflux-card.css',
+				array(),
+				SPECFLUX_MAC_VERSION
+			);
 		}
 
 		// Enqueue wizard styles on settings page.
@@ -284,6 +290,12 @@ class Admin {
 					'userId'            => get_current_user_id(),
 					'chatPageUrl'       => admin_url( 'admin.php?page=specflux-mac-ai-assistant' ),
 					'conversationNonce' => wp_create_nonce( 'specflux_mac_conversation' ),
+					'i18n'              => array(
+						'needsApproval'        => __( 'Needs your approval:', 'specflux-marketing-analytics-chat' ),
+						'approve'              => __( 'Approve', 'specflux-marketing-analytics-chat' ),
+						'reject'               => __( 'Reject', 'specflux-marketing-analytics-chat' ),
+						'reviewInAgentSafety'  => __( 'Review in Agent Safety', 'specflux-marketing-analytics-chat' ),
+					),
 				)
 			);
 		}

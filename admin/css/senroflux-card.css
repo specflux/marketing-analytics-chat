@@ -1,0 +1,17 @@
+/* S11: inline Agent Safety approval card in the chat. */
+
+.senroflux-approval-card {
+	margin: 8px 0;
+	padding: 12px 16px;
+	border: 1px solid #996800;
+	border-left-width: 4px;
+	background: #fcf9e8;
+	border-radius: 4px;
+}
+
+.senroflux-approval-card .senroflux-card-actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 0;
+}
