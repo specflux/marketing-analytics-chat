@@ -270,4 +270,71 @@ class GSCClientTest extends TestCase {
 		$this->assertIsArray( $result );
 		$this->assertCount( 0, $result );
 	}
+
+	/**
+	 * Test site normalization ignores scheme, www, case and trailing slash.
+	 */
+	public function test_normalize_site_for_match(): void {
+		$this->assertSame( 'example.com', GSC_Client::normalize_site_for_match( 'https://www.Example.com/' ) );
+		$this->assertSame( 'example.com', GSC_Client::normalize_site_for_match( 'http://example.com' ) );
+		$this->assertSame( 'example.com', GSC_Client::normalize_site_for_match( 'sc-domain:example.com' ) );
+	}
+
+	/**
+	 * Test suggestion matches www vs non-www.
+	 */
+	public function test_suggest_site_www_variants(): void {
+		$sites = array( array( 'site_url' => 'https://www.example.com/' ) );
+		$this->assertSame( 'https://www.example.com/', GSC_Client::suggest_site( $sites, 'https://example.com' ) );
+
+		$sites = array( array( 'site_url' => 'https://example.com/' ) );
+		$this->assertSame( 'https://example.com/', GSC_Client::suggest_site( $sites, 'https://www.example.com' ) );
+	}
+
+	/**
+	 * Test suggestion matches http vs https and trailing slash.
+	 */
+	public function test_suggest_site_scheme_and_trailing_slash(): void {
+		$sites = array( array( 'site_url' => 'http://example.com/' ) );
+		$this->assertSame( 'http://example.com/', GSC_Client::suggest_site( $sites, 'https://example.com' ) );
+		$this->assertSame( 'http://example.com/', GSC_Client::suggest_site( $sites, 'https://example.com/' ) );
+	}
+
+	/**
+	 * Test suggestion matches a domain property.
+	 */
+	public function test_suggest_site_sc_domain(): void {
+		$sites = array( array( 'site_url' => 'sc-domain:example.com' ) );
+		$this->assertSame( 'sc-domain:example.com', GSC_Client::suggest_site( $sites, 'https://www.example.com' ) );
+	}
+
+	/**
+	 * Test no match returns null.
+	 */
+	public function test_suggest_site_no_match(): void {
+		$sites = array(
+			array( 'site_url' => 'https://other.com/' ),
+			array( 'site_url' => 'sc-domain:another.org' ),
+		);
+		$this->assertNull( GSC_Client::suggest_site( $sites, 'https://example.com' ) );
+		$this->assertNull( GSC_Client::suggest_site( array(), 'https://example.com' ) );
+	}
+
+	/**
+	 * Test URL-prefix is preferred over sc-domain, and exact scheme+host over variants.
+	 */
+	public function test_suggest_site_prefers_url_prefix_and_exact(): void {
+		$sites = array(
+			array( 'site_url' => 'sc-domain:example.com' ),
+			array( 'site_url' => 'http://www.example.com/' ),
+			array( 'site_url' => 'https://example.com/' ),
+		);
+		$this->assertSame( 'https://example.com/', GSC_Client::suggest_site( $sites, 'https://example.com' ) );
+
+		$sites = array(
+			array( 'site_url' => 'sc-domain:example.com' ),
+			array( 'site_url' => 'http://www.example.com/' ),
+		);
+		$this->assertSame( 'http://www.example.com/', GSC_Client::suggest_site( $sites, 'https://example.com' ) );
+	}
 }

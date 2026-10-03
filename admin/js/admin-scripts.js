@@ -331,6 +331,11 @@
 							);
 						});
 
+						// Pre-select the suggested site (never saved automatically).
+						if (response.data.suggested_site && !$selector.val()) {
+							$selector.val(response.data.suggested_site);
+						}
+
 						// Show selector and save button
 						$selector.show();
 						$saveButton.show();

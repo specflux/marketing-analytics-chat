@@ -310,6 +310,76 @@ class GSC_Client {
 	}
 
 	/**
+	 * Normalize a Search Console site entry or site URL for comparison.
+	 *
+	 * Lowercases, strips the scheme, a leading "www." and trailing slashes.
+	 * "sc-domain:example.com" normalizes to "example.com".
+	 *
+	 * @param string $value Site entry or URL.
+	 * @return string Normalized host/path.
+	 */
+	public static function normalize_site_for_match( $value ) {
+		$value = strtolower( trim( (string) $value ) );
+		$value = preg_replace( '#^sc-domain:#', '', $value );
+		$value = preg_replace( '#^[a-z][a-z0-9+.-]*://#', '', $value );
+		$value = preg_replace( '#^www\.#', '', $value );
+
+		return rtrim( $value, '/' );
+	}
+
+	/**
+	 * Pick the Search Console site entry that best matches a site URL.
+	 *
+	 * Preference: URL-prefix entry with the same scheme and host, then a URL-prefix
+	 * entry differing only by scheme or www, then an sc-domain property.
+	 *
+	 * @param array  $sites    Entries from list_sites() (arrays with 'site_url') or plain strings.
+	 * @param string $home_url Current site URL.
+	 * @return string|null Matching site entry, or null when nothing matches.
+	 */
+	public static function suggest_site( $sites, $home_url ) {
+		$target = self::normalize_site_for_match( $home_url );
+		if ( '' === $target ) {
+			return null;
+		}
+
+		$home_scheme = strtolower( (string) wp_parse_url( $home_url, PHP_URL_SCHEME ) );
+		$home_host   = strtolower( (string) wp_parse_url( $home_url, PHP_URL_HOST ) );
+		$best        = null;
+		$best_rank   = 0;
+
+		foreach ( (array) $sites as $site ) {
+			$entry = is_array( $site ) ? (string) ( $site['site_url'] ?? '' ) : (string) $site;
+			if ( '' === $entry ) {
+				continue;
+			}
+
+			if ( 0 === strpos( $entry, 'sc-domain:' ) ) {
+				// A domain property covers every path on the host.
+				if ( self::normalize_site_for_match( $entry ) !== self::normalize_site_for_match( $home_host ) ) {
+					continue;
+				}
+				$rank = 1;
+			} elseif ( self::normalize_site_for_match( $entry ) !== $target ) {
+				continue;
+			} elseif ( strtolower( rtrim( $entry, '/' ) ) === rtrim( $home_scheme . '://' . $home_host . (string) wp_parse_url( $home_url, PHP_URL_PATH ), '/' ) ) {
+				$rank = 4;
+			} elseif ( strtolower( (string) wp_parse_url( $entry, PHP_URL_SCHEME ) ) === $home_scheme ) {
+				$rank = 3;
+			} else {
+				$rank = 2;
+			}
+
+			if ( $rank > $best_rank ) {
+				$best      = $entry;
+				$best_rank = $rank;
+			}
+		}
+
+		return $best;
+	}
+
+	/**
 	 * Set GSC site URL
 	 *
 	 * @param string $site_url Site URL.

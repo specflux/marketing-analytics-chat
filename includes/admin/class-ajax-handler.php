@@ -606,9 +606,13 @@ class Ajax_Handler {
 			}
 
 			Logger::debug( sprintf( 'Found %d sites', count( $sites ) ) );
+			// Suggest the property matching this site, but only before one is saved.
+			$suggested = get_option( 'specflux_mac_gsc_site_url' ) ? null : GSC_Client::suggest_site( $sites, home_url() );
+
 			wp_send_json_success(
 				array(
-					'sites' => $sites,
+					'sites'          => $sites,
+					'suggested_site' => $suggested,
 				)
 			);
 		} catch ( \Exception $e ) {
