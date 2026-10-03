@@ -105,6 +105,13 @@ class Credential_Manager {
 			return false;
 		}
 
+		// A saved property/site belongs to the connection that picked it, so drop it too.
+		if ( 'ga4' === $platform ) {
+			delete_option( 'specflux_mac_ga4_property_id' );
+		} elseif ( 'gsc' === $platform ) {
+			delete_option( 'specflux_mac_gsc_site_url' );
+		}
+
 		$option_name = $this->get_option_name( $platform );
 		return delete_option( $option_name );
 	}

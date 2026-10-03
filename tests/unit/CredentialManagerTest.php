@@ -112,6 +112,25 @@ class CredentialManagerTest extends TestCase {
 	}
 
 	/**
+	 * Disconnecting GA4/GSC clears the saved property/site selection.
+	 */
+	public function test_delete_credentials_clears_saved_selection(): void {
+		global $mock_options;
+		$manager = new Credential_Manager();
+
+		$mock_options['specflux_mac_ga4_property_id'] = '123';
+		$mock_options['specflux_mac_gsc_site_url']    = 'https://example.com/';
+		$manager->save_credentials( 'gsc', array( 'access_token' => 'x' ) );
+
+		$manager->delete_credentials( 'gsc' );
+		$this->assertArrayNotHasKey( 'specflux_mac_gsc_site_url', $mock_options );
+		$this->assertArrayHasKey( 'specflux_mac_ga4_property_id', $mock_options );
+
+		$manager->delete_credentials( 'ga4' );
+		$this->assertArrayNotHasKey( 'specflux_mac_ga4_property_id', $mock_options );
+	}
+
+	/**
 	 * Test invalid platform handling.
 	 */
 	public function test_invalid_platform(): void {
