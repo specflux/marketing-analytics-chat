@@ -9,7 +9,6 @@ namespace Specflux_Marketing_Analytics\Abilities;
 
 use Specflux_Marketing_Analytics\API_Clients\GA4_Client;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
-use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -94,7 +93,7 @@ class GA4_Abilities {
 				),
 
 				'execute_callback'    => array( $this, 'execute_get_ga4_metrics' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -148,7 +147,7 @@ class GA4_Abilities {
 				),
 
 				'execute_callback'    => array( $this, 'execute_get_ga4_events' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -192,7 +191,7 @@ class GA4_Abilities {
 				),
 
 				'execute_callback'    => array( $this, 'execute_get_ga4_realtime' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -242,7 +241,7 @@ class GA4_Abilities {
 				),
 
 				'execute_callback'    => array( $this, 'execute_get_traffic_sources' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -275,7 +274,7 @@ class GA4_Abilities {
 				),
 
 				'execute_callback'    => array( $this, 'execute_ga4_overview' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				'permission_callback' => array( Abilities_Registrar::class, 'can_access' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -294,35 +293,18 @@ class GA4_Abilities {
 	 * @return array Tool result.
 	 */
 	public function execute_get_ga4_metrics( $args ) {
-		try {
-			$client = new GA4_Client();
+		return Ability_Response::tool(
+			function () use ( $args ) {
+				$client = new GA4_Client();
 
-			$data = $client->run_report(
-				$args['metrics'],
-				$args['dimensions'] ?? array(),
-				$args['date_range'] ?? '7daysAgo',
-				array( 'limit' => $args['limit'] ?? 100 )
-			);
-
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => wp_json_encode( $data, JSON_PRETTY_PRINT ),
-					),
-				),
-			);
-		} catch ( \Exception $e ) {
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => 'Error: ' . $e->getMessage(),
-					),
-				),
-				'isError' => true,
-			);
-		}
+				return $client->run_report(
+					$args['metrics'],
+					$args['dimensions'] ?? array(),
+					$args['date_range'] ?? '7daysAgo',
+					array( 'limit' => $args['limit'] ?? 100 )
+				);
+			}
+		);
 	}
 
 	/**
@@ -332,34 +314,17 @@ class GA4_Abilities {
 	 * @return array Tool result.
 	 */
 	public function execute_get_ga4_events( $args ) {
-		try {
-			$client = new GA4_Client();
+		return Ability_Response::tool(
+			function () use ( $args ) {
+				$client = new GA4_Client();
 
-			$data = $client->get_event_data(
-				$args['event_name'] ?? null,
-				$args['date_range'] ?? '7daysAgo',
-				$args['limit'] ?? 100
-			);
-
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => wp_json_encode( $data, JSON_PRETTY_PRINT ),
-					),
-				),
-			);
-		} catch ( \Exception $e ) {
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => 'Error: ' . $e->getMessage(),
-					),
-				),
-				'isError' => true,
-			);
-		}
+				return $client->get_event_data(
+					$args['event_name'] ?? null,
+					$args['date_range'] ?? '7daysAgo',
+					$args['limit'] ?? 100
+				);
+			}
+		);
 	}
 
 	/**
@@ -369,32 +334,15 @@ class GA4_Abilities {
 	 * @return array Tool result.
 	 */
 	public function execute_get_ga4_realtime( $args ) {
-		try {
-			$client = new GA4_Client();
+		return Ability_Response::tool(
+			function () use ( $args ) {
+				$client = new GA4_Client();
 
-			$data = $client->get_realtime_data(
-				$args['metrics'] ?? array( 'activeUsers' )
-			);
-
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => wp_json_encode( $data, JSON_PRETTY_PRINT ),
-					),
-				),
-			);
-		} catch ( \Exception $e ) {
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => 'Error: ' . $e->getMessage(),
-					),
-				),
-				'isError' => true,
-			);
-		}
+				return $client->get_realtime_data(
+					$args['metrics'] ?? array( 'activeUsers' )
+				);
+			}
+		);
 	}
 
 	/**
@@ -404,33 +352,16 @@ class GA4_Abilities {
 	 * @return array Tool result.
 	 */
 	public function execute_get_traffic_sources( $args ) {
-		try {
-			$client = new GA4_Client();
+		return Ability_Response::tool(
+			function () use ( $args ) {
+				$client = new GA4_Client();
 
-			$data = $client->get_traffic_sources(
-				$args['date_range'] ?? '7daysAgo',
-				$args['limit'] ?? 100
-			);
-
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => wp_json_encode( $data, JSON_PRETTY_PRINT ),
-					),
-				),
-			);
-		} catch ( \Exception $e ) {
-			return array(
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => 'Error: ' . $e->getMessage(),
-					),
-				),
-				'isError' => true,
-			);
-		}
+				return $client->get_traffic_sources(
+					$args['date_range'] ?? '7daysAgo',
+					$args['limit'] ?? 100
+				);
+			}
+		);
 	}
 
 	/**
@@ -440,48 +371,22 @@ class GA4_Abilities {
 	 * @return array Resource result.
 	 */
 	public function execute_ga4_overview( $args ) {
-		try {
-			$client = new GA4_Client();
+		return Ability_Response::resource(
+			'ga4://overview',
+			function () {
+				$client = new GA4_Client();
 
-			// Get key metrics for last 7 days.
-			$metrics = array( 'activeUsers', 'sessions', 'screenPageViews', 'bounceRate' );
-			$data    = $client->run_report( $metrics, array(), '7daysAgo' );
+				// Get key metrics for last 7 days.
+				$metrics = array( 'activeUsers', 'sessions', 'screenPageViews', 'bounceRate' );
+				$data    = $client->run_report( $metrics, array(), '7daysAgo' );
 
-			$summary = array(
-				'property_id' => $client->get_property_id(),
-				'period'      => 'Last 7 days',
-				'key_metrics' => $data['totals'] ?? array(),
-				'row_count'   => $data['row_count'] ?? 0,
-			);
-
-			return array(
-				'contents' => array(
-					array(
-						'uri'      => 'ga4://overview',
-						'mimeType' => 'application/json',
-						'text'     => wp_json_encode( $summary, JSON_PRETTY_PRINT ),
-					),
-				),
-			);
-		} catch ( \Exception $e ) {
-			return array(
-				'contents' => array(
-					array(
-						'uri'      => 'ga4://overview',
-						'mimeType' => 'text/plain',
-						'text'     => 'Error: ' . $e->getMessage(),
-					),
-				),
-			);
-		}
-	}
-
-	/**
-	 * Permission callback for all GA4 abilities
-	 *
-	 * @return bool True if user has permission, false otherwise.
-	 */
-	public function check_permissions() {
-		return Permission_Manager::can_access_plugin();
+				return array(
+					'property_id' => $client->get_property_id(),
+					'period'      => 'Last 7 days',
+					'key_metrics' => $data['totals'] ?? array(),
+					'row_count'   => $data['row_count'] ?? 0,
+				);
+			}
+		);
 	}
 }

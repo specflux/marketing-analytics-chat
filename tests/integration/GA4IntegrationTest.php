@@ -36,7 +36,8 @@ class GA4IntegrationTest extends TestCase {
 			$this->markTestSkipped( 'GA4 API credentials not available for integration testing.' );
 		}
 
-		Credential_Manager::save_credentials( 'ga4', array(
+		$credential_manager = new Credential_Manager();
+		$credential_manager->save_credentials( 'ga4', array(
 			'client_id'     => getenv( 'GA4_CLIENT_ID' ),
 			'client_secret' => getenv( 'GA4_CLIENT_SECRET' ),
 			'refresh_token' => getenv( 'GA4_REFRESH_TOKEN' ),
@@ -55,12 +56,10 @@ class GA4IntegrationTest extends TestCase {
 			$this->markTestSkipped( 'GA4_PROPERTY_ID not set.' );
 		}
 
-		$result = $this->client->get_metrics( array(
-			'property_id' => $property_id,
-			'start_date'  => date( 'Y-m-d', strtotime( '-7 days' ) ),
-			'end_date'    => date( 'Y-m-d' ),
-			'metrics'     => array( 'activeUsers', 'sessions' ),
-		) );
+		update_option( 'specflux_mac_ga4_property_id', $property_id );
+		$client = new GA4_Client();
+
+		$result = $client->run_report( array( 'activeUsers', 'sessions' ), array(), '7daysAgo' );
 
 		$this->assertIsArray( $result );
 	}
@@ -87,17 +86,14 @@ class GA4IntegrationTest extends TestCase {
 			$this->markTestSkipped( 'GA4_PROPERTY_ID not set.' );
 		}
 
-		$result = $this->client->get_metrics( array(
-			'property_id' => $property_id,
-			'start_date'  => date( 'Y-m-d', strtotime( '-30 days' ) ),
-			'end_date'    => date( 'Y-m-d' ),
-			'metrics'     => array(
-				'activeUsers',
-				'sessions',
-				'screenPageViews',
-				'bounceRate',
-			),
-		) );
+		update_option( 'specflux_mac_ga4_property_id', $property_id );
+		$client = new GA4_Client();
+
+		$result = $client->run_report(
+			array( 'activeUsers', 'sessions', 'screenPageViews', 'bounceRate' ),
+			array(),
+			'30daysAgo'
+		);
 
 		$this->assertIsArray( $result );
 
@@ -117,13 +113,14 @@ class GA4IntegrationTest extends TestCase {
 			$this->markTestSkipped( 'GA4_PROPERTY_ID not set.' );
 		}
 
-		$result = $this->client->get_metrics( array(
-			'property_id' => $property_id,
-			'start_date'  => date( 'Y-m-d', strtotime( '-7 days' ) ),
-			'end_date'    => date( 'Y-m-d' ),
-			'metrics'     => array( 'activeUsers' ),
-			'dimensions'  => array( 'country', 'deviceCategory' ),
-		) );
+		update_option( 'specflux_mac_ga4_property_id', $property_id );
+		$client = new GA4_Client();
+
+		$result = $client->run_report(
+			array( 'activeUsers' ),
+			array( 'country', 'deviceCategory' ),
+			'7daysAgo'
+		);
 
 		$this->assertIsArray( $result );
 	}

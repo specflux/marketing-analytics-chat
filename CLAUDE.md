@@ -88,7 +88,7 @@ do_action( 'specflux_mac_register_ajax_handlers' );       // class-ajax-handler.
 | GA4_Client | Standard | 30 minutes |
 | GSC_Client | Standard | 24 hours |
 
-**Clarity constructor asymmetry**: Clarity_Client requires `($api_token, $project_id)` — unlike GA4/GSC which are parameterless. Special-case any dynamic instantiation.
+All three clients construct parameterless and resolve their own credentials — `new Clarity_Client()`, `new GA4_Client()`, `new GSC_Client()`. Clarity's constructor still accepts `($api_token, $project_id)` for one caller only: the connection test in `Ajax_Handler::test_clarity_connection()`, which runs before anything is saved. It throws if no credentials are supplied and none are stored.
 
 ## CSS Design Tokens
 
