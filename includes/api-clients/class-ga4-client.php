@@ -21,6 +21,13 @@ defined( 'ABSPATH' ) || exit;
 class GA4_Client {
 
 	/**
+	 * Largest property count match_property() will look up data streams for.
+	 *
+	 * @var int
+	 */
+	const MAX_PROPERTIES_TO_MATCH = 25;
+
+	/**
 	 * OAuth Handler instance
 	 *
 	 * @var OAuth_Handler
@@ -320,6 +327,86 @@ class GA4_Client {
 
 			throw $e;
 		}
+	}
+
+	/**
+	 * Find the GA4 property whose web data stream points at a site URL.
+	 *
+	 * Costs one Admin API call per property, so accounts with more than
+	 * MAX_PROPERTIES_TO_MATCH properties are not matched at all.
+	 *
+	 * @param array  $properties Entries from list_properties().
+	 * @param string $home_url   Current site URL.
+	 * @return array{property_id: string|null, confident: bool}
+	 */
+	public function match_property( $properties, $home_url ) {
+		$properties = (array) $properties;
+		if ( empty( $properties ) || count( $properties ) > self::MAX_PROPERTIES_TO_MATCH ) {
+			return self::pick_property( array(), $home_url );
+		}
+
+		$access_token = $this->oauth_handler->get_access_token( 'ga4' );
+		if ( empty( $access_token ) ) {
+			return self::pick_property( array(), $home_url );
+		}
+
+		$client = new \Google\Client();
+		$client->setAccessToken( $access_token );
+		$analytics_admin = new \Google\Service\GoogleAnalyticsAdmin( $client );
+
+		$stream_uris = array();
+		foreach ( $properties as $property ) {
+			$property_id = (string) ( $property['property_id'] ?? '' );
+			if ( '' === $property_id ) {
+				continue;
+			}
+
+			try {
+				$response = $analytics_admin->properties_dataStreams->listPropertiesDataStreams( 'properties/' . $property_id );
+			} catch ( \Exception $e ) {
+				Logger::debug( sprintf( 'GA4: could not list data streams for %s: %s', $property_id, $e->getMessage() ) );
+				continue;
+			}
+
+			foreach ( (array) $response->getDataStreams() as $stream ) {
+				$web = $stream->getWebStreamData();
+				if ( $web && $web->getDefaultUri() ) {
+					$stream_uris[ $property_id ][] = $web->getDefaultUri();
+				}
+			}
+		}
+
+		return self::pick_property( $stream_uris, $home_url );
+	}
+
+	/**
+	 * Pick the property whose web stream URL matches a site URL.
+	 *
+	 * Scheme, www and trailing slashes are ignored. Confident only when exactly one
+	 * property matches; several matching properties (a duplicate or stale property)
+	 * are left for the user to choose.
+	 *
+	 * @param array  $stream_uris Web stream URLs keyed by property ID.
+	 * @param string $home_url    Current site URL.
+	 * @return array{property_id: string|null, confident: bool}
+	 */
+	public static function pick_property( $stream_uris, $home_url ) {
+		$target  = GSC_Client::normalize_site_for_match( $home_url );
+		$matches = array();
+
+		foreach ( (array) $stream_uris as $property_id => $uris ) {
+			foreach ( (array) $uris as $uri ) {
+				if ( '' !== $target && GSC_Client::normalize_site_for_match( $uri ) === $target ) {
+					$matches[] = (string) $property_id;
+					break;
+				}
+			}
+		}
+
+		return array(
+			'property_id' => 1 === count( $matches ) ? $matches[0] : null,
+			'confident'   => 1 === count( $matches ),
+		);
 	}
 
 	/**

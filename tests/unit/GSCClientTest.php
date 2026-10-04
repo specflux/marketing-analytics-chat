@@ -344,4 +344,21 @@ class GSCClientTest extends TestCase {
 		);
 		$this->assertSame( 'https://www.example.com/', GSC_Client::suggest_site( $sites, 'https://example.com' ) );
 	}
+
+	/**
+	 * Test only an exact URL-prefix or sc-domain match is confident enough to save.
+	 */
+	public function test_match_site_confidence(): void {
+		$this->assertTrue( GSC_Client::match_site( array( 'https://example.com/' ), 'https://example.com' )['confident'] );
+		$this->assertTrue( GSC_Client::match_site( array( 'sc-domain:example.com' ), 'https://www.example.com' )['confident'] );
+		$this->assertFalse( GSC_Client::match_site( array( 'https://www.example.com/' ), 'https://example.com' )['confident'] );
+		$this->assertFalse( GSC_Client::match_site( array( 'http://example.com/' ), 'https://example.com' )['confident'] );
+		$this->assertSame(
+			array(
+				'site'      => null,
+				'confident' => false,
+			),
+			GSC_Client::match_site( array( 'https://other.com/' ), 'https://example.com' )
+		);
+	}
 }

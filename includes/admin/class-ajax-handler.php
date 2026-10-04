@@ -467,11 +467,27 @@ class Ajax_Handler {
 			}
 
 			Logger::debug( sprintf( 'Found %d properties', count( $properties ) ) );
-			wp_send_json_success(
-				array(
-					'properties' => $properties,
-				)
+			$data = array(
+				'properties'         => $properties,
+				'suggested_property' => null,
+				'auto_selected'      => null,
 			);
+
+			// Before a property is saved, match this site; a confident match on the automatic first load is saved outright.
+			if ( ! get_option( 'specflux_mac_ga4_property_id' ) ) {
+				$match = $client->match_property( $properties, home_url() );
+				$auto  = isset( $_POST['auto'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['auto'] ) );
+
+				if ( $auto && $match['confident'] && $client->set_property_id( $match['property_id'] ) ) {
+					/** This action is documented in class-ajax-handler.php */
+					do_action( 'specflux_mac_platform_connected', 'ga4' );
+					$data['auto_selected'] = $match['property_id'];
+				} else {
+					$data['suggested_property'] = $match['property_id'];
+				}
+			}
+
+			wp_send_json_success( $data );
 		} catch ( \Exception $e ) {
 			Logger::error( '===== LIST PROPERTIES EXCEPTION =====' );
 			Logger::error( sprintf( 'Exception: %s', $e->getMessage() ) );
@@ -606,15 +622,27 @@ class Ajax_Handler {
 			}
 
 			Logger::debug( sprintf( 'Found %d sites', count( $sites ) ) );
-			// Suggest the property matching this site, but only before one is saved.
-			$suggested = get_option( 'specflux_mac_gsc_site_url' ) ? null : GSC_Client::suggest_site( $sites, home_url() );
-
-			wp_send_json_success(
-				array(
-					'sites'          => $sites,
-					'suggested_site' => $suggested,
-				)
+			$data = array(
+				'sites'          => $sites,
+				'suggested_site' => null,
+				'auto_selected'  => null,
 			);
+
+			// Before a site is saved, match this site; a confident match on the automatic first load is saved outright.
+			if ( ! get_option( 'specflux_mac_gsc_site_url' ) ) {
+				$match = GSC_Client::match_site( $sites, home_url() );
+				$auto  = isset( $_POST['auto'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['auto'] ) );
+
+				if ( $auto && $match['confident'] && $client->set_site_url( $match['site'] ) ) {
+					/** This action is documented in class-ajax-handler.php */
+					do_action( 'specflux_mac_platform_connected', 'gsc' );
+					$data['auto_selected'] = $match['site'];
+				} else {
+					$data['suggested_site'] = $match['site'];
+				}
+			}
+
+			wp_send_json_success( $data );
 		} catch ( \Exception $e ) {
 			Logger::debug( '===== LIST SITES EXCEPTION =====' );
 			Logger::debug( sprintf( 'Exception: %s', $e->getMessage() ) );

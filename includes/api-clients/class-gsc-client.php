@@ -330,17 +330,34 @@ class GSC_Client {
 	/**
 	 * Pick the Search Console site entry that best matches a site URL.
 	 *
-	 * Preference: URL-prefix entry with the same scheme and host, then an sc-domain
-	 * property, then a URL-prefix entry differing only by scheme or www.
-	 *
 	 * @param array  $sites    Entries from list_sites() (arrays with 'site_url') or plain strings.
 	 * @param string $home_url Current site URL.
 	 * @return string|null Matching site entry, or null when nothing matches.
 	 */
 	public static function suggest_site( $sites, $home_url ) {
+		return self::match_site( $sites, $home_url )['site'];
+	}
+
+	/**
+	 * Match a site URL against Search Console entries.
+	 *
+	 * Preference: URL-prefix entry with the same scheme and host, then an sc-domain
+	 * property, then a URL-prefix entry differing only by scheme or www. Only the
+	 * first two are confident enough to save without asking: a scheme or www
+	 * variant usually holds little of this site's data.
+	 *
+	 * @param array  $sites    Entries from list_sites() (arrays with 'site_url') or plain strings.
+	 * @param string $home_url Current site URL.
+	 * @return array{site: string|null, confident: bool}
+	 */
+	public static function match_site( $sites, $home_url ) {
+		$none   = array(
+			'site'      => null,
+			'confident' => false,
+		);
 		$target = self::normalize_site_for_match( $home_url );
 		if ( '' === $target ) {
-			return null;
+			return $none;
 		}
 
 		$home_scheme = strtolower( (string) wp_parse_url( $home_url, PHP_URL_SCHEME ) );
@@ -377,7 +394,14 @@ class GSC_Client {
 			}
 		}
 
-		return $best;
+		if ( null === $best ) {
+			return $none;
+		}
+
+		return array(
+			'site'      => $best,
+			'confident' => $best_rank >= 3,
+		);
 	}
 
 	/**

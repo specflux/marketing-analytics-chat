@@ -159,7 +159,8 @@
 	 */
 	function showNotice(type, message) {
 		var noticeClass = 'notice-' + type;
-		var $notice = $('<div class="notice ' + noticeClass + ' is-dismissible"><p>' + message + '</p></div>');
+		var $notice = $('<div class="notice ' + noticeClass + ' is-dismissible"><p></p></div>');
+		$notice.find('p').text(message);
 
 		$('.wrap > h1').after($notice);
 
@@ -176,7 +177,8 @@
 	 */
 	function initGA4PropertySelector() {
 		// Load properties button
-		$('#load-ga4-properties').on('click', function(e) {
+		// auto is true only for the automatic first load, which may save a confident match.
+		$('#load-ga4-properties').on('click', function(e, auto) {
 			e.preventDefault();
 
 			var $button = $(this);
@@ -198,9 +200,18 @@
 				type: 'POST',
 				data: {
 					action: 'specflux_mac_list_ga4_properties',
+					auto: auto ? 1 : 0,
 					nonce: specfluxMacAdmin.nonce
 				},
 				success: function(response) {
+					if (response.success && response.data.auto_selected) {
+						showNotice('success', 'Matched this site to GA4 property ' + response.data.auto_selected + '.');
+						setTimeout(function() {
+							location.reload();
+						}, 1000);
+						return;
+					}
+
 					if (response.success) {
 						// Clear existing options except the first one
 						$selector.find('option:not(:first)').remove();
@@ -217,6 +228,10 @@
 									.text(optionText)
 							);
 						});
+
+						if (response.data.suggested_property && !$selector.val()) {
+							$selector.val(response.data.suggested_property);
+						}
 
 						// Show selector and save button
 						$selector.show();
@@ -237,6 +252,10 @@
 				}
 			});
 		});
+
+		if ($('#load-ga4-properties').data('auto')) {
+			$('#load-ga4-properties').trigger('click', [true]);
+		}
 
 		// Save property button
 		$('#save-ga4-property').on('click', function(e) {
@@ -289,7 +308,8 @@
 	 */
 	function initGSCSiteSelector() {
 		// Load sites button
-		$('#load-gsc-sites').on('click', function(e) {
+		// auto is true only for the automatic first load, which may save a confident match.
+		$('#load-gsc-sites').on('click', function(e, auto) {
 			e.preventDefault();
 
 			var $button = $(this);
@@ -311,9 +331,18 @@
 				type: 'POST',
 				data: {
 					action: 'specflux_mac_list_gsc_sites',
+					auto: auto ? 1 : 0,
 					nonce: specfluxMacAdmin.nonce
 				},
 				success: function(response) {
+					if (response.success && response.data.auto_selected) {
+						showNotice('success', 'Matched this site to Search Console property ' + response.data.auto_selected + '.');
+						setTimeout(function() {
+							location.reload();
+						}, 1000);
+						return;
+					}
+
 					if (response.success) {
 						// Clear existing options except the first one
 						$selector.find('option:not(:first)').remove();
@@ -331,7 +360,7 @@
 							);
 						});
 
-						// Pre-select the suggested site (never saved automatically).
+						// Pre-select a match that was not confident enough to save.
 						if (response.data.suggested_site && !$selector.val()) {
 							$selector.val(response.data.suggested_site);
 						}
@@ -355,6 +384,10 @@
 				}
 			});
 		});
+
+		if ($('#load-gsc-sites').data('auto')) {
+			$('#load-gsc-sites').trigger('click', [true]);
+		}
 
 		// Save site button
 		$('#save-gsc-site').on('click', function(e) {

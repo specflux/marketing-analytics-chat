@@ -402,9 +402,15 @@ $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 						</table>
 
 						<p class="submit">
-							<button type="button" id="load-ga4-properties" class="button button-secondary">
-								<?php esc_html_e( 'Load Available Properties', 'specflux-marketing-analytics-chat' ); ?>
-							</button>
+							<?php if ( $current_property_id ) : ?>
+								<button type="button" id="load-ga4-properties" class="button button-secondary">
+									<?php esc_html_e( 'Change Property', 'specflux-marketing-analytics-chat' ); ?>
+								</button>
+							<?php else : ?>
+								<button type="button" id="load-ga4-properties" class="button button-secondary" data-auto="1">
+									<?php esc_html_e( 'Load Available Properties', 'specflux-marketing-analytics-chat' ); ?>
+								</button>
+							<?php endif; ?>
 							<button type="button" id="save-ga4-property" class="button button-primary" style="display: none;">
 								<?php esc_html_e( 'Save Selected Property', 'specflux-marketing-analytics-chat' ); ?>
 							</button>
@@ -535,9 +541,15 @@ $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 						</table>
 
 						<p class="submit">
-							<button type="button" id="load-gsc-sites" class="button button-secondary">
-								<?php esc_html_e( 'Load Available Sites', 'specflux-marketing-analytics-chat' ); ?>
-							</button>
+							<?php if ( $current_site_url ) : ?>
+								<button type="button" id="load-gsc-sites" class="button button-secondary">
+									<?php esc_html_e( 'Change Site', 'specflux-marketing-analytics-chat' ); ?>
+								</button>
+							<?php else : ?>
+								<button type="button" id="load-gsc-sites" class="button button-secondary" data-auto="1">
+									<?php esc_html_e( 'Load Available Sites', 'specflux-marketing-analytics-chat' ); ?>
+								</button>
+							<?php endif; ?>
 							<button type="button" id="save-gsc-site" class="button button-primary" style="display: none;">
 								<?php esc_html_e( 'Save Selected Site', 'specflux-marketing-analytics-chat' ); ?>
 							</button>
