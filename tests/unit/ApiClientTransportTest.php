@@ -166,6 +166,33 @@ class ApiClientTransportTest extends TestCase {
 	}
 
 	/**
+	 * GA4 and GSC announce a fetch on a cache miss only, so the review prompt counts real fetches.
+	 */
+	public function test_google_clients_fire_data_fetched_on_cache_miss_only(): void {
+		update_option( 'specflux_mac_ga4_property_id', '123456' );
+		update_option( 'specflux_mac_gsc_site_url', 'https://example.com/' );
+		$GLOBALS['specflux_mac_test_actions'] = array();
+
+		$ga4 = new GA4_Client( $this->ga4_service_returning( array( 'date' ), array( 'sessions' ), array( array( array( '20260801' ), array( '42' ) ) ) ) );
+		$ga4->run_report( array( 'sessions' ), array( 'date' ) );
+		$ga4->run_report( array( 'sessions' ), array( 'date' ) );
+
+		$gsc = new GSC_Client( $this->gsc_service_returning( array( array( 5, 100, 0.05, 7.5, array( '/pricing' ) ) ) ) );
+		$gsc->query_search_analytics( '7daysAgo', array( 'page' ) );
+
+		$fired = array_values(
+			array_filter(
+				$GLOBALS['specflux_mac_test_actions'],
+				static function ( $action ) {
+					return 'specflux_mac_data_fetched' === $action[0];
+				}
+			)
+		);
+
+		$this->assertSame( array( array( 'ga4' ), array( 'gsc' ) ), array_column( $fired, 1 ) );
+	}
+
+	/**
 	 * GSC rows are flattened into the search analytics shape.
 	 */
 	public function test_gsc_parses_search_analytics_from_service(): void {

@@ -670,7 +670,8 @@ if ( ! function_exists( 'do_action' ) ) {
 	 * @param mixed  ...$args   Additional arguments.
 	 */
 	function do_action( $hook_name, ...$args ) {
-		// In tests, do nothing
+		// Record only; tests read $GLOBALS['specflux_mac_test_actions'] to see what fired.
+		$GLOBALS['specflux_mac_test_actions'][] = array( $hook_name, $args );
 	}
 }
 
