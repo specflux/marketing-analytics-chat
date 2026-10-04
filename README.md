@@ -46,17 +46,16 @@ Chat with your analytics data directly in WordPress. Chat runs through the WordP
 - **WordPress**: 7.0+
 - **PHP**: 8.1+
 - **PHP Extensions**: `json`, `curl`, `openssl`, `sodium`
-- **Optional Plugin**: [MCP Adapter](https://wordpress.org/plugins/mcp-adapter/) — only needed to connect external AI clients such as Claude Desktop or Cursor. The built-in chat works without it.
+- **Optional Plugin**: [MCP Adapter](https://github.com/WordPress/mcp-adapter) — only needed to connect external AI clients such as Claude Desktop or Cursor. The built-in chat works without it.
 
 ## Installation
 
 ### From WordPress.org
 
-1. Install and activate the **MCP Adapter** plugin from WordPress.org
-2. Upload `specflux-marketing-analytics-chat` to `/wp-content/plugins/`
-3. Activate through the Plugins menu
-4. Go to **Marketing Analytics > Settings > Google API** to configure OAuth
-5. Connect your platforms from the **Connections** page
+1. Install **Specflux Marketing Analytics Chat** from Plugins > Add New, or upload `specflux-marketing-analytics-chat` to `/wp-content/plugins/`
+2. Activate through the Plugins menu
+3. Connect your platforms from **Marketing Analytics > Connections**. Google Analytics and Search Console use one-click **Connect with Google**; no Google Cloud project needed (bring your own OAuth client under **Settings > Google API** only if you prefer)
+4. Optional, for external AI clients only: install the [MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin from GitHub
 
 ### From Source
 
@@ -74,8 +73,8 @@ wp plugin activate specflux-marketing-analytics-chat
 
 Navigate to **Marketing Analytics > Connections** in WordPress admin:
 
-- **Google Analytics 4** — Complete OAuth flow, select your GA4 property
-- **Google Search Console** — Complete OAuth flow (shared credentials with GA4), select your property
+- **Google Analytics 4** — Click **Connect with Google**, then select your GA4 property
+- **Google Search Console** — Click **Connect with Google**, then select your property
 - **Microsoft Clarity** — Enter API token and project ID
 
 ### 2. Configure MCP Client
@@ -133,7 +132,7 @@ GPL v2 or later. See [LICENSE](LICENSE) for details.
 ## Credits
 
 Built with:
-- [WordPress MCP Adapter](https://wordpress.org/plugins/mcp-adapter/)
+- [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter)
 - [Google API PHP Client](https://github.com/googleapis/google-api-php-client)
 
 ## Repository
