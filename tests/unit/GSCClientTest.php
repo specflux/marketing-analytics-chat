@@ -321,9 +321,9 @@ class GSCClientTest extends TestCase {
 	}
 
 	/**
-	 * Test URL-prefix is preferred over sc-domain, and exact scheme+host over variants.
+	 * Test an exact URL-prefix wins, then sc-domain, then scheme/www variants.
 	 */
-	public function test_suggest_site_prefers_url_prefix_and_exact(): void {
+	public function test_suggest_site_prefers_exact_then_domain(): void {
 		$sites = array(
 			array( 'site_url' => 'sc-domain:example.com' ),
 			array( 'site_url' => 'http://www.example.com/' ),
@@ -332,9 +332,16 @@ class GSCClientTest extends TestCase {
 		$this->assertSame( 'https://example.com/', GSC_Client::suggest_site( $sites, 'https://example.com' ) );
 
 		$sites = array(
-			array( 'site_url' => 'sc-domain:example.com' ),
 			array( 'site_url' => 'http://www.example.com/' ),
+			array( 'site_url' => 'sc-domain:example.com' ),
+			array( 'site_url' => 'https://www.example.com/' ),
 		);
-		$this->assertSame( 'http://www.example.com/', GSC_Client::suggest_site( $sites, 'https://example.com' ) );
+		$this->assertSame( 'sc-domain:example.com', GSC_Client::suggest_site( $sites, 'https://example.com' ) );
+
+		$sites = array(
+			array( 'site_url' => 'http://example.com/' ),
+			array( 'site_url' => 'https://www.example.com/' ),
+		);
+		$this->assertSame( 'https://www.example.com/', GSC_Client::suggest_site( $sites, 'https://example.com' ) );
 	}
 }

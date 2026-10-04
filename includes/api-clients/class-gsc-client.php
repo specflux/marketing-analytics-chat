@@ -330,8 +330,8 @@ class GSC_Client {
 	/**
 	 * Pick the Search Console site entry that best matches a site URL.
 	 *
-	 * Preference: URL-prefix entry with the same scheme and host, then a URL-prefix
-	 * entry differing only by scheme or www, then an sc-domain property.
+	 * Preference: URL-prefix entry with the same scheme and host, then an sc-domain
+	 * property, then a URL-prefix entry differing only by scheme or www.
 	 *
 	 * @param array  $sites    Entries from list_sites() (arrays with 'site_url') or plain strings.
 	 * @param string $home_url Current site URL.
@@ -355,19 +355,20 @@ class GSC_Client {
 			}
 
 			if ( 0 === strpos( $entry, 'sc-domain:' ) ) {
-				// A domain property covers every path on the host.
+				// A domain property covers every scheme and subdomain, so it beats a
+				// URL-prefix property that only matches after ignoring scheme or www.
 				if ( self::normalize_site_for_match( $entry ) !== self::normalize_site_for_match( $home_host ) ) {
 					continue;
 				}
-				$rank = 1;
+				$rank = 3;
 			} elseif ( self::normalize_site_for_match( $entry ) !== $target ) {
 				continue;
 			} elseif ( strtolower( rtrim( $entry, '/' ) ) === rtrim( $home_scheme . '://' . $home_host . (string) wp_parse_url( $home_url, PHP_URL_PATH ), '/' ) ) {
 				$rank = 4;
 			} elseif ( strtolower( (string) wp_parse_url( $entry, PHP_URL_SCHEME ) ) === $home_scheme ) {
-				$rank = 3;
-			} else {
 				$rank = 2;
+			} else {
+				$rank = 1;
 			}
 
 			if ( $rank > $best_rank ) {
