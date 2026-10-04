@@ -352,29 +352,48 @@ class GA4_Client {
 
 		$client = new \Google\Client();
 		$client->setAccessToken( $access_token );
-		$analytics_admin = new \Google\Service\GoogleAnalyticsAdmin( $client );
+		$http = $client->authorize();
 
+		$property_ids = array_values(
+			array_filter(
+				array_map(
+					static function ( $property ) {
+						return (string) ( $property['property_id'] ?? '' );
+					},
+					$properties
+				)
+			)
+		);
+
+		// Each lookup takes over a second, so they run concurrently to stay well inside PHP's time limit.
 		$stream_uris = array();
-		foreach ( $properties as $property ) {
-			$property_id = (string) ( $property['property_id'] ?? '' );
-			if ( '' === $property_id ) {
-				continue;
+		$requests    = static function () use ( $property_ids ) {
+			foreach ( $property_ids as $property_id ) {
+				yield new \GuzzleHttp\Psr7\Request( 'GET', 'https://analyticsadmin.googleapis.com/v1beta/properties/' . rawurlencode( $property_id ) . '/dataStreams' );
 			}
+		};
 
-			try {
-				$response = $analytics_admin->properties_dataStreams->listPropertiesDataStreams( 'properties/' . $property_id );
-			} catch ( \Exception $e ) {
-				Logger::debug( sprintf( 'GA4: could not list data streams for %s: %s', $property_id, $e->getMessage() ) );
-				continue;
-			}
-
-			foreach ( (array) $response->getDataStreams() as $stream ) {
-				$web = $stream->getWebStreamData();
-				if ( $web && $web->getDefaultUri() ) {
-					$stream_uris[ $property_id ][] = $web->getDefaultUri();
-				}
-			}
-		}
+		$pool = new \GuzzleHttp\Pool(
+			$http,
+			$requests(),
+			array(
+				'concurrency' => 10,
+				'options'     => array( 'timeout' => 10 ),
+				'fulfilled'   => static function ( $response, $index ) use ( $property_ids, &$stream_uris ) {
+					$body = json_decode( (string) $response->getBody(), true );
+					foreach ( (array) ( $body['dataStreams'] ?? array() ) as $stream ) {
+						if ( ! empty( $stream['webStreamData']['defaultUri'] ) ) {
+							$stream_uris[ $property_ids[ $index ] ][] = $stream['webStreamData']['defaultUri'];
+						}
+					}
+				},
+				'rejected'    => static function ( $reason, $index ) use ( $property_ids ) {
+					$message = $reason instanceof \Throwable ? $reason->getMessage() : (string) $reason;
+					Logger::debug( sprintf( 'GA4: could not list data streams for %s: %s', $property_ids[ $index ], $message ) );
+				},
+			)
+		);
+		$pool->promise()->wait();
 
 		return self::pick_property( $stream_uris, $home_url );
 	}
