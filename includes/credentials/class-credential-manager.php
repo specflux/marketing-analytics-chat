@@ -113,6 +113,8 @@ class Credential_Manager {
 			delete_option( $cleanup_option );
 		}
 
+		Connection_Tester::forget_result( $platform );
+
 		$option_name = $this->get_option_name( $platform );
 		return delete_option( $option_name );
 	}

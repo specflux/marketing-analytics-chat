@@ -173,4 +173,41 @@ class PlatformRegistryTest extends TestCase {
 		$this->assertFalse( $tester->test_connection( 'unknown' )['success'] );
 		$this->assertSame( 'error', $tester->get_connection_status( 'unknown' ) );
 	}
+
+	/**
+	 * Test results are remembered per platform and forgotten on disconnect.
+	 */
+	public function test_last_connection_result_is_remembered_and_forgotten(): void {
+		$this->register(
+			array(
+				'slug'            => 'bingx',
+				'auth'            => 'api_key',
+				'fields'          => array( 'api_key' ),
+				'connection_test' => static function () {
+					return array(
+						'success' => false,
+						'message' => 'Rejected.',
+					);
+				},
+			)
+		);
+
+		$tester = new Connection_Tester();
+		$tester->test_connection( 'bingx' );
+		$last = Connection_Tester::get_last_result( 'bingx' );
+		$this->assertFalse( $last['success'] );
+		$this->assertSame( 'Rejected.', $last['message'] );
+
+		( new \Specflux_Marketing_Analytics\Credentials\Credential_Manager() )->delete_credentials( 'bingx' );
+		$this->assertNull( Connection_Tester::get_last_result( 'bingx' ) );
+	}
+
+	/**
+	 * Field labels capitalise acronyms and honour explicit labels.
+	 */
+	public function test_field_label(): void {
+		$this->assertSame( 'API key', Platform_Registry::field_label( array(), 'api_key' ) );
+		$this->assertSame( 'Site URL', Platform_Registry::field_label( array(), 'site_url' ) );
+		$this->assertSame( 'Login', Platform_Registry::field_label( array( 'field_labels' => array( 'login' => 'Login' ) ), 'login' ) );
+	}
 }

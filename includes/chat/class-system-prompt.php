@@ -11,6 +11,7 @@
 
 namespace Specflux_Marketing_Analytics\Chat;
 
+use Specflux_Marketing_Analytics\Credentials\Connection_Tester;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 use Specflux_Marketing_Analytics\Credentials\Platform_Registry;
 
@@ -77,7 +78,13 @@ class System_Prompt {
 			return true;
 		}
 
-		return (bool) $this->credential_manager->has_credentials( $definition['slug'] );
+		if ( ! $this->credential_manager->has_credentials( $definition['slug'] ) ) {
+			return false;
+		}
+
+		// A saved key that the service rejected is not a working connection.
+		$last = 'api_key' === $definition['auth'] ? Connection_Tester::get_last_result( $definition['slug'] ) : null;
+		return null === $last || ! empty( $last['success'] );
 	}
 
 	/**

@@ -32,6 +32,7 @@ defined( 'ABSPATH' ) || exit;
  * - help_url        (string)        Link to where the user obtains credentials.
  * - cleanup_options  (string[])      Option names deleted when the platform is disconnected.
  * - prompt_hint     (string)        One sentence telling the chat model what this source answers.
+ * - field_labels    (array)         Field name => label for the default connection panel.
  */
 class Platform_Registry {
 
@@ -133,6 +134,27 @@ class Platform_Registry {
 	}
 
 	/**
+	 * Human-readable label for a credential field
+	 *
+	 * @param array  $definition Platform definition.
+	 * @param string $field      Field name.
+	 * @return string Label.
+	 */
+	public static function field_label( array $definition, $field ) {
+		if ( ! empty( $definition['field_labels'][ $field ] ) ) {
+			return (string) $definition['field_labels'][ $field ];
+		}
+
+		$words = explode( '_', $field );
+		foreach ( $words as $i => $word ) {
+			$upper       = strtoupper( $word );
+			$words[ $i ] = in_array( $upper, array( 'API', 'URL', 'ID' ), true ) ? $upper : ( 0 === $i ? ucfirst( $word ) : $word );
+		}
+
+		return implode( ' ', $words );
+	}
+
+	/**
 	 * Fill in defaults for a definition
 	 *
 	 * @param string $slug       Platform slug.
@@ -154,6 +176,7 @@ class Platform_Registry {
 			'help_url'        => '',
 			'cleanup_options' => array(),
 			'prompt_hint'     => '',
+			'field_labels'    => array(),
 		);
 
 		$normalized         = array_merge( $defaults, $definition );

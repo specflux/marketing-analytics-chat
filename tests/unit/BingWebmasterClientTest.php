@@ -194,7 +194,7 @@ class BingWebmasterClientTest extends TestCase {
 			$this->client()->get_crawl_stats();
 			$this->fail( 'Expected exception.' );
 		} catch ( \Exception $e ) {
-			$this->assertStringContainsString( 'InvalidApiKey', $e->getMessage() );
+			$this->assertStringContainsString( 'rejected the API key', $e->getMessage() );
 			$this->assertStringNotContainsString( self::KEY, $e->getMessage() );
 		}
 	}
@@ -272,7 +272,19 @@ class BingWebmasterClientTest extends TestCase {
 
 		$result = $this->client()->test_connection();
 		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'InvalidApiKey', $result['message'] );
+		$this->assertStringContainsString( 'rejected the API key', $result['message'] );
+	}
+
+	/**
+	 * The live API prefixes the message ("ERROR!!! InvalidApiKey", seen 2026-10-06); it gets the same helpful text.
+	 */
+	public function test_live_error_prefix_is_stripped(): void {
+		$this->respond( array( 'ErrorCode' => 3, 'Message' => 'ERROR!!! InvalidApiKey' ), 400, false );
+
+		$result = $this->client()->test_connection();
+		$this->assertFalse( $result['success'] );
+		$this->assertStringContainsString( 'rejected the API key', $result['message'] );
+		$this->assertStringNotContainsString( 'ERROR!!!', $result['message'] );
 	}
 
 	/**

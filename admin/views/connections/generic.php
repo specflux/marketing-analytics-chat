@@ -23,8 +23,14 @@ $generic_saved    = $credential_manager->get_credentials( $generic_slug );
 $generic_saved    = is_array( $generic_saved ) ? $generic_saved : array();
 $generic_required = array_diff( $panel_definition['fields'], $panel_definition['optional_fields'] );
 
+$generic_failure = '';
 if ( 'api_key' === $generic_auth && ! empty( $generic_required ) ) {
 	$generic_connected = $credential_manager->has_credentials( $generic_slug );
+	$generic_last      = Connection_Tester::get_last_result( $generic_slug );
+	if ( $generic_connected && null !== $generic_last && empty( $generic_last['success'] ) ) {
+		$generic_connected = false;
+		$generic_failure   = (string) $generic_last['message'];
+	}
 } else {
 	$generic_tester    = new Connection_Tester();
 	$generic_result    = $generic_tester->test_connection( $generic_slug );
@@ -40,6 +46,11 @@ if ( 'api_key' === $generic_auth && ! empty( $generic_required ) ) {
 				<span class="dashicons dashicons-yes-alt"></span>
 				<?php esc_html_e( 'Connected', 'specflux-marketing-analytics-chat' ); ?>
 			</span>
+		<?php elseif ( '' !== $generic_failure ) : ?>
+			<span class="status-badge heading-disconnected">
+				<span class="dashicons dashicons-warning"></span>
+				<?php esc_html_e( 'Connection Failed', 'specflux-marketing-analytics-chat' ); ?>
+			</span>
 		<?php else : ?>
 			<span class="status-badge heading-disconnected">
 				<span class="dashicons dashicons-warning"></span>
@@ -47,6 +58,10 @@ if ( 'api_key' === $generic_auth && ! empty( $generic_required ) ) {
 			</span>
 		<?php endif; ?>
 	</h3>
+
+	<?php if ( '' !== $generic_failure ) : ?>
+		<div class="notice notice-error inline"><p><?php echo esc_html( $generic_failure ); ?></p></div>
+	<?php endif; ?>
 
 	<?php if ( '' !== $panel_definition['description'] ) : ?>
 		<p><?php echo esc_html( $panel_definition['description'] ); ?></p>
@@ -68,11 +83,11 @@ if ( 'api_key' === $generic_auth && ! empty( $generic_required ) ) {
 				?>
 				<tr>
 					<th scope="row">
-						<label for="<?php echo esc_attr( $generic_input_id ); ?>"><?php echo esc_html( ucwords( str_replace( '_', ' ', $generic_field ) ) ); ?></label>
+						<label for="<?php echo esc_attr( $generic_input_id ); ?>"><?php echo esc_html( Platform_Registry::field_label( $panel_definition, $generic_field ) ); ?></label>
 					</th>
 					<td>
 						<input
-							type="<?php echo esc_attr( $generic_secret ? 'password' : 'text' ); ?>"
+							type="<?php echo esc_attr( $generic_secret ? 'password' : ( '_url' === substr( $generic_field, -4 ) ? 'url' : 'text' ) ); ?>"
 							id="<?php echo esc_attr( $generic_input_id ); ?>"
 							class="regular-text smac-generic-field"
 							data-field="<?php echo esc_attr( $generic_field ); ?>"

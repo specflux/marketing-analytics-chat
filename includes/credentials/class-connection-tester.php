@@ -260,6 +260,57 @@ class Connection_Tester {
 	}
 
 	/**
+	 * Option holding the last connection test result for a platform.
+	 *
+	 * @param string $platform Platform slug.
+	 * @return string Option name.
+	 */
+	private static function last_result_option( $platform ) {
+		return 'specflux_mac_last_test_' . $platform;
+	}
+
+	/**
+	 * Store a connection test result so status badges and the chat prompt can tell a saved-but-rejected key from a working one.
+	 *
+	 * @param string $platform Platform slug.
+	 * @param array  $result   Result with 'success' and 'message'.
+	 * @return array The same result.
+	 */
+	private static function remember_result( $platform, $result ) {
+		$result = is_array( $result ) ? $result : array( 'success' => false );
+		update_option(
+			self::last_result_option( $platform ),
+			array(
+				'success' => ! empty( $result['success'] ),
+				'message' => isset( $result['message'] ) ? (string) $result['message'] : '',
+				'time'    => time(),
+			),
+			false
+		);
+		return $result;
+	}
+
+	/**
+	 * Last stored connection test result for a platform.
+	 *
+	 * @param string $platform Platform slug.
+	 * @return array|null Array with 'success', 'message' and 'time', or null if never tested.
+	 */
+	public static function get_last_result( $platform ) {
+		$result = get_option( self::last_result_option( $platform ), null );
+		return is_array( $result ) ? $result : null;
+	}
+
+	/**
+	 * Forget the stored result, e.g. when the platform is disconnected.
+	 *
+	 * @param string $platform Platform slug.
+	 */
+	public static function forget_result( $platform ) {
+		delete_option( self::last_result_option( $platform ) );
+	}
+
+	/**
 	 * Run the connection test for a registered platform
 	 *
 	 * Uses the definition's `connection_test` callable when present, otherwise
@@ -279,12 +330,12 @@ class Connection_Tester {
 		}
 
 		if ( is_callable( $definition['connection_test'] ) ) {
-			return call_user_func( $definition['connection_test'] );
+			return self::remember_result( $platform, call_user_func( $definition['connection_test'] ) );
 		}
 
 		$method = 'test_' . $platform . '_connection';
 		if ( method_exists( $this, $method ) ) {
-			return $this->$method();
+			return self::remember_result( $platform, $this->$method() );
 		}
 
 		return array(

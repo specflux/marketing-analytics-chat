@@ -471,8 +471,10 @@ class Bing_Webmaster_Client {
 
 		if ( $code >= 400 || ( is_array( $body ) && isset( $body['ErrorCode'] ) ) ) {
 			$message = is_array( $body ) && ! empty( $body['Message'] ) ? (string) $body['Message'] : 'HTTP ' . $code;
+			// The live API prefixes messages with "ERROR!!! " (e.g. "ERROR!!! InvalidApiKey"); the docs omit it.
+			$message = trim( preg_replace( '/^ERROR!+\s*/', '', $message ) );
 			if ( 'InvalidApiKey' === $message ) {
-				$message = 'InvalidApiKey: the API key was rejected. Generate a new API key in Bing Webmaster Tools and save it again.';
+				$message = 'Bing rejected the API key. Generate a new API key in Bing Webmaster Tools and save it again.';
 			}
 			throw new \Exception( $this->scrub( $message ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
