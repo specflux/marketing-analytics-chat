@@ -274,6 +274,11 @@ class NamingConsistencyTest extends TestCase {
 							continue;
 						}
 
+						// Skip options owned by SEO plugins that the content integration reads.
+						if ( in_array( $option_name, array( 'wpseo_titles' ), true ) ) {
+							continue;
+						}
+
 						if ( strpos( $option_name, $this->expected_option_prefix ) !== 0 ) {
 							$relative = str_replace( SPECFLUX_MAC_PATH, '', $file );
 							$errors[] = "{$relative}:" . ( $line_num + 1 ) . " option '{$option_name}' doesn't use prefix '{$this->expected_option_prefix}'";
@@ -605,6 +610,11 @@ class NamingConsistencyTest extends TestCase {
 			foreach ( $lines as $line_num => $line ) {
 				if ( preg_match_all( $pattern, $line, $matches ) ) {
 					foreach ( $matches[1] as $table_suffix ) {
+						// Skip tables owned by SEO plugins that the content integration reads.
+						if ( in_array( $table_suffix, array( 'aioseo_posts', 'rank_math_404_logs' ), true ) ) {
+							continue;
+						}
+
 						if ( strpos( $table_suffix, 'specflux_mac_' ) !== 0 ) {
 							$relative = str_replace( SPECFLUX_MAC_PATH, '', $file );
 							$errors[] = "{$relative}:" . ( $line_num + 1 ) . " table '{$table_suffix}' doesn't use prefix 'specflux_mac_'";
