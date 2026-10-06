@@ -111,6 +111,9 @@ class Plugin {
 		$ajax_handler = new Admin\Ajax_Handler();
 		$ajax_handler->register_hooks();
 
+		// Weekly email preview (admin-post.php).
+		( new Reports\Weekly_Summary_Preview() )->register_hooks();
+
 		// Register chat AJAX handlers.
 		$chat_ajax = new Chat\Chat_Ajax_Handler();
 		$chat_ajax->register_handlers();

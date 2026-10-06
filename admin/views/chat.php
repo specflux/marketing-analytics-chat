@@ -12,6 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use Specflux_Marketing_Analytics\Chat\Chat_Ajax_Handler;
 use Specflux_Marketing_Analytics\Chat\Chat_Manager;
+use Specflux_Marketing_Analytics\Admin\Widget_Headline;
+use Specflux_Marketing_Analytics\Reports\Weekly_Prompt_Builder;
 
 $chat_manager = new Chat_Manager();
 $user_id      = get_current_user_id();
@@ -209,17 +211,15 @@ if ( ! function_exists( 'specflux_mac_format_chat_markdown' ) ) {
 						<?php wp_nonce_field( 'specflux_mac_admin', 'chat_nonce' ); ?>
 						<input type="hidden" name="conversation_id" value="<?php echo esc_attr( $active_conversation_id ); ?>">
 
-						<div class="suggested-prompts" id="suggested-prompts">
-							<button type="button" class="suggested-prompt" data-prompt="<?php esc_attr_e( 'Show me traffic trends for the last 30 days', 'specflux-marketing-analytics-chat' ); ?>">
-								<?php esc_html_e( 'Show me traffic trends for the last 30 days', 'specflux-marketing-analytics-chat' ); ?>
-							</button>
-							<button type="button" class="suggested-prompt" data-prompt="<?php esc_attr_e( 'What are my top performing pages?', 'specflux-marketing-analytics-chat' ); ?>">
-								<?php esc_html_e( 'What are my top performing pages?', 'specflux-marketing-analytics-chat' ); ?>
-							</button>
-							<button type="button" class="suggested-prompt" data-prompt="<?php esc_attr_e( 'Compare this week vs last week', 'specflux-marketing-analytics-chat' ); ?>">
-								<?php esc_html_e( 'Compare this week vs last week', 'specflux-marketing-analytics-chat' ); ?>
-							</button>
-						</div>
+						<?php if ( empty( $messages ) ) : ?>
+							<div class="suggested-prompts" id="suggested-prompts">
+								<?php foreach ( Weekly_Prompt_Builder::suggestions( Widget_Headline::cached() ) as $specflux_mac_chip ) : ?>
+									<button type="button" class="suggested-prompt" data-prompt="<?php echo esc_attr( $specflux_mac_chip ); ?>">
+										<?php echo esc_html( $specflux_mac_chip ); ?>
+									</button>
+								<?php endforeach; ?>
+							</div>
+						<?php endif; ?>
 
 						<div class="input-wrapper">
 							<textarea
