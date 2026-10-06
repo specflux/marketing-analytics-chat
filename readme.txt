@@ -9,7 +9,7 @@ Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-AI chat for your Google Analytics 4, Search Console, and Microsoft Clarity data, powered by MCP.
+Ask AI about your Google Analytics 4, Search Console and Clarity data, get a weekly email summary, and see views and clicks for every post.
 
 == Description ==
 
@@ -22,6 +22,11 @@ Connecting Google Analytics 4 and Search Console takes one click: sign in with G
 * **Google Analytics 4** - Traffic metrics, user behavior, conversions, real-time data
 * **Google Search Console** - Search performance, queries, indexing status
 * **Microsoft Clarity** - Session recordings, heatmaps, user behavior insights
+
+= Weekly Email Summary & Per-Post Stats =
+
+* **Weekly Email Summary** - Every Monday morning, a short email compares last week with the week before: sessions, users, and page views, top pages and traffic sources, Search Console clicks, impressions, CTR, and position with your top queries, plus Clarity engagement. On by default for the site admin; change recipients or turn it off under Settings > Email
+* **Views and Clicks on Every Post** - An "Analytics (28d)" column in your Posts and Pages lists shows each post's Google Analytics views and Search Console clicks and average position. Click a number to ask the AI how that post can do better
 
 = AI Chat & MCP Features =
 
@@ -77,8 +82,10 @@ connection setup), and searchconsole.googleapis.com (search queries, clicks,
 impressions, and indexing status). Each request carries your OAuth access token,
 the GA4 property ID or Search Console site URL being queried, and the date range
 and metrics requested. Requests are made when you open a plugin screen whose
-cached data has expired, when you refresh the dashboard widget, and when an
-ability is run from the built-in chat or an external MCP client. No post
+cached data has expired, when you refresh the dashboard widget, when an
+ability is run from the built-in chat or an external MCP client, when the
+weekly summary email is prepared (once a week, if enabled), and when the
+Posts or Pages list needs fresh per-post numbers (at most every 12 hours). No post
 content, visitor records, or other personal data from your WordPress site is
 sent.
 
@@ -118,7 +125,7 @@ What is sent and when: the plugin calls the Clarity Data Export API at
 www.clarity.ms. Each request carries your Clarity API token and project ID,
 together with the number of days and the dimensions requested. Requests are made
 when cached Clarity data has expired and a plugin screen, a dashboard widget
-refresh, or an MCP ability asks for it. Clarity permits ten export requests per
+refresh, an MCP ability, or the weekly summary email asks for it. Clarity permits ten export requests per
 project per day, so responses are cached for one hour.
 
 Terms of use: https://clarity.microsoft.com/terms
@@ -216,6 +223,13 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 4. Settings page with API configuration
 
 == Changelog ==
+
+= Unreleased =
+* Added: Weekly email summary. Every Monday at 08:00 site time the site admin gets last week's numbers from each connected platform compared with the week before, with top pages, traffic sources, and search queries. Recipients, on/off, and a "Send a test summary now" button are under Settings > Email
+* Added: An "Analytics (28d)" column in the Posts and Pages lists with each post's views, search clicks, and average position. Numbers are fetched once and cached for 12 hours, and each one links to the AI Assistant with a question about that post
+* Added: A "Get started" link in the plugin's row on the Plugins screen
+* Changed: Top pages and traffic sources are now explicitly sorted by their metric
+* Readme: installation steps and the chat FAQ now describe one-click Google sign-in and the WordPress AI Client
 
 = 0.4.0 - 2026-10-06 =
 * Added: After you connect Google, the Connections screen picks the Search Console site and Google Analytics 4 property for this site on its own when there is exactly one clear match. When there is no clear match it opens the list with the closest match selected, and you can switch at any time with "Change Site" / "Change Property"
