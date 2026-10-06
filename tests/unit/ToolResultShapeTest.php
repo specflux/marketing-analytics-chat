@@ -86,4 +86,66 @@ class ToolResultShapeTest extends TestCase {
 
 		$this->assertSame( '{"a":[1,2]}', $result['content'][0]['text'] );
 	}
+
+	/**
+	 * Long row lists are cut with a truncated note; short ones are untouched.
+	 */
+	public function test_long_row_lists_are_truncated_with_a_note(): void {
+		$GLOBALS['specflux_mac_test_abilities']['x/y'] = static function () {
+			return Ability_Response::tool(
+				static function () {
+					return array(
+						'rows'      => range( 1, 60 ),
+						'row_count' => 60,
+						'period'    => array(
+							'start_date' => '2026-09-01',
+							'end_date'   => '2026-09-07',
+						),
+						'small'     => array( 1, 2 ),
+					);
+				}
+			);
+		};
+
+		$result = ( new MCP_Client( 1 ) )->call_tool( 'x/y' );
+		$data   = json_decode( $result['content'][0]['text'], true );
+
+		$this->assertCount( 25, $data['rows'] );
+		$this->assertSame( array( 'shown' => 25, 'total' => 60 ), $data['truncated']['rows'] );
+		$this->assertSame( 60, $data['row_count'] );
+		$this->assertSame( '2026-09-07', $data['period']['end_date'] );
+		$this->assertCount( 2, $data['small'] );
+	}
+
+	/**
+	 * A top-level list is wrapped so the note has somewhere to live.
+	 */
+	public function test_top_level_list_is_wrapped_when_truncated(): void {
+		$GLOBALS['specflux_mac_test_abilities']['x/y'] = static function () {
+			return range( 1, 30 );
+		};
+
+		$result = ( new MCP_Client( 1 ) )->call_tool( 'x/y' );
+		$data   = json_decode( $result['content'][0]['text'], true );
+
+		$this->assertCount( 25, $data['rows'] );
+		$this->assertSame( 30, $data['truncated']['rows']['total'] );
+	}
+
+	/**
+	 * The cap is filterable and can be disabled.
+	 */
+	public function test_row_cap_is_filterable(): void {
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_chat_max_result_rows'] = static function () {
+			return 0;
+		};
+		$GLOBALS['specflux_mac_test_abilities']['x/y'] = static function () {
+			return array( 'rows' => range( 1, 40 ) );
+		};
+
+		$result = ( new MCP_Client( 1 ) )->call_tool( 'x/y' );
+		unset( $GLOBALS['specflux_mac_test_filters']['specflux_mac_chat_max_result_rows'] );
+
+		$this->assertCount( 40, json_decode( $result['content'][0]['text'], true )['rows'] );
+	}
 }

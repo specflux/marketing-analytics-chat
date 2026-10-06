@@ -205,7 +205,11 @@ class GA4_Client {
 			// Run report.
 			$response = $analytics->properties->runReport( 'properties/' . $this->property_id, $request );
 
-			$data = $this->parse_report_response( $response );
+			$data           = $this->parse_report_response( $response );
+			$data['period'] = array(
+				'start_date' => $this->resolve_date( $this->parse_date_range( $date_range, 'start' ) ),
+				'end_date'   => $this->resolve_date( $this->parse_date_range( $date_range, 'end' ) ),
+			);
 
 			/**
 			 * Fires after analytics data has been fetched successfully.
@@ -507,6 +511,33 @@ class GA4_Client {
 
 		// For end boundary, return 'today' if not specified.
 		return 'today';
+	}
+
+	/**
+	 * Resolve a GA4 date token ('7daysAgo', 'yesterday', 'today') to Y-m-d.
+	 *
+	 * Reports return the resolved dates so the model can state the exact period.
+	 * Anything that is not a recognised relative token is returned unchanged.
+	 *
+	 * @param string $date Date token.
+	 * @return string Y-m-d date, or the original value.
+	 */
+	private function resolve_date( $date ) {
+		$now = new \DateTimeImmutable( 'now', wp_timezone() );
+
+		if ( 'today' === $date ) {
+			return $now->format( 'Y-m-d' );
+		}
+
+		if ( 'yesterday' === $date ) {
+			return $now->modify( '-1 day' )->format( 'Y-m-d' );
+		}
+
+		if ( preg_match( '/^(\d+)daysAgo$/', $date, $matches ) ) {
+			return $now->modify( '-' . (int) $matches[1] . ' days' )->format( 'Y-m-d' );
+		}
+
+		return $date;
 	}
 
 	/**

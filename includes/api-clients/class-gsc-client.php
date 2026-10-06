@@ -170,7 +170,11 @@ class GSC_Client {
 			// Execute query.
 			$response = $search_console->searchanalytics->query( $this->site_url, $request );
 
-			$data = $this->parse_search_analytics_response( $response );
+			$data           = $this->parse_search_analytics_response( $response );
+			$data['period'] = array(
+				'start_date' => $start_date,
+				'end_date'   => $end_date,
+			);
 
 			/** This action is documented in includes/api-clients/class-ga4-client.php */
 			do_action( 'specflux_mac_data_fetched', 'gsc' );
