@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
+use Specflux_Marketing_Analytics\Credentials\Platform_Registry;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
@@ -190,15 +191,14 @@ $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 	</p>
 
 	<h2 class="nav-tab-wrapper">
-		<a href="?page=specflux-mac-connections&tab=clarity" class="nav-tab <?php echo esc_attr( 'clarity' === $active_tab ? 'nav-tab-active' : '' ); ?>">
-			<?php esc_html_e( 'Microsoft Clarity', 'specflux-marketing-analytics-chat' ); ?>
-		</a>
-		<a href="?page=specflux-mac-connections&tab=ga4" class="nav-tab <?php echo esc_attr( 'ga4' === $active_tab ? 'nav-tab-active' : '' ); ?>">
-			<?php esc_html_e( 'Google Analytics 4', 'specflux-marketing-analytics-chat' ); ?>
-		</a>
-		<a href="?page=specflux-mac-connections&tab=gsc" class="nav-tab <?php echo esc_attr( 'gsc' === $active_tab ? 'nav-tab-active' : '' ); ?>">
-			<?php esc_html_e( 'Google Search Console', 'specflux-marketing-analytics-chat' ); ?>
-		</a>
+		<?php foreach ( Platform_Registry::all() as $tab_slug => $tab_definition ) : ?>
+			<?php if ( empty( $tab_definition['tab'] ) ) : ?>
+				<?php continue; ?>
+			<?php endif; ?>
+			<a href="?page=specflux-mac-connections&tab=<?php echo esc_attr( $tab_slug ); ?>" class="nav-tab <?php echo esc_attr( $tab_slug === $active_tab ? 'nav-tab-active' : '' ); ?>">
+				<?php echo esc_html( $tab_definition['label'] ); ?>
+			</a>
+		<?php endforeach; ?>
 		<?php
 		/**
 		 * Allow pro add-on to add additional connection tabs.
@@ -211,376 +211,31 @@ $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 
 	<div class="tab-content">
 		<?php
-		switch ( $active_tab ) {
-			case 'clarity':
-				?>
-				<div class="connection-panel">
-					<h3>
-						<?php esc_html_e( 'Microsoft Clarity Configuration', 'specflux-marketing-analytics-chat' ); ?>
-						<?php if ( $clarity_connected ) : ?>
-							<span class="status-badge heading-connected">
-								<span class="dashicons dashicons-yes-alt"></span>
-								<?php esc_html_e( 'Connected', 'specflux-marketing-analytics-chat' ); ?>
-							</span>
-						<?php else : ?>
-							<span class="status-badge heading-disconnected">
-								<span class="dashicons dashicons-warning"></span>
-								<?php esc_html_e( 'Not Connected', 'specflux-marketing-analytics-chat' ); ?>
-							</span>
-						<?php endif; ?>
-					</h3>
-					<p><?php esc_html_e( 'Connect to Microsoft Clarity to access session recordings, heatmaps, and user behavior insights.', 'specflux-marketing-analytics-chat' ); ?></p>
+		$panel_definition = Platform_Registry::get( $active_tab );
+		$panel_file       = __DIR__ . '/connections/' . $active_tab . '.php';
 
-					<form method="post" action="" class="clarity-connection-form">
-						<?php wp_nonce_field( 'specflux_mac_save_clarity', 'clarity_nonce' ); ?>
-
-						<table class="form-table">
-							<tr>
-								<th scope="row">
-									<label for="clarity_api_token"><?php esc_html_e( 'API Token', 'specflux-marketing-analytics-chat' ); ?></label>
-								</th>
-								<td>
-									<input
-										type="text"
-										id="clarity_api_token"
-										name="clarity_api_token"
-										class="regular-text"
-										value="<?php echo esc_attr( $clarity_token_display ); ?>"
-										placeholder="<?php echo $clarity_has_token ? esc_attr__( 'Token saved (enter new token to update)', 'specflux-marketing-analytics-chat' ) : esc_attr__( 'Enter your API token', 'specflux-marketing-analytics-chat' ); ?>"
-											<?php
-											if ( $clarity_has_token ) {
-												echo 'readonly onfocus="this.removeAttribute(\'readonly\'); this.value=\'\'; this.type=\'password\';"';
-											} else {
-												echo 'type="password"';
-											}
-											?>
-									/>
-									<?php if ( $clarity_has_token ) : ?>
-										<p class="description success">
-											<span class="dashicons dashicons-yes-alt"></span>
-											<?php esc_html_e( 'API token is securely stored and encrypted. Leave blank to keep current token, or enter a new one to update.', 'specflux-marketing-analytics-chat' ); ?>
-										</p>
-									<?php else : ?>
-										<p class="description">
-											<?php
-											printf(
-												/* translators: %s: link to Clarity documentation */
-												esc_html__( 'Get your API token from the %s.', 'specflux-marketing-analytics-chat' ),
-												'<a href="https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-data-export-api" target="_blank">' . esc_html__( 'Clarity Data Export API', 'specflux-marketing-analytics-chat' ) . '</a>'
-											);
-											?>
-										</p>
-									<?php endif; ?>
-								</td>
-							</tr>
-							<tr>
-								<th scope="row">
-									<label for="clarity_project_id"><?php esc_html_e( 'Project ID', 'specflux-marketing-analytics-chat' ); ?></label>
-								</th>
-								<td>
-									<input type="text" id="clarity_project_id" name="clarity_project_id" class="regular-text" value="<?php echo esc_attr( $clarity_project_id ); ?>" />
-									<p class="description"><?php esc_html_e( 'Your Clarity project ID (for reference only - the API token identifies your project)', 'specflux-marketing-analytics-chat' ); ?></p>
-								</td>
-							</tr>
-						</table>
-
-						<p class="submit">
-							<button type="button" class="button button-secondary test-connection" data-platform="clarity">
-								<?php esc_html_e( 'Test Connection', 'specflux-marketing-analytics-chat' ); ?>
-							</button>
-							<input type="submit" name="save_clarity" class="button button-primary" value="<?php esc_attr_e( 'Save Credentials', 'specflux-marketing-analytics-chat' ); ?>" />
-						</p>
-					</form>
-				</div>
-				<?php
-				break;
-
-			case 'ga4':
-				$has_oauth_credentials = $oauth_handler->has_oauth_credentials();
-				$can_connect_google    = $oauth_handler->can_connect_google();
-				$is_connected          = $credential_manager->has_credentials( 'ga4' );
-				$current_property_id   = get_option( 'specflux_mac_ga4_property_id' );
-				?>
-				<div class="connection-panel">
-					<h3>
-						<?php esc_html_e( 'Google Analytics 4 Configuration', 'specflux-marketing-analytics-chat' ); ?>
-						<?php if ( $is_connected ) : ?>
-							<span class="status-badge heading-connected">
-								<span class="dashicons dashicons-yes-alt"></span>
-								<?php esc_html_e( 'Connected', 'specflux-marketing-analytics-chat' ); ?>
-							</span>
-						<?php else : ?>
-							<span class="status-badge heading-disconnected">
-								<span class="dashicons dashicons-warning"></span>
-								<?php esc_html_e( 'Not Connected', 'specflux-marketing-analytics-chat' ); ?>
-							</span>
-						<?php endif; ?>
-					</h3>
-					<p><?php esc_html_e( 'Connect to Google Analytics 4 to access traffic metrics, user behavior, and conversion data.', 'specflux-marketing-analytics-chat' ); ?></p>
-
-					<?php if ( ! $is_connected ) : ?>
-						<?php if ( $can_connect_google ) : ?>
-							<h4><?php esc_html_e( 'Connect your Google Analytics account', 'specflux-marketing-analytics-chat' ); ?></h4>
-							<p>
-								<?php esc_html_e( 'Sign in with Google and grant read-only access to your Google Analytics data.', 'specflux-marketing-analytics-chat' ); ?>
-								<?php if ( ! $has_oauth_credentials ) : ?>
-									<?php esc_html_e( 'No Google Cloud project or API keys are needed.', 'specflux-marketing-analytics-chat' ); ?>
-								<?php endif; ?>
-							</p>
-							<p class="submit">
-								<button type="button" class="button button-primary button-large smac-google-connect" data-service="ga4">
-									<span class="dashicons dashicons-google" style="margin-top: 3px;"></span>
-									<?php esc_html_e( 'Connect with Google', 'specflux-marketing-analytics-chat' ); ?>
-								</button>
-								<span class="smac-google-connect-status description" style="display: none; margin-left: 8px;"></span>
-							</p>
-						<?php else : ?>
-							<div class="notice notice-warning inline">
-								<p><?php esc_html_e( 'Hosted Google sign-in is disabled on this site, so you need to configure your own Google OAuth client before connecting.', 'specflux-marketing-analytics-chat' ); ?></p>
-							</div>
-						<?php endif; ?>
-
-						<details class="smac-advanced-oauth">
-							<summary><?php esc_html_e( 'Advanced: use your own Google Cloud OAuth client', 'specflux-marketing-analytics-chat' ); ?></summary>
-							<p class="description">
-								<?php if ( $has_oauth_credentials ) : ?>
-									<?php esc_html_e( 'Your own OAuth client is configured and will be used for this connection.', 'specflux-marketing-analytics-chat' ); ?>
-								<?php else : ?>
-									<?php esc_html_e( 'By default, sign-in goes through the Specflux Google OAuth client. If your organisation requires its own Google Cloud project, configure a client ID and secret and it will be used instead.', 'specflux-marketing-analytics-chat' ); ?>
-								<?php endif; ?>
-								<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-settings&tab=google-api' ) ); ?>"><?php esc_html_e( 'Google API settings', 'specflux-marketing-analytics-chat' ); ?></a>
-							</p>
-						</details>
-
-					<?php else : ?>
-						<!-- Connected State -->
-						<div class="notice notice-success">
-							<p><strong><?php esc_html_e( 'Connected!', 'specflux-marketing-analytics-chat' ); ?></strong> <?php esc_html_e( 'Your Google Analytics 4 account is connected and ready to use.', 'specflux-marketing-analytics-chat' ); ?></p>
-						</div>
-
-						<!-- Property Selection -->
-						<h4><?php esc_html_e( 'Select GA4 Property', 'specflux-marketing-analytics-chat' ); ?></h4>
-						<p><?php esc_html_e( 'Choose which Google Analytics 4 property to query for data:', 'specflux-marketing-analytics-chat' ); ?></p>
-
-						<table class="form-table">
-							<tr>
-								<th scope="row">
-									<label for="ga4_property_selector"><?php esc_html_e( 'GA4 Property', 'specflux-marketing-analytics-chat' ); ?></label>
-								</th>
-								<td>
-									<div id="ga4-property-loading" style="display: none;">
-										<span class="spinner is-active" style="float: none; margin: 0 10px 0 0;"></span>
-										<?php esc_html_e( 'Loading properties...', 'specflux-marketing-analytics-chat' ); ?>
-									</div>
-
-									<div id="ga4-property-error" class="notice notice-error inline" style="display: none; margin: 10px 0; padding: 10px;">
-										<p></p>
-									</div>
-
-									<select id="ga4_property_selector" name="ga4_property_id" class="regular-text" style="display: none;">
-										<option value=""><?php esc_html_e( 'Select a property...', 'specflux-marketing-analytics-chat' ); ?></option>
-									</select>
-
-									<?php if ( $current_property_id ) : ?>
-										<p class="description success">
-											<span class="dashicons dashicons-yes-alt"></span>
-											<?php
-											printf(
-												/* translators: %s: property ID */
-												esc_html__( 'Currently selected property: %s', 'specflux-marketing-analytics-chat' ),
-												'<strong>' . esc_html( $current_property_id ) . '</strong>'
-											);
-											?>
-										</p>
-									<?php else : ?>
-										<p class="description">
-											<?php esc_html_e( 'No property selected yet. Please select a property from the list above.', 'specflux-marketing-analytics-chat' ); ?>
-										</p>
-									<?php endif; ?>
-								</td>
-							</tr>
-						</table>
-
-						<p class="submit">
-							<?php if ( $current_property_id ) : ?>
-								<button type="button" id="load-ga4-properties" class="button button-secondary">
-									<?php esc_html_e( 'Change Property', 'specflux-marketing-analytics-chat' ); ?>
-								</button>
-							<?php else : ?>
-								<button type="button" id="load-ga4-properties" class="button button-secondary" data-auto="1">
-									<?php esc_html_e( 'Load Available Properties', 'specflux-marketing-analytics-chat' ); ?>
-								</button>
-							<?php endif; ?>
-							<button type="button" id="save-ga4-property" class="button button-primary" style="display: none;">
-								<?php esc_html_e( 'Save Selected Property', 'specflux-marketing-analytics-chat' ); ?>
-							</button>
-						</p>
-
-						<hr style="margin: 30px 0;" />
-
-						<form method="post" action="" style="margin-top: 20px;">
-							<?php wp_nonce_field( 'specflux_mac_disconnect_oauth', 'disconnect_oauth_nonce' ); ?>
-							<input type="hidden" name="service" value="ga4" />
-
-							<p class="submit">
-								<button type="button" class="button button-secondary test-connection" data-platform="ga4">
-									<?php esc_html_e( 'Test Connection', 'specflux-marketing-analytics-chat' ); ?>
-								</button>
-								<input type="submit" name="disconnect_oauth" class="button button-secondary" value="<?php esc_attr_e( 'Disconnect', 'specflux-marketing-analytics-chat' ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to disconnect from Google Analytics?', 'specflux-marketing-analytics-chat' ) ); ?>');" />
-							</p>
-						</form>
-					<?php endif; ?>
-				</div>
-				<?php
-				break;
-
-			case 'gsc':
-				$has_oauth_credentials = $oauth_handler->has_oauth_credentials();
-				$can_connect_google    = $oauth_handler->can_connect_google();
-				$is_connected          = $credential_manager->has_credentials( 'gsc' );
-				$current_site_url      = get_option( 'specflux_mac_gsc_site_url' );
-				?>
-				<div class="connection-panel">
-					<h3>
-						<?php esc_html_e( 'Google Search Console Configuration', 'specflux-marketing-analytics-chat' ); ?>
-						<?php if ( $is_connected ) : ?>
-							<span class="status-badge heading-connected">
-								<span class="dashicons dashicons-yes-alt"></span>
-								<?php esc_html_e( 'Connected', 'specflux-marketing-analytics-chat' ); ?>
-							</span>
-						<?php else : ?>
-							<span class="status-badge heading-disconnected">
-								<span class="dashicons dashicons-warning"></span>
-								<?php esc_html_e( 'Not Connected', 'specflux-marketing-analytics-chat' ); ?>
-							</span>
-						<?php endif; ?>
-					</h3>
-					<p><?php esc_html_e( 'Connect to Google Search Console to access search performance data, indexing status, and query analytics.', 'specflux-marketing-analytics-chat' ); ?></p>
-
-					<?php if ( ! $is_connected ) : ?>
-						<?php if ( $can_connect_google ) : ?>
-							<h4><?php esc_html_e( 'Connect your Google Search Console account', 'specflux-marketing-analytics-chat' ); ?></h4>
-							<p>
-								<?php esc_html_e( 'Sign in with Google and grant read-only access to your Google Search Console data.', 'specflux-marketing-analytics-chat' ); ?>
-								<?php if ( ! $has_oauth_credentials ) : ?>
-									<?php esc_html_e( 'No Google Cloud project or API keys are needed.', 'specflux-marketing-analytics-chat' ); ?>
-								<?php endif; ?>
-							</p>
-							<p class="submit">
-								<button type="button" class="button button-primary button-large smac-google-connect" data-service="gsc">
-									<span class="dashicons dashicons-google" style="margin-top: 3px;"></span>
-									<?php esc_html_e( 'Connect with Google', 'specflux-marketing-analytics-chat' ); ?>
-								</button>
-								<span class="smac-google-connect-status description" style="display: none; margin-left: 8px;"></span>
-							</p>
-						<?php else : ?>
-							<div class="notice notice-warning inline">
-								<p><?php esc_html_e( 'Hosted Google sign-in is disabled on this site, so you need to configure your own Google OAuth client before connecting.', 'specflux-marketing-analytics-chat' ); ?></p>
-							</div>
-						<?php endif; ?>
-
-						<details class="smac-advanced-oauth">
-							<summary><?php esc_html_e( 'Advanced: use your own Google Cloud OAuth client', 'specflux-marketing-analytics-chat' ); ?></summary>
-							<p class="description">
-								<?php if ( $has_oauth_credentials ) : ?>
-									<?php esc_html_e( 'Your own OAuth client is configured and will be used for this connection.', 'specflux-marketing-analytics-chat' ); ?>
-								<?php else : ?>
-									<?php esc_html_e( 'By default, sign-in goes through the Specflux Google OAuth client. If your organisation requires its own Google Cloud project, configure a client ID and secret and it will be used instead.', 'specflux-marketing-analytics-chat' ); ?>
-								<?php endif; ?>
-								<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-settings&tab=google-api' ) ); ?>"><?php esc_html_e( 'Google API settings', 'specflux-marketing-analytics-chat' ); ?></a>
-							</p>
-						</details>
-
-					<?php else : ?>
-						<!-- Connected State -->
-						<div class="notice notice-success">
-							<p><strong><?php esc_html_e( 'Connected!', 'specflux-marketing-analytics-chat' ); ?></strong> <?php esc_html_e( 'Your Google Search Console account is connected and ready to use.', 'specflux-marketing-analytics-chat' ); ?></p>
-						</div>
-
-						<!-- Site Selection -->
-						<h4><?php esc_html_e( 'Select Search Console Property', 'specflux-marketing-analytics-chat' ); ?></h4>
-						<p><?php esc_html_e( 'Choose which Search Console property to query for data:', 'specflux-marketing-analytics-chat' ); ?></p>
-
-						<table class="form-table">
-							<tr>
-								<th scope="row">
-									<label for="gsc_site_selector"><?php esc_html_e( 'Site URL', 'specflux-marketing-analytics-chat' ); ?></label>
-								</th>
-								<td>
-									<div id="gsc-site-loading" style="display: none;">
-										<span class="spinner is-active" style="float: none; margin: 0 10px 0 0;"></span>
-										<?php esc_html_e( 'Loading sites...', 'specflux-marketing-analytics-chat' ); ?>
-									</div>
-
-									<div id="gsc-site-error" class="notice notice-error inline" style="display: none; margin: 10px 0; padding: 10px;">
-										<p></p>
-									</div>
-
-									<select id="gsc_site_selector" name="gsc_site_url" class="regular-text" style="display: none;">
-										<option value=""><?php esc_html_e( 'Select a site...', 'specflux-marketing-analytics-chat' ); ?></option>
-									</select>
-
-									<?php if ( $current_site_url ) : ?>
-										<p class="description success">
-											<span class="dashicons dashicons-yes-alt"></span>
-											<?php
-											printf(
-												/* translators: %s: site URL */
-												esc_html__( 'Currently selected site: %s', 'specflux-marketing-analytics-chat' ),
-												'<strong>' . esc_html( $current_site_url ) . '</strong>'
-											);
-											?>
-										</p>
-									<?php else : ?>
-										<p class="description">
-											<?php esc_html_e( 'No site selected yet. Please select a site from the list above.', 'specflux-marketing-analytics-chat' ); ?>
-										</p>
-									<?php endif; ?>
-								</td>
-							</tr>
-						</table>
-
-						<p class="submit">
-							<?php if ( $current_site_url ) : ?>
-								<button type="button" id="load-gsc-sites" class="button button-secondary">
-									<?php esc_html_e( 'Change Site', 'specflux-marketing-analytics-chat' ); ?>
-								</button>
-							<?php else : ?>
-								<button type="button" id="load-gsc-sites" class="button button-secondary" data-auto="1">
-									<?php esc_html_e( 'Load Available Sites', 'specflux-marketing-analytics-chat' ); ?>
-								</button>
-							<?php endif; ?>
-							<button type="button" id="save-gsc-site" class="button button-primary" style="display: none;">
-								<?php esc_html_e( 'Save Selected Site', 'specflux-marketing-analytics-chat' ); ?>
-							</button>
-						</p>
-
-						<hr style="margin: 30px 0;" />
-
-						<form method="post" action="" style="margin-top: 20px;">
-							<?php wp_nonce_field( 'specflux_mac_disconnect_oauth', 'disconnect_oauth_nonce' ); ?>
-							<input type="hidden" name="service" value="gsc" />
-
-							<p class="submit">
-								<button type="button" class="button button-secondary test-connection" data-platform="gsc">
-									<?php esc_html_e( 'Test Connection', 'specflux-marketing-analytics-chat' ); ?>
-								</button>
-								<input type="submit" name="disconnect_oauth" class="button button-secondary" value="<?php esc_attr_e( 'Disconnect', 'specflux-marketing-analytics-chat' ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to disconnect from Google Search Console?', 'specflux-marketing-analytics-chat' ) ); ?>');" />
-							</p>
-						</form>
-					<?php endif; ?>
-				</div>
-				<?php
-				break;
-
-			default:
+		if ( null !== $panel_definition && file_exists( $panel_file ) ) {
+			include $panel_file;
+		} else {
+			if ( null !== $panel_definition && ! has_action( 'specflux_mac_render_connection_panel_' . $active_tab ) ) {
+				include __DIR__ . '/connections/generic.php';
+			} elseif ( null !== $panel_definition ) {
 				/**
-				 * Allow pro add-on to render additional connection tab content.
+				 * Render the connection panel for a registered platform.
 				 *
-				 * @param string $active_tab The currently active tab.
+				 * The dynamic portion is the platform slug registered via specflux_mac_platforms.
+				 *
+				 * @param array $panel_definition The platform definition.
 				 */
-				do_action( 'specflux_mac_connections_tab_content', $active_tab );
-				break;
+				do_action( 'specflux_mac_render_connection_panel_' . $active_tab, $panel_definition );
+			}
+
+			/**
+			 * Allow pro add-on to render additional connection tab content.
+			 *
+			 * @param string $active_tab The currently active tab.
+			 */
+			do_action( 'specflux_mac_connections_tab_content', $active_tab );
 		}
 		?>
 	</div>

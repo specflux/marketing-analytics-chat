@@ -260,16 +260,52 @@ class Connection_Tester {
 	}
 
 	/**
+	 * Run the connection test for a registered platform
+	 *
+	 * Uses the definition's `connection_test` callable when present, otherwise
+	 * the built-in `test_{slug}_connection()` method (core platforms).
+	 *
+	 * @param string $platform Platform identifier.
+	 * @return array Test result with success status and message.
+	 */
+	public function test_connection( $platform ) {
+		$definition = Platform_Registry::get( $platform );
+
+		if ( null === $definition ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Unsupported platform.', 'specflux-marketing-analytics-chat' ),
+			);
+		}
+
+		if ( is_callable( $definition['connection_test'] ) ) {
+			return call_user_func( $definition['connection_test'] );
+		}
+
+		$method = 'test_' . $platform . '_connection';
+		if ( method_exists( $this, $method ) ) {
+			return $this->$method();
+		}
+
+		return array(
+			'success' => false,
+			'message' => __( 'This platform does not provide a connection test.', 'specflux-marketing-analytics-chat' ),
+		);
+	}
+
+	/**
 	 * Test all platform connections
 	 *
 	 * @return array Array of platform => test_result.
 	 */
 	public function test_all_connections() {
-		return array(
-			'clarity' => $this->test_clarity_connection(),
-			'ga4'     => $this->test_ga4_connection(),
-			'gsc'     => $this->test_gsc_connection(),
-		);
+		$results = array();
+
+		foreach ( Platform_Registry::slugs() as $platform ) {
+			$results[ $platform ] = $this->test_connection( $platform );
+		}
+
+		return $results;
 	}
 
 	/**
@@ -279,31 +315,22 @@ class Connection_Tester {
 	 * @return string Status: 'connected', 'not_configured', 'error'.
 	 */
 	public function get_connection_status( $platform ) {
-		switch ( $platform ) {
-			case 'clarity':
-				if ( ! $this->credential_manager->has_credentials( 'clarity' ) ) {
-					return 'not_configured';
-				}
-				$result = $this->test_clarity_connection();
-				return $result['success'] ? 'connected' : 'error';
+		$definition = Platform_Registry::get( $platform );
 
-			case 'ga4':
-				if ( ! $this->oauth_handler->get_access_token( 'ga4' ) ) {
-					return 'not_configured';
-				}
-				$result = $this->test_ga4_connection();
-				return $result['success'] ? 'connected' : 'error';
-
-			case 'gsc':
-				if ( ! $this->oauth_handler->get_access_token( 'gsc' ) ) {
-					return 'not_configured';
-				}
-				$result = $this->test_gsc_connection();
-				return $result['success'] ? 'connected' : 'error';
-
-			default:
-				return 'error';
+		if ( null === $definition ) {
+			return 'error';
 		}
+
+		if ( 'google_oauth' === $definition['auth'] ) {
+			if ( ! $this->oauth_handler->get_access_token( $platform ) ) {
+				return 'not_configured';
+			}
+		} elseif ( 'api_key' === $definition['auth'] && ! $this->credential_manager->has_credentials( $platform ) ) {
+			return 'not_configured';
+		}
+
+		$result = $this->test_connection( $platform );
+		return $result['success'] ? 'connected' : 'error';
 	}
 
 	/**
@@ -312,10 +339,12 @@ class Connection_Tester {
 	 * @return array Array of platform => status.
 	 */
 	public function get_all_statuses() {
-		return array(
-			'clarity' => $this->get_connection_status( 'clarity' ),
-			'ga4'     => $this->get_connection_status( 'ga4' ),
-			'gsc'     => $this->get_connection_status( 'gsc' ),
-		);
+		$statuses = array();
+
+		foreach ( Platform_Registry::slugs() as $platform ) {
+			$statuses[ $platform ] = $this->get_connection_status( $platform );
+		}
+
+		return $statuses;
 	}
 }

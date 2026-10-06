@@ -25,13 +25,15 @@ class Credential_Manager {
 
 	/**
 	 * Supported platforms
+	 *
+	 * @deprecated Use Platform_Registry::slugs(); this lists only the core platforms.
 	 */
 	const SUPPORTED_PLATFORMS = array( 'clarity', 'ga4', 'gsc' );
 
 	/**
 	 * Save credentials for a platform
 	 *
-	 * @param string $platform Platform identifier (clarity, ga4, gsc).
+	 * @param string $platform Platform identifier registered in Platform_Registry.
 	 * @param array  $credentials Credential data to store.
 	 * @return bool True on success, false on failure.
 	 */
@@ -63,7 +65,7 @@ class Credential_Manager {
 	/**
 	 * Get credentials for a platform
 	 *
-	 * @param string $platform Platform identifier (clarity, ga4, gsc).
+	 * @param string $platform Platform identifier registered in Platform_Registry.
 	 * @return array|null Decrypted credentials or null if not found/failed.
 	 */
 	public function get_credentials( $platform ) {
@@ -97,7 +99,7 @@ class Credential_Manager {
 	/**
 	 * Delete credentials for a platform
 	 *
-	 * @param string $platform Platform identifier (clarity, ga4, gsc).
+	 * @param string $platform Platform identifier registered in Platform_Registry.
 	 * @return bool True on success, false on failure.
 	 */
 	public function delete_credentials( $platform ) {
@@ -106,10 +108,9 @@ class Credential_Manager {
 		}
 
 		// A saved property/site belongs to the connection that picked it, so drop it too.
-		if ( 'ga4' === $platform ) {
-			delete_option( 'specflux_mac_ga4_property_id' );
-		} elseif ( 'gsc' === $platform ) {
-			delete_option( 'specflux_mac_gsc_site_url' );
+		$definition = Platform_Registry::get( $platform );
+		foreach ( (array) $definition['cleanup_options'] as $cleanup_option ) {
+			delete_option( $cleanup_option );
 		}
 
 		$option_name = $this->get_option_name( $platform );
@@ -119,7 +120,7 @@ class Credential_Manager {
 	/**
 	 * Check if credentials exist for a platform
 	 *
-	 * @param string $platform Platform identifier (clarity, ga4, gsc).
+	 * @param string $platform Platform identifier registered in Platform_Registry.
 	 * @return bool True if credentials exist, false otherwise.
 	 */
 	public function has_credentials( $platform ) {
@@ -139,7 +140,7 @@ class Credential_Manager {
 	public function get_all_statuses() {
 		$statuses = array();
 
-		foreach ( self::SUPPORTED_PLATFORMS as $platform ) {
+		foreach ( Platform_Registry::slugs() as $platform ) {
 			$statuses[ $platform ] = $this->has_credentials( $platform );
 		}
 
@@ -191,7 +192,7 @@ class Credential_Manager {
 	 * @return bool True if valid, false otherwise.
 	 */
 	private function is_valid_platform( $platform ) {
-		return in_array( $platform, self::SUPPORTED_PLATFORMS, true );
+		return Platform_Registry::is_registered( $platform );
 	}
 
 	/**
@@ -212,7 +213,7 @@ class Credential_Manager {
 	public function clear_all_credentials() {
 		$success = true;
 
-		foreach ( self::SUPPORTED_PLATFORMS as $platform ) {
+		foreach ( Platform_Registry::slugs() as $platform ) {
 			if ( ! $this->delete_credentials( $platform ) ) {
 				$success = false;
 			}
@@ -229,7 +230,7 @@ class Credential_Manager {
 	public function export_encrypted() {
 		$export = array();
 
-		foreach ( self::SUPPORTED_PLATFORMS as $platform ) {
+		foreach ( Platform_Registry::slugs() as $platform ) {
 			$option_name = $this->get_option_name( $platform );
 			$encrypted   = get_option( $option_name );
 
