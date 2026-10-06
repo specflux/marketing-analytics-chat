@@ -420,6 +420,7 @@ if ( ! function_exists( 'get_bloginfo' ) ) {
         $info = array(
             'version' => '7.0',
             'name'    => 'Test Blog',
+            'admin_email' => 'admin@example.com',
             'url'     => 'https://example.com',
         );
         return isset( $info[ $show ] ) ? $info[ $show ] : '';
@@ -657,7 +658,10 @@ if ( ! function_exists( 'apply_filters' ) ) {
 	 * @return mixed
 	 */
 	function apply_filters( $hook_name, $value, ...$args ) {
-		// In tests, just return the value unfiltered
+		// Unfiltered unless a test registers a callback in $GLOBALS['specflux_mac_test_filters'][ $hook_name ].
+		if ( isset( $GLOBALS['specflux_mac_test_filters'][ $hook_name ] ) ) {
+			return call_user_func( $GLOBALS['specflux_mac_test_filters'][ $hook_name ], $value, ...$args );
+		}
 		return $value;
 	}
 }
@@ -684,8 +688,8 @@ if ( ! function_exists( 'wp_next_scheduled' ) ) {
 	 * @return false|int
 	 */
 	function wp_next_scheduled( $hook, $args = array() ) {
-		// In tests, return false (no scheduled events)
-		return false;
+		// Tests can seed or inspect $GLOBALS['specflux_mac_test_cron'] (hook => timestamp).
+		return $GLOBALS['specflux_mac_test_cron'][ $hook ] ?? false;
 	}
 }
 
@@ -700,7 +704,8 @@ if ( ! function_exists( 'wp_schedule_event' ) ) {
 	 * @return bool
 	 */
 	function wp_schedule_event( $timestamp, $recurrence, $hook, $args = array() ) {
-		// In tests, return true (success)
+		$GLOBALS['specflux_mac_test_cron'][ $hook ] = $timestamp;
+		$GLOBALS['specflux_mac_test_cron_log'][]    = array( $timestamp, $recurrence, $hook );
 		return true;
 	}
 }
@@ -1257,6 +1262,72 @@ if ( ! function_exists( 'wp_add_dashboard_widget' ) ) {
 	 */
 	function wp_add_dashboard_widget( $widget_id, $widget_name, $callback, $control_callback = null, $callback_args = null, $context = 'normal', $priority = 'core' ) {
 		// In tests, do nothing
+	}
+}
+
+// Mocks used by the weekly summary tests.
+if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
+	/**
+	 * Mock wp_clear_scheduled_hook function.
+	 *
+	 * @param string $hook Hook name.
+	 * @return int
+	 */
+	function wp_clear_scheduled_hook( $hook ) {
+		unset( $GLOBALS['specflux_mac_test_cron'][ $hook ] );
+		return 1;
+	}
+}
+
+if ( ! function_exists( 'wp_timezone' ) ) {
+	/**
+	 * Mock wp_timezone function. Tests set $GLOBALS['specflux_mac_test_timezone'].
+	 *
+	 * @return DateTimeZone
+	 */
+	function wp_timezone() {
+		return new DateTimeZone( $GLOBALS['specflux_mac_test_timezone'] ?? 'UTC' );
+	}
+}
+
+if ( ! function_exists( 'is_email' ) ) {
+	/**
+	 * Mock is_email function.
+	 *
+	 * @param string $email Email address.
+	 * @return string|false
+	 */
+	function is_email( $email ) {
+		return filter_var( $email, FILTER_VALIDATE_EMAIL ) ? $email : false;
+	}
+}
+
+if ( ! function_exists( 'wp_specialchars_decode' ) ) {
+	/**
+	 * Mock wp_specialchars_decode function.
+	 *
+	 * @param string $text          Text.
+	 * @param int    $quote_style   Quote style.
+	 * @return string
+	 */
+	function wp_specialchars_decode( $text, $quote_style = ENT_NOQUOTES ) {
+		return htmlspecialchars_decode( $text, $quote_style );
+	}
+}
+
+if ( ! function_exists( 'wp_mail' ) ) {
+	/**
+	 * Mock wp_mail function: records the message in $GLOBALS['specflux_mac_test_mail'].
+	 *
+	 * @param string|string[] $to      Recipients.
+	 * @param string          $subject Subject.
+	 * @param string          $message Body.
+	 * @param string|string[] $headers Headers.
+	 * @return bool
+	 */
+	function wp_mail( $to, $subject, $message, $headers = '' ) {
+		$GLOBALS['specflux_mac_test_mail'][] = compact( 'to', 'subject', 'message', 'headers' );
+		return $GLOBALS['specflux_mac_test_mail_result'] ?? true;
 	}
 }
 

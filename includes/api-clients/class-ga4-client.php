@@ -476,6 +476,12 @@ class GA4_Client {
 	 * @return string Formatted date string.
 	 */
 	private function parse_date_range( $date_range, $boundary = 'start' ) {
+		// An explicit "start,end" pair (same convention as the GSC client).
+		if ( false !== strpos( $date_range, ',' ) ) {
+			list( $start, $end ) = array_map( 'trim', explode( ',', $date_range, 2 ) );
+			return 'start' === $boundary ? $start : $end;
+		}
+
 		// If it's already a date, return it.
 		if ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_range ) ) {
 			return $date_range;
