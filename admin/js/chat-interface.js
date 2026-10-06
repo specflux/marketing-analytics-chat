@@ -19,6 +19,20 @@
 			this.bindEvents();
 			this.renderStoredMessages();
 			this.scrollToBottom();
+			this.prefillFromQuery();
+		},
+
+		/**
+		 * Prefill (never send) the message box from a ?prompt= query param.
+		 */
+		prefillFromQuery: function() {
+			if (typeof URLSearchParams === 'undefined') {
+				return;
+			}
+			var prompt = new URLSearchParams(window.location.search).get('prompt');
+			if (prompt) {
+				$('#message-input').val(prompt.substring(0, 500)).focus();
+			}
 		},
 
 		/**

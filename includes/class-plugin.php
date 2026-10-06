@@ -30,6 +30,7 @@ class Plugin {
 		$this->load_dependencies();
 		$this->define_admin_hooks();
 		$this->define_ajax_hooks();
+		$this->define_post_stats_hooks();
 		$this->define_abilities_hooks();
 		$this->define_review_prompt_hooks();
 	}
@@ -59,6 +60,21 @@ class Plugin {
 		$this->loader->add_action( 'wp_dashboard_setup', $admin, 'register_dashboard_widget' );
 		$this->loader->add_action( 'admin_bar_menu', $admin, 'add_admin_bar_item', 100 );
 		$this->loader->add_action( 'admin_enqueue_scripts', $admin, 'enqueue_admin_bar_styles' );
+	}
+
+	/**
+	 * Register the per-post analytics column (admin only).
+	 */
+	private function define_post_stats_hooks() {
+		if ( ! is_admin() ) {
+			return;
+		}
+
+		$post_stats = new Admin\Post_Stats();
+
+		$this->loader->add_action( 'admin_init', $post_stats, 'register_columns' );
+		$this->loader->add_action( 'admin_enqueue_scripts', $post_stats, 'enqueue_assets' );
+		$this->loader->add_action( 'wp_ajax_' . Admin\Post_Stats::AJAX_ACTION, $post_stats, 'handle_ajax' );
 	}
 
 	/**

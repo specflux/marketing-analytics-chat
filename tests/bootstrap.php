@@ -1260,6 +1260,49 @@ if ( ! function_exists( 'wp_add_dashboard_widget' ) ) {
 	}
 }
 
+// Post helpers used by the post stats column. Tests populate
+// $mock_posts[ $id ] = array( 'status' => 'publish', 'url' => '...', 'title' => '...' ).
+$mock_posts = array();
+
+if ( ! function_exists( 'get_post_types' ) ) {
+	function get_post_types( $args = array() ) {
+		return array( 'post' => 'post', 'page' => 'page', 'attachment' => 'attachment' );
+	}
+}
+
+if ( ! function_exists( 'get_post_status' ) ) {
+	function get_post_status( $post_id ) {
+		global $mock_posts;
+		return $mock_posts[ $post_id ]['status'] ?? false;
+	}
+}
+
+if ( ! function_exists( 'get_permalink' ) ) {
+	function get_permalink( $post_id ) {
+		global $mock_posts;
+		return $mock_posts[ $post_id ]['url'] ?? false;
+	}
+}
+
+if ( ! function_exists( 'get_the_title' ) ) {
+	function get_the_title( $post_id ) {
+		global $mock_posts;
+		return $mock_posts[ $post_id ]['title'] ?? '';
+	}
+}
+
+if ( ! function_exists( 'wp_make_link_relative' ) ) {
+	function wp_make_link_relative( $link ) {
+		return preg_replace( '|^(https?:)?//[^/]+(/?.*)|i', '$2', $link );
+	}
+}
+
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+	function wp_strip_all_tags( $text ) {
+		return trim( strip_tags( (string) $text ) );
+	}
+}
+
 // Define the plugin namespace functions that live in the main plugin file.
 // We can't require the main file because it re-defines constants without
 // if-defined guards. Instead, we define the namespaced functions here.

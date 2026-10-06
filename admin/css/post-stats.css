@@ -1,0 +1,26 @@
+/* Analytics column on the Posts and Pages list screens. */
+.column-specflux_mac_analytics {
+	width: 11em;
+}
+
+.smac-post-stats {
+	display: block;
+	color: var(--smac-text-secondary, #646970);
+	font-size: 12px;
+	line-height: 1.5;
+	text-decoration: none;
+}
+
+a.smac-post-stats:hover,
+a.smac-post-stats:focus {
+	color: var(--smac-primary, #2271b1);
+}
+
+.smac-post-stats__line {
+	display: block;
+}
+
+.smac-post-stats__pos,
+.smac-post-stats__loading {
+	opacity: 0.8;
+}
