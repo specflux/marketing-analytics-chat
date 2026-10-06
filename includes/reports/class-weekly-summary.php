@@ -422,6 +422,8 @@ class Weekly_Summary {
 
 		if ( isset( $by_name['Traffic']['totalSessionCount'] ) ) {
 			$stats[] = array(
+				'key'   => 'sessions',
+				'raw'   => (float) $by_name['Traffic']['totalSessionCount'],
 				'label' => __( 'Sessions', 'specflux-marketing-analytics-chat' ),
 				'value' => number_format_i18n( (float) $by_name['Traffic']['totalSessionCount'] ),
 			);

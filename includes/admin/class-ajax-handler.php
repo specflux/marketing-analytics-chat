@@ -734,59 +734,13 @@ class Ajax_Handler {
 	/**
 	 * Refresh the dashboard widget transient from the connected platforms.
 	 *
+	 * Reuses the weekly summary collector so the widget headline matches the
+	 * weekly email. Each platform fails independently inside the collector.
+	 *
 	 * @return array Success payload for the JSON response.
 	 */
 	private function do_refresh_widget_data() {
-		$widget_data        = array();
-		$credential_manager = new Credential_Manager();
-
-		// Fetch GA4 metrics if connected.
-		// Signature: run_report( $metrics, $dimensions = array(), $date_range = '7daysAgo', $options = array() ).
-		if ( $credential_manager->has_credentials( 'ga4' ) ) {
-			try {
-				$ga4_client         = new GA4_Client();
-				$widget_data['ga4'] = $ga4_client->run_report(
-					array( 'sessions', 'activeUsers', 'screenPageViews' ),
-					array( 'date' ),
-					'7daysAgo'
-				);
-			} catch ( \Throwable $e ) {
-				$widget_data['ga4_error'] = $e->getMessage();
-			}
-		}
-
-		// Fetch GSC metrics if connected.
-		// Signature: query_search_analytics( $date_range = '7daysAgo', $dimensions = array(), ... ).
-		if ( $credential_manager->has_credentials( 'gsc' ) ) {
-			try {
-				$gsc_client         = new GSC_Client();
-				$widget_data['gsc'] = $gsc_client->query_search_analytics(
-					'7daysAgo',
-					array( 'date' )
-				);
-			} catch ( \Throwable $e ) {
-				$widget_data['gsc_error'] = $e->getMessage();
-			}
-		}
-
-		// Fetch Clarity metrics if connected. Clarity's data export API caps the
-		// window at 3 days, so request 3 (not 7) to get a live response.
-		if ( $credential_manager->has_credentials( 'clarity' ) ) {
-			try {
-				$clarity_client         = new Clarity_Client();
-				$widget_data['clarity'] = $clarity_client->get_insights( 3 );
-			} catch ( \Throwable $e ) {
-				$widget_data['clarity_error'] = $e->getMessage();
-			}
-		}
-
-		// Store in transient with 30 minute TTL.
-		set_transient( 'specflux_mac_widget_data', $widget_data, 30 * MINUTE_IN_SECONDS );
-
-		return array(
-			'message' => 'Widget data refreshed successfully.',
-			'data'    => $widget_data,
-		);
+		return Widget_Headline::refresh();
 	}
 
 	/**

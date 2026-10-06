@@ -159,7 +159,8 @@ class Admin {
 				'specflux-mac-dashboard-widget',
 				'specfluxMacDashboardWidget',
 				array(
-					'nonce' => wp_create_nonce( 'specflux_mac_admin' ),
+					'nonce'       => wp_create_nonce( 'specflux_mac_admin' ),
+					'unavailable' => __( 'Numbers unavailable right now. Use Refresh to try again.', 'specflux-marketing-analytics-chat' ),
 				)
 			);
 		}

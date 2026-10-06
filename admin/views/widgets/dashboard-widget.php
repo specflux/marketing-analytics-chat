@@ -12,14 +12,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use Specflux_Marketing_Analytics\Admin\Widget_Headline;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Scheduler;
 
 $credential_manager = new Credential_Manager();
 $platforms          = array( 'clarity', 'ga4', 'gsc' );
 $recent_anomalies   = get_option( 'specflux_mac_recent_anomalies', array() );
-$widget_data        = get_transient( 'specflux_mac_widget_data' );
+$connected          = array();
+foreach ( $platforms as $platform_key ) {
+	if ( $credential_manager->has_credentials( $platform_key ) ) {
+		$connected[] = $platform_key;
+	}
+}
+$has_connection = ! empty( $connected );
+$headline_items = $has_connection ? Widget_Headline::cached() : null;
 ?>
 <div class="smac-widget">
+	<?php if ( ! $has_connection ) : ?>
+		<div class="smac-widget-section">
+			<?php echo Widget_Headline::render_empty_state(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer. ?>
+		</div>
+	<?php else : ?>
+		<!-- This week (loaded automatically when nothing is cached) -->
+		<div class="smac-widget-section smac-widget-headline"<?php echo null === $headline_items ? ' data-autoload="1"' : ''; ?>>
+			<?php
+			// Never call the APIs while the dashboard renders: show a loading state and let the script fetch.
+			echo null === $headline_items ? Widget_Headline::render_loading() : Widget_Headline::render( $headline_items ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer.
+			?>
+		</div>
+
 	<!-- Platform Status -->
 	<div class="smac-widget-section">
 		<h4 class="smac-widget-heading">
@@ -34,6 +56,7 @@ $widget_data        = get_transient( 'specflux_mac_widget_data' );
 			<?php endforeach; ?>
 		</div>
 	</div>
+	<?php endif; ?>
 
 	<!-- Recent Anomalies -->
 	<?php if ( ! empty( $recent_anomalies ) ) : ?>
@@ -66,6 +89,7 @@ $widget_data        = get_transient( 'specflux_mac_widget_data' );
 		</div>
 	<?php endif; ?>
 
+	<?php if ( $has_connection ) : ?>
 	<!-- Quick Action -->
 	<div class="smac-widget-section" style="margin-top: 15px; text-align: center;">
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-ai-assistant' ) ); ?>" class="button button-primary" style="width: 100%; text-align: center;">
@@ -80,4 +104,9 @@ $widget_data        = get_transient( 'specflux_mac_widget_data' );
 			<?php esc_html_e( 'Refresh', 'specflux-marketing-analytics-chat' ); ?>
 		</button>
 	</div>
+	<?php endif; ?>
+
+	<?php if ( current_user_can( 'manage_options' ) ) : ?>
+		<?php echo Widget_Headline::render_email_link( ( new Weekly_Summary_Scheduler() )->is_enabled() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer. ?>
+	<?php endif; ?>
 </div>
