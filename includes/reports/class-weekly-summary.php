@@ -349,8 +349,16 @@ class Weekly_Summary {
 		$queries = array();
 
 		try {
-			$report = $client->query_search_analytics( implode( ',', $range['current'] ), array( 'query' ), array(), array( 'row_limit' => 5 ) );
-			foreach ( array_slice( (array) ( $report['rows'] ?? array() ), 0, 5 ) as $row ) {
+			$report = $client->query_search_analytics( implode( ',', $range['current'] ), array( 'query' ), array(), array( 'row_limit' => 250 ) );
+			$found  = (array) ( $report['rows'] ?? array() );
+			// Search Console breaks click ties alphabetically; impressions are the more useful tiebreak on low-traffic sites.
+			usort(
+				$found,
+				function ( $a, $b ) {
+					return array( (float) ( $b['clicks'] ?? 0 ), (float) ( $b['impressions'] ?? 0 ) ) <=> array( (float) ( $a['clicks'] ?? 0 ), (float) ( $a['impressions'] ?? 0 ) );
+				}
+			);
+			foreach ( array_slice( $found, 0, 5 ) as $row ) {
 				$queries[] = array(
 					'label' => (string) ( $row['key'] ?? ( $row['keys'][0] ?? '' ) ),
 					'value' => (float) ( $row['clicks'] ?? 0 ),
