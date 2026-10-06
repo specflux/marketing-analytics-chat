@@ -53,12 +53,16 @@ class MCP_Client {
 				$name         = '';
 				$description  = '';
 				$input_schema = null;
+				$label        = '';
+				$annotations  = null;
 
 				if ( is_object( $ability ) && $ability instanceof \WP_Ability ) {
 					// Use getter methods for WP_Ability objects.
 					$name         = $ability->get_name();
 					$description  = $ability->get_description();
 					$input_schema = $ability->get_input_schema();
+					$label        = method_exists( $ability, 'get_label' ) ? $ability->get_label() : '';
+					$annotations  = method_exists( $ability, 'get_meta_item' ) ? $ability->get_meta_item( 'annotations' ) : null;
 				} elseif ( is_object( $ability ) ) {
 					// Fallback for other object types - try getter methods first, then properties.
 					if ( method_exists( $ability, 'get_name' ) ) {
@@ -107,6 +111,9 @@ class MCP_Client {
 					'name'        => $name,
 					'description' => $description,
 					'inputSchema' => $input_schema,
+					'label'       => $label,
+					// Core ability annotations; Tool_Policy treats anything but readonly=true as a write.
+					'annotations' => is_array( $annotations ) ? $annotations : array(),
 				);
 			}
 
