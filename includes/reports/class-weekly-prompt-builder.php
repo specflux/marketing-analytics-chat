@@ -110,6 +110,43 @@ class Weekly_Prompt_Builder {
 	}
 
 	/**
+	 * Question about the whole SEO issue list (dashboard row and weekly email).
+	 *
+	 * @param array $summary Seo_Issue_Summary data.
+	 * @return string Plain-text prompt.
+	 */
+	public static function seo_summary_prompt( array $summary ) {
+		$total = (int) ( $summary['total'] ?? 0 );
+
+		return sprintf(
+			/* translators: %s: number of SEO issues */
+			_n(
+				'Find my SEO issues and tell me what to fix first. You found %s issue.',
+				'Find my SEO issues and tell me what to fix first. You found %s issues.',
+				$total,
+				'specflux-marketing-analytics-chat'
+			),
+			number_format_i18n( $total )
+		);
+	}
+
+	/**
+	 * Question about one page's SEO issue (weekly email).
+	 *
+	 * @param array $issue One entry of Seo_Issue_Summary['top'].
+	 * @return string Plain-text prompt.
+	 */
+	public static function seo_issue_prompt( array $issue ) {
+		return sprintf(
+			/* translators: 1: issue such as "Missing meta description", 2: page title, 3: page URL */
+			__( 'How do I fix "%1$s" on "%2$s" (%3$s)? Show me what to change.', 'specflux-marketing-analytics-chat' ),
+			(string) ( $issue['label'] ?? '' ),
+			(string) ( $issue['title'] ?? '' ),
+			(string) ( $issue['url'] ?? '' )
+		);
+	}
+
+	/**
 	 * Suggestion chips for the empty chat state.
 	 *
 	 * @param array[]|null $items Cached headline items, or null when none.

@@ -175,3 +175,24 @@
 	font-size: 12px;
 	color: var(--smac-text-secondary);
 }
+
+/* Widget SEO row */
+.smac-widget-seo:empty {
+	display: none;
+}
+
+.smac-widget-seo-line,
+.smac-widget-seo-top,
+.smac-widget-seo-action,
+.smac-widget-seo-note {
+	margin: 0 0 6px;
+}
+
+.smac-widget-seo-line {
+	font-size: 14px;
+}
+
+.smac-widget-seo-note {
+	font-size: 12px;
+	color: var(--smac-text-secondary);
+}

@@ -452,59 +452,74 @@ class Content_Abilities {
 	public function execute_find_seo_issues( $args = array() ) {
 		return Ability_Response::tool(
 			function () use ( $args ) {
-				$args = (array) $args;
-				$this->assert_dates( $args );
-
-				$plugin     = $this->reader->detect();
-				$scan_limit = Content_Inventory::clamp_limit( $args['scan_limit'] ?? 200, self::POOL_SIZE );
-				$max_issues = Content_Inventory::clamp_limit( $args['max_issues'] ?? 50, 200 );
-
-				$pool_args             = $args;
-				$pool_args['limit']    = self::POOL_SIZE;
-				$pool_args['hard_cap'] = self::POOL_SIZE;
-				$analytics             = $this->load_analytics();
-				$pool                  = $this->sort_rows( $this->attach_metrics( $this->inventory->query( $pool_args ), $analytics ), 'impressions' );
-				$scanned               = array_slice( $pool, 0, $scan_limit );
-
-				$seo = $this->reader->read_many( array_column( $scanned, 'post_id' ), $plugin );
-
-				$queries_note = 'Focus keyword vs top search queries check was skipped: Search Console is not connected.';
-				$queries_map  = null;
-				if ( 'ok' === $analytics['status']['gsc'] || 'partial' === $analytics['status']['gsc'] ) {
-					list( $queries_map, $queries_note ) = $this->load_page_queries();
-				}
-
-				$rows = array();
-				foreach ( $scanned as $entry ) {
-					$metrics = $entry['metrics'];
-					unset( $entry['metrics'] );
-					$rows[] = array(
-						'item'    => $entry,
-						'seo'     => $seo[ $entry['post_id'] ],
-						'metrics' => $metrics,
-						'queries' => ( null !== $queries_map && isset( $queries_map[ $entry['path'] ] ) ) ? $queries_map[ $entry['path'] ] : null,
-					);
-				}
-
-				$result = ( new Seo_Issue_Detector() )->detect( $rows, $max_issues );
-
-				return array(
-					'period'            => $this->describe_analytics_period() . ' Content filtered by ' . $this->describe_publish_period( $args ) . '.',
-					'seo_plugin'        => '' === $plugin ? null : $this->reader->get_label( $plugin ),
-					'note'              => '' === $plugin ? 'No supported SEO plugin is active; only analytics-based checks (CTR) ran. SEO titles and descriptions were not checked; installing one of Yoast SEO, Rank Math, All in One SEO or SEOPress enables those checks.' : '',
-					'pages_scanned'     => count( $scanned ),
-					'pages_available'   => count( $pool ),
-					'data_status'       => $analytics['status'],
-					'queries_check'     => null === $queries_map ? $queries_note : 'ran',
-					'site_average_ctr'  => $result['site_avg_ctr'],
-					'total_issues'      => $result['total'],
-					'listed_issues'     => count( $result['issues'] ),
-					'truncated'         => $result['truncated'],
-					'counts_by_type'    => $result['counts'],
-					'template_note'     => 'Titles and descriptions containing template variables are not length-checked.',
-					'issues'            => $result['issues'],
-				);
+				return $this->scan_seo_issues( (array) $args );
 			}
+		);
+	}
+
+	/**
+	 * Run the SEO issue scan behind find-seo-issues.
+	 *
+	 * Shared with the dashboard widget and weekly email summary so every
+	 * surface reports the same numbers. May call Search Console, so never run
+	 * it while a normal admin page renders.
+	 *
+	 * @param array $args Same arguments as find-seo-issues (all optional).
+	 * @return array Scan result (see find-seo-issues output).
+	 * @throws \Exception When a date argument is malformed.
+	 */
+	public function scan_seo_issues( array $args = array() ) {
+		$args = (array) $args;
+		$this->assert_dates( $args );
+
+		$plugin     = $this->reader->detect();
+		$scan_limit = Content_Inventory::clamp_limit( $args['scan_limit'] ?? 200, self::POOL_SIZE );
+		$max_issues = Content_Inventory::clamp_limit( $args['max_issues'] ?? 50, 200 );
+
+		$pool_args             = $args;
+		$pool_args['limit']    = self::POOL_SIZE;
+		$pool_args['hard_cap'] = self::POOL_SIZE;
+		$analytics             = $this->load_analytics();
+		$pool                  = $this->sort_rows( $this->attach_metrics( $this->inventory->query( $pool_args ), $analytics ), 'impressions' );
+		$scanned               = array_slice( $pool, 0, $scan_limit );
+
+		$seo = $this->reader->read_many( array_column( $scanned, 'post_id' ), $plugin );
+
+		$queries_note = 'Focus keyword vs top search queries check was skipped: Search Console is not connected.';
+		$queries_map  = null;
+		if ( 'ok' === $analytics['status']['gsc'] || 'partial' === $analytics['status']['gsc'] ) {
+			list( $queries_map, $queries_note ) = $this->load_page_queries();
+		}
+
+		$rows = array();
+		foreach ( $scanned as $entry ) {
+			$metrics = $entry['metrics'];
+			unset( $entry['metrics'] );
+			$rows[] = array(
+				'item'    => $entry,
+				'seo'     => $seo[ $entry['post_id'] ],
+				'metrics' => $metrics,
+				'queries' => ( null !== $queries_map && isset( $queries_map[ $entry['path'] ] ) ) ? $queries_map[ $entry['path'] ] : null,
+			);
+		}
+
+		$result = ( new Seo_Issue_Detector() )->detect( $rows, $max_issues );
+
+		return array(
+			'period'            => $this->describe_analytics_period() . ' Content filtered by ' . $this->describe_publish_period( $args ) . '.',
+			'seo_plugin'        => '' === $plugin ? null : $this->reader->get_label( $plugin ),
+			'note'              => '' === $plugin ? 'No supported SEO plugin is active; only analytics-based checks (CTR) ran. SEO titles and descriptions were not checked; installing one of Yoast SEO, Rank Math, All in One SEO or SEOPress enables those checks.' : '',
+			'pages_scanned'     => count( $scanned ),
+			'pages_available'   => count( $pool ),
+			'data_status'       => $analytics['status'],
+			'queries_check'     => null === $queries_map ? $queries_note : 'ran',
+			'site_average_ctr'  => $result['site_avg_ctr'],
+			'total_issues'      => $result['total'],
+			'listed_issues'     => count( $result['issues'] ),
+			'truncated'         => $result['truncated'],
+			'counts_by_type'    => $result['counts'],
+			'template_note'     => 'Titles and descriptions containing template variables are not length-checked.',
+			'issues'            => $result['issues'],
 		);
 	}
 

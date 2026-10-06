@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use Specflux_Marketing_Analytics\Admin\Widget_Headline;
+use Specflux_Marketing_Analytics\Content\Seo_Issue_Summary;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 use Specflux_Marketing_Analytics\Reports\Weekly_Prompt_Builder;
 use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Scheduler;
@@ -28,6 +29,8 @@ foreach ( $platforms as $platform_key ) {
 }
 $has_connection = ! empty( $connected );
 $headline_items = $has_connection ? Widget_Headline::cached() : null;
+$seo_summary    = $has_connection ? Seo_Issue_Summary::cached() : null;
+$needs_autoload = null === $headline_items || null === $seo_summary;
 ?>
 <div class="smac-widget">
 	<?php if ( ! $has_connection ) : ?>
@@ -36,12 +39,15 @@ $headline_items = $has_connection ? Widget_Headline::cached() : null;
 		</div>
 	<?php else : ?>
 		<!-- This week (loaded automatically when nothing is cached) -->
-		<div class="smac-widget-section smac-widget-headline"<?php echo null === $headline_items ? ' data-autoload="1"' : ''; ?>>
+		<div class="smac-widget-section smac-widget-headline"<?php echo $needs_autoload ? ' data-autoload="1"' : ''; ?>>
 			<?php
 			// Never call the APIs while the dashboard renders: show a loading state and let the script fetch.
 			echo null === $headline_items ? Widget_Headline::render_loading() : Widget_Headline::render( $headline_items ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer.
 			?>
 		</div>
+
+		<!-- SEO (cached summary only; the AJAX refresh fills it when cold) -->
+		<div class="smac-widget-section smac-widget-seo"><?php echo Widget_Headline::render_seo( $seo_summary ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer. ?></div>
 
 	<!-- Platform Status -->
 	<div class="smac-widget-section">
