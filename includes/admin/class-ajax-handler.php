@@ -13,6 +13,7 @@ use Specflux_Marketing_Analytics\API_Clients\GSC_Client;
 use Specflux_Marketing_Analytics\Credentials\Connection_Tester;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
+use Specflux_Marketing_Analytics\Credentials\Platform_Registry;
 use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Scheduler;
 use Specflux_Marketing_Analytics\Utils\Logger;
 use Specflux_Marketing_Analytics\Utils\Permission_Manager;
@@ -131,13 +132,14 @@ class Ajax_Handler {
 		$platform = isset( $_POST['platform'] ) ? sanitize_text_field( wp_unslash( $_POST['platform'] ) ) : '';
 		Logger::debug( sprintf( 'Testing connection for platform: %s', $platform ) );
 
-		// Use Connection_Tester for OAuth-based platforms (GA4, GSC).
-		if ( in_array( $platform, array( 'ga4', 'gsc' ), true ) ) {
-			return $this->test_oauth_platform_connection( $platform );
-		}
-
+		// Clarity tests the (possibly unsaved) credentials posted by the form.
 		if ( 'clarity' === $platform ) {
 			return $this->test_clarity_connection();
+		}
+
+		// Every other registered platform tests through Connection_Tester.
+		if ( Platform_Registry::is_registered( $platform ) ) {
+			return $this->test_oauth_platform_connection( $platform );
 		}
 
 		Logger::debug( sprintf( 'ERROR: Unsupported platform: %s', $platform ) );
@@ -163,7 +165,8 @@ class Ajax_Handler {
 
 		$service = isset( $_POST['service'] ) ? sanitize_key( wp_unslash( $_POST['service'] ) ) : '';
 
-		if ( ! in_array( $service, array( 'ga4', 'gsc' ), true ) ) {
+		$service_definition = Platform_Registry::get( $service );
+		if ( null === $service_definition || 'google_oauth' !== $service_definition['auth'] ) {
 			wp_send_json_error( array( 'message' => __( 'Unsupported service.', 'specflux-marketing-analytics-chat' ) ) );
 			return;
 		}
@@ -265,7 +268,7 @@ class Ajax_Handler {
 	}
 
 	/**
-	 * Test OAuth platform connection (GA4 or GSC)
+	 * Test a registered platform's connection through Connection_Tester
 	 *
 	 * @param string $platform Platform key.
 	 * @return array Success payload for the JSON response.
@@ -276,22 +279,12 @@ class Ajax_Handler {
 		try {
 			$connection_tester = new Connection_Tester();
 
-			if ( 'ga4' === $platform ) {
-				$result = $connection_tester->test_ga4_connection();
-			} elseif ( 'gsc' === $platform ) {
-				$result = $connection_tester->test_gsc_connection();
-			} else {
-				$result = null;
-			}
+			$result = $connection_tester->test_connection( $platform );
 		} catch ( \Exception $e ) {
 			Logger::debug( '===== OAUTH CONNECTION TEST EXCEPTION =====' );
 			Logger::debug( sprintf( 'Exception: %s', $e->getMessage() ) );
 
 			throw new \RuntimeException( 'Connection test failed: ' . esc_html( $e->getMessage() ) );
-		}
-
-		if ( null === $result ) {
-			throw new \RuntimeException( 'Invalid platform for OAuth testing' );
 		}
 
 		Logger::debug( sprintf( 'OAuth connection test result: %s', wp_json_encode( $result ) ) );

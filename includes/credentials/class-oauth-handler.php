@@ -607,14 +607,13 @@ class OAuth_Handler {
 	 * @return array OAuth scopes.
 	 */
 	private function get_scopes_for_service( $service ) {
-		switch ( $service ) {
-			case 'ga4':
-				return self::SCOPES_GA4;
-			case 'gsc':
-				return self::SCOPES_GSC;
-			default:
-				return array();
+		$definition = Platform_Registry::get( $service );
+
+		if ( null === $definition || 'google_oauth' !== $definition['auth'] ) {
+			return array();
 		}
+
+		return (array) $definition['scopes'];
 	}
 
 	/**

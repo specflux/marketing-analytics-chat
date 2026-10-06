@@ -9,6 +9,8 @@
 
 namespace Specflux_Marketing_Analytics\Cache;
 
+use Specflux_Marketing_Analytics\Credentials\Platform_Registry;
+
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
 /**
@@ -22,7 +24,10 @@ class Cache_Manager {
 	const CACHE_PREFIX = 'specflux_mac_';
 
 	/**
-	 * Default TTL values for each platform (in seconds)
+	 * Default TTL values (in seconds)
+	 *
+	 * Platform TTLs now come from Platform_Registry; this remains the fallback
+	 * and the source for non-platform keys such as cross_platform.
 	 */
 	const DEFAULT_TTL = array(
 		'clarity'        => HOUR_IN_SECONDS,        // 1 hour (rate limit: 10 req/day).
@@ -153,9 +158,12 @@ class Cache_Manager {
 	 */
 	public function get_default_ttl( $platform ) {
 		// Apply filter to allow customization.
+		$definition = Platform_Registry::get( $platform );
+		$default    = null !== $definition ? $definition['cache_ttl'] : ( self::DEFAULT_TTL[ $platform ] ?? HOUR_IN_SECONDS );
+
 		$ttl = apply_filters(
 			'specflux_mac_cache_ttl',
-			self::DEFAULT_TTL[ $platform ] ?? HOUR_IN_SECONDS,
+			$default,
 			$platform
 		);
 
@@ -206,7 +214,7 @@ class Cache_Manager {
 
 		// Count by platform.
 		$by_platform = array();
-		foreach ( array( 'clarity', 'ga4', 'gsc' ) as $platform ) {
+		foreach ( Platform_Registry::slugs() as $platform ) {
 			$platform_pattern         = self::CACHE_PREFIX . $platform . '_%';
 			$by_platform[ $platform ] = $wpdb->get_var(
 				$wpdb->prepare(
