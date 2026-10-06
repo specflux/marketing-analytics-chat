@@ -1405,7 +1405,8 @@ if ( ! function_exists( 'add_query_arg' ) ) {
 	 */
 	function add_query_arg( $key, $value, $url = '' ) {
 		$sep = ( false === strpos( $url, '?' ) ) ? '?' : '&';
-		return $url . $sep . urlencode( $key ) . '=' . urlencode( $value );
+		// Like core: values are appended as given, without encoding.
+		return $url . $sep . $key . '=' . $value;
 	}
 }
 

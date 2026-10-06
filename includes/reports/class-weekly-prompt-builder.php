@@ -101,14 +101,12 @@ class Weekly_Prompt_Builder {
 	/**
 	 * Build the AI Assistant URL with a prefilled prompt.
 	 *
-	 * WordPress URL-encodes the value inside add_query_arg(), so the raw prompt is passed
-	 * (pre-encoding would double-encode it).
-	 *
 	 * @param string $prompt Plain-text prompt.
 	 * @return string URL (not HTML-escaped; wrap in esc_url() on output).
 	 */
 	public static function assistant_url( $prompt ) {
-		return add_query_arg( 'prompt', self::cap( $prompt ), admin_url( 'admin.php?page=' . self::PAGE_SLUG ) );
+		// add_query_arg() does not encode values; an unencoded '?' or '%' would truncate or corrupt the prompt.
+		return add_query_arg( 'prompt', rawurlencode( self::cap( $prompt ) ), admin_url( 'admin.php?page=' . self::PAGE_SLUG ) );
 	}
 
 	/**

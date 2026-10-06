@@ -30,9 +30,26 @@
 				return;
 			}
 			var prompt = new URLSearchParams(window.location.search).get('prompt');
-			if (prompt) {
-				$('#message-input').val(prompt.substring(0, 500)).focus();
+			if (!prompt) {
+				return;
 			}
+			prompt = prompt.substring(0, 500);
+
+			if ($('#message-input').length) {
+				$('#message-input').val(prompt).focus();
+				return;
+			}
+
+			// No conversation is open, so there is no input to fill yet: open one and carry the prompt over.
+			$.post(specfluxMacChat.ajaxUrl, {
+				action: 'specflux_mac_create_conversation',
+				nonce: specfluxMacChat.nonce,
+				user_id: specfluxMacChat.userId
+			}).done(function(response) {
+				if (response.success && response.data.conversation_id) {
+					window.location.href = specfluxMacChat.chatPageUrl + '&conversation_id=' + response.data.conversation_id + '&_wpnonce=' + specfluxMacChat.conversationNonce + '&prompt=' + encodeURIComponent(prompt);
+				}
+			});
 		},
 
 		/**

@@ -144,8 +144,19 @@ class WeeklyEntryPointsTest extends TestCase {
 	public function test_email_cta_url_contains_encoded_prompt(): void {
 		$html = ( new Weekly_Summary_Email() )->render( $this->context(), array() );
 
-		$this->assertStringContainsString( 'prompt=Last+week+GA4+sessions', $html );
+		$this->assertStringContainsString( 'prompt=Last%20week%20GA4%20sessions', $html );
 		$this->assertStringNotContainsString( '%2520', $html );
+	}
+
+	/**
+	 * A prompt with '?', '%' and commas survives the URL intact.
+	 */
+	public function test_prompt_round_trips_through_url(): void {
+		$prompt = 'Sessions were 12,480 (up 8.4%). What should I do first?';
+		$url    = Weekly_Prompt_Builder::assistant_url( $prompt );
+		parse_str( (string) wp_parse_url( $url, PHP_URL_QUERY ), $query );
+
+		$this->assertSame( $prompt, $query['prompt'] );
 	}
 
 	/**
