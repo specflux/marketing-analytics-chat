@@ -21,6 +21,13 @@ defined( 'ABSPATH' ) || exit;
 class GA4_Client {
 
 	/**
+	 * Largest property count match_property() will look up data streams for.
+	 *
+	 * @var int
+	 */
+	const MAX_PROPERTIES_TO_MATCH = 25;
+
+	/**
 	 * OAuth Handler instance
 	 *
 	 * @var OAuth_Handler
@@ -320,6 +327,105 @@ class GA4_Client {
 
 			throw $e;
 		}
+	}
+
+	/**
+	 * Find the GA4 property whose web data stream points at a site URL.
+	 *
+	 * Costs one Admin API call per property, so accounts with more than
+	 * MAX_PROPERTIES_TO_MATCH properties are not matched at all.
+	 *
+	 * @param array  $properties Entries from list_properties().
+	 * @param string $home_url   Current site URL.
+	 * @return array{property_id: string|null, confident: bool}
+	 */
+	public function match_property( $properties, $home_url ) {
+		$properties = (array) $properties;
+		if ( empty( $properties ) || count( $properties ) > self::MAX_PROPERTIES_TO_MATCH ) {
+			return self::pick_property( array(), $home_url );
+		}
+
+		$access_token = $this->oauth_handler->get_access_token( 'ga4' );
+		if ( empty( $access_token ) ) {
+			return self::pick_property( array(), $home_url );
+		}
+
+		$client = new \Google\Client();
+		$client->setAccessToken( $access_token );
+		$http = $client->authorize();
+
+		$property_ids = array_values(
+			array_filter(
+				array_map(
+					static function ( $property ) {
+						return (string) ( $property['property_id'] ?? '' );
+					},
+					$properties
+				)
+			)
+		);
+
+		// Each lookup takes over a second, so they run concurrently to stay well inside PHP's time limit.
+		$stream_uris = array();
+		$requests    = static function () use ( $property_ids ) {
+			foreach ( $property_ids as $property_id ) {
+				yield new \GuzzleHttp\Psr7\Request( 'GET', 'https://analyticsadmin.googleapis.com/v1beta/properties/' . rawurlencode( $property_id ) . '/dataStreams' );
+			}
+		};
+
+		$pool = new \GuzzleHttp\Pool(
+			$http,
+			$requests(),
+			array(
+				'concurrency' => 10,
+				'options'     => array( 'timeout' => 10 ),
+				'fulfilled'   => static function ( $response, $index ) use ( $property_ids, &$stream_uris ) {
+					$body = json_decode( (string) $response->getBody(), true );
+					foreach ( (array) ( $body['dataStreams'] ?? array() ) as $stream ) {
+						if ( ! empty( $stream['webStreamData']['defaultUri'] ) ) {
+							$stream_uris[ $property_ids[ $index ] ][] = $stream['webStreamData']['defaultUri'];
+						}
+					}
+				},
+				'rejected'    => static function ( $reason, $index ) use ( $property_ids ) {
+					$message = $reason instanceof \Throwable ? $reason->getMessage() : (string) $reason;
+					Logger::debug( sprintf( 'GA4: could not list data streams for %s: %s', $property_ids[ $index ], $message ) );
+				},
+			)
+		);
+		$pool->promise()->wait();
+
+		return self::pick_property( $stream_uris, $home_url );
+	}
+
+	/**
+	 * Pick the property whose web stream URL matches a site URL.
+	 *
+	 * Scheme, www and trailing slashes are ignored. Confident only when exactly one
+	 * property matches; several matching properties (a duplicate or stale property)
+	 * are left for the user to choose.
+	 *
+	 * @param array  $stream_uris Web stream URLs keyed by property ID.
+	 * @param string $home_url    Current site URL.
+	 * @return array{property_id: string|null, confident: bool}
+	 */
+	public static function pick_property( $stream_uris, $home_url ) {
+		$target  = GSC_Client::normalize_site_for_match( $home_url );
+		$matches = array();
+
+		foreach ( (array) $stream_uris as $property_id => $uris ) {
+			foreach ( (array) $uris as $uri ) {
+				if ( '' !== $target && GSC_Client::normalize_site_for_match( $uri ) === $target ) {
+					$matches[] = (string) $property_id;
+					break;
+				}
+			}
+		}
+
+		return array(
+			'property_id' => 1 === count( $matches ) ? $matches[0] : null,
+			'confident'   => 1 === count( $matches ),
+		);
 	}
 
 	/**

@@ -310,6 +310,101 @@ class GSC_Client {
 	}
 
 	/**
+	 * Normalize a Search Console site entry or site URL for comparison.
+	 *
+	 * Lowercases, strips the scheme, a leading "www." and trailing slashes.
+	 * "sc-domain:example.com" normalizes to "example.com".
+	 *
+	 * @param string $value Site entry or URL.
+	 * @return string Normalized host/path.
+	 */
+	public static function normalize_site_for_match( $value ) {
+		$value = strtolower( trim( (string) $value ) );
+		$value = preg_replace( '#^sc-domain:#', '', $value );
+		$value = preg_replace( '#^[a-z][a-z0-9+.-]*://#', '', $value );
+		$value = preg_replace( '#^www\.#', '', $value );
+
+		return rtrim( $value, '/' );
+	}
+
+	/**
+	 * Pick the Search Console site entry that best matches a site URL.
+	 *
+	 * @param array  $sites    Entries from list_sites() (arrays with 'site_url') or plain strings.
+	 * @param string $home_url Current site URL.
+	 * @return string|null Matching site entry, or null when nothing matches.
+	 */
+	public static function suggest_site( $sites, $home_url ) {
+		return self::match_site( $sites, $home_url )['site'];
+	}
+
+	/**
+	 * Match a site URL against Search Console entries.
+	 *
+	 * Preference: URL-prefix entry with the same scheme and host, then an sc-domain
+	 * property, then a URL-prefix entry differing only by scheme or www. Only the
+	 * first two are confident enough to save without asking: a scheme or www
+	 * variant usually holds little of this site's data.
+	 *
+	 * @param array  $sites    Entries from list_sites() (arrays with 'site_url') or plain strings.
+	 * @param string $home_url Current site URL.
+	 * @return array{site: string|null, confident: bool}
+	 */
+	public static function match_site( $sites, $home_url ) {
+		$none   = array(
+			'site'      => null,
+			'confident' => false,
+		);
+		$target = self::normalize_site_for_match( $home_url );
+		if ( '' === $target ) {
+			return $none;
+		}
+
+		$home_scheme = strtolower( (string) wp_parse_url( $home_url, PHP_URL_SCHEME ) );
+		$home_host   = strtolower( (string) wp_parse_url( $home_url, PHP_URL_HOST ) );
+		$best        = null;
+		$best_rank   = 0;
+
+		foreach ( (array) $sites as $site ) {
+			$entry = is_array( $site ) ? (string) ( $site['site_url'] ?? '' ) : (string) $site;
+			if ( '' === $entry ) {
+				continue;
+			}
+
+			if ( 0 === strpos( $entry, 'sc-domain:' ) ) {
+				// A domain property covers every scheme and subdomain, so it beats a
+				// URL-prefix property that only matches after ignoring scheme or www.
+				if ( self::normalize_site_for_match( $entry ) !== self::normalize_site_for_match( $home_host ) ) {
+					continue;
+				}
+				$rank = 3;
+			} elseif ( self::normalize_site_for_match( $entry ) !== $target ) {
+				continue;
+			} elseif ( strtolower( rtrim( $entry, '/' ) ) === rtrim( $home_scheme . '://' . $home_host . (string) wp_parse_url( $home_url, PHP_URL_PATH ), '/' ) ) {
+				$rank = 4;
+			} elseif ( strtolower( (string) wp_parse_url( $entry, PHP_URL_SCHEME ) ) === $home_scheme ) {
+				$rank = 2;
+			} else {
+				$rank = 1;
+			}
+
+			if ( $rank > $best_rank ) {
+				$best      = $entry;
+				$best_rank = $rank;
+			}
+		}
+
+		if ( null === $best ) {
+			return $none;
+		}
+
+		return array(
+			'site'      => $best,
+			'confident' => $best_rank >= 3,
+		);
+	}
+
+	/**
 	 * Set GSC site URL
 	 *
 	 * @param string $site_url Site URL.

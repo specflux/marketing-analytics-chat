@@ -162,4 +162,59 @@ class GA4ClientTest extends TestCase {
 			$this->assertStringContainsString( 'Failed to initialize GA4 client', $e->getMessage() );
 		}
 	}
+
+	/**
+	 * Test a single property whose web stream matches is picked confidently.
+	 */
+	public function test_pick_property_single_match_is_confident(): void {
+		$streams = array(
+			'111' => array( 'https://other.com' ),
+			'222' => array( 'https://www.example.com/' ),
+		);
+		$this->assertSame(
+			array(
+				'property_id' => '222',
+				'confident'   => true,
+			),
+			GA4_Client::pick_property( $streams, 'https://example.com' )
+		);
+	}
+
+	/**
+	 * Test several matching properties are left for the user to choose.
+	 */
+	public function test_pick_property_several_matches_is_not_confident(): void {
+		$streams = array(
+			'111' => array( 'https://example.com' ),
+			'222' => array( 'http://www.example.com' ),
+		);
+		$this->assertSame(
+			array(
+				'property_id' => null,
+				'confident'   => false,
+			),
+			GA4_Client::pick_property( $streams, 'https://example.com/' )
+		);
+	}
+
+	/**
+	 * Test no matching stream, or a stream for another path, picks nothing.
+	 */
+	public function test_pick_property_no_match(): void {
+		$streams = array( '111' => array( 'https://example.com/shop' ) );
+		$this->assertNull( GA4_Client::pick_property( $streams, 'https://example.com' )['property_id'] );
+		$this->assertFalse( GA4_Client::pick_property( array(), 'https://example.com' )['confident'] );
+	}
+
+	/**
+	 * Test accounts above the property cap are not matched (no stream lookups).
+	 */
+	public function test_match_property_skips_large_accounts(): void {
+		$properties = array();
+		for ( $i = 0; $i <= GA4_Client::MAX_PROPERTIES_TO_MATCH; $i++ ) {
+			$properties[] = array( 'property_id' => (string) $i );
+		}
+		$client = new GA4_Client();
+		$this->assertFalse( $client->match_property( $properties, 'https://example.com' )['confident'] );
+	}
 }
