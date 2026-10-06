@@ -68,7 +68,7 @@ if ( ! function_exists( 'specflux_mac_format_chat_markdown' ) ) {
 <div class="wrap specflux-marketing-analytics-chat">
 	<h1 class="wp-heading-inline"><?php esc_html_e( 'AI Assistant', 'specflux-marketing-analytics-chat' ); ?></h1>
 	<p class="description">
-		<?php esc_html_e( 'Chat with an AI assistant about your marketing analytics data. The assistant can access Clarity, Google Analytics, and Search Console data.', 'specflux-marketing-analytics-chat' ); ?>
+		<?php esc_html_e( 'Chat with an AI assistant about your marketing analytics data. The assistant answers from the sources connected on the Connections page: Google Analytics 4, Search Console, Microsoft Clarity, Bing Webmaster Tools, PageSpeed Insights, and your own posts and SEO plugin.', 'specflux-marketing-analytics-chat' ); ?>
 	</p>
 
 	<div class="chat-container">
@@ -126,6 +126,7 @@ if ( ! function_exists( 'specflux_mac_format_chat_markdown' ) ) {
 								<li><?php esc_html_e( 'Search Console rankings and queries', 'specflux-marketing-analytics-chat' ); ?></li>
 								<li><?php esc_html_e( 'User behavior insights from Clarity', 'specflux-marketing-analytics-chat' ); ?></li>
 								<li><?php esc_html_e( 'Period comparisons and analysis', 'specflux-marketing-analytics-chat' ); ?></li>
+								<li><?php esc_html_e( 'SEO fixes for your posts, page speed, and Bing search', 'specflux-marketing-analytics-chat' ); ?></li>
 							</ul>
 						</div>
 					<?php else : ?>
