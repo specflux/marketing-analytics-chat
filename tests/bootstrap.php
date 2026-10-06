@@ -695,7 +695,39 @@ if ( ! function_exists( 'wp_next_scheduled' ) ) {
 	 */
 	function wp_next_scheduled( $hook, $args = array() ) {
 		// Tests can seed or inspect $GLOBALS['specflux_mac_test_cron'] (hook => timestamp).
+		$by_args = $GLOBALS['specflux_mac_test_cron_args'][ $hook . '|' . serialize( $args ) ] ?? false; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+		if ( false !== $by_args ) {
+			return $by_args;
+		}
 		return $GLOBALS['specflux_mac_test_cron'][ $hook ] ?? false;
+	}
+}
+
+if ( ! function_exists( 'wp_schedule_single_event' ) ) {
+	/**
+	 * Mock wp_schedule_single_event function.
+	 *
+	 * @param int    $timestamp Timestamp.
+	 * @param string $hook      Hook name.
+	 * @param array  $args      Hook arguments.
+	 * @return bool
+	 */
+	function wp_schedule_single_event( $timestamp, $hook, $args = array() ) {
+		$GLOBALS['specflux_mac_test_cron_args'][ $hook . '|' . serialize( $args ) ] = $timestamp; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+		$GLOBALS['specflux_mac_test_single'][] = array( $hook, $args );
+		return true;
+	}
+}
+
+if ( ! function_exists( 'spawn_cron' ) ) {
+	/**
+	 * Mock spawn_cron function (counts calls).
+	 *
+	 * @return bool
+	 */
+	function spawn_cron() {
+		$GLOBALS['specflux_mac_test_spawn_cron'] = ( $GLOBALS['specflux_mac_test_spawn_cron'] ?? 0 ) + 1;
+		return true;
 	}
 }
 

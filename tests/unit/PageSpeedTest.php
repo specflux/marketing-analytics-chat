@@ -40,7 +40,7 @@ class PageSpeedTest extends TestCase {
 		$mock_options    = array();
 		$mock_transients = array();
 		$this->history   = array();
-		unset( $GLOBALS['specflux_mac_test_filters'] );
+		unset( $GLOBALS['specflux_mac_test_filters'], $GLOBALS['specflux_mac_test_cron'], $GLOBALS['specflux_mac_test_cron_args'], $GLOBALS['specflux_mac_test_single'], $GLOBALS['specflux_mac_test_spawn_cron'] );
 		Platform_Registry::reset();
 	}
 
@@ -336,24 +336,25 @@ class PageSpeedTest extends TestCase {
 		$this->assertSame( 'failed', $cwv['page_assessment'] );
 		$this->assertSame( 'passed', $cwv['origin_assessment'] );
 
+		// The CWV call above cached the home page, so the audit ranks it and flags the bad URL.
 		$audit = json_decode( $abilities->execute_audit_top_pages_speed( array( 'limit' => 2 ) )['content'][0]['text'], true );
 		$this->assertSame( 32, $audit['rows'][0]['score'] );
 		$this->assertArrayHasKey( 'error', $audit['rows'][1] );
-		$this->assertFalse( $audit['partial'] );
+		$this->assertTrue( $audit['complete'] );
 
 		$bad = $abilities->execute_get_page_speed( array( 'url' => 'https://evil.example.org/' ) );
 		$this->assertTrue( $bad['isError'] );
 	}
 
 	/**
-	 * With no time budget the audit stops early and says so.
+	 * Abilities over a stub client with a fixed page list.
+	 *
+	 * @param PageSpeed_Client $client Client.
+	 * @param array            $paths  Page paths.
+	 * @return PageSpeed_Abilities
 	 */
-	public function test_audit_partial_when_out_of_time() {
-		$GLOBALS['specflux_mac_test_filters']['specflux_mac_pagespeed_time_budget'] = static function () {
-				return 1;
-			};
-
-		$abilities = new class( $this->client( array() ) ) extends PageSpeed_Abilities {
+	private function abilities_for( PageSpeed_Client $client, array $paths = array( '/' ) ) {
+		return new class( $client, $paths ) extends PageSpeed_Abilities {
 			/**
 			 * Client.
 			 *
@@ -362,12 +363,21 @@ class PageSpeedTest extends TestCase {
 			private $stub;
 
 			/**
+			 * Paths.
+			 *
+			 * @var array
+			 */
+			private $paths;
+
+			/**
 			 * Constructor.
 			 *
-			 * @param PageSpeed_Client $stub Client.
+			 * @param PageSpeed_Client $stub  Client.
+			 * @param array            $paths Paths.
 			 */
-			public function __construct( $stub ) {
-				$this->stub = $stub;
+			public function __construct( $stub, $paths ) {
+				$this->stub  = $stub;
+				$this->paths = $paths;
 			}
 
 			/**
@@ -378,11 +388,182 @@ class PageSpeedTest extends TestCase {
 			protected function make_client() {
 				return $this->stub;
 			}
-		};
 
-		$audit = json_decode( $abilities->execute_audit_top_pages_speed( array( 'limit' => 3 ) )['content'][0]['text'], true );
-		$this->assertTrue( $audit['partial'] );
-		$this->assertStringContainsString( 'Stopped early', $audit['note'] );
+			/**
+			 * Fixed pages.
+			 *
+			 * @param int $limit Limit.
+			 * @return array
+			 */
+			protected function pick_pages( $limit ) {
+				$pages = array();
+				foreach ( $this->paths as $path ) {
+					$pages[] = array(
+						'path'  => $path,
+						'views' => null,
+					);
+				}
+				return array(
+					'source' => 'home_and_latest_posts',
+					'pages'  => $pages,
+				);
+			}
+		};
+	}
+
+	/**
+	 * Decode a tool result.
+	 *
+	 * @param array $result Tool result.
+	 * @return array
+	 */
+	private function decode( $result ) {
+		return json_decode( $result['content'][0]['text'], true );
+	}
+
+	/**
+	 * Run a callback with a short PHP time limit.
+	 *
+	 * @param callable $fn Callback.
+	 */
+	private function with_low_time( callable $fn ) {
+		$old = ini_get( 'max_execution_time' );
+		ini_set( 'max_execution_time', '30' ); // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
+		try {
+			$fn();
+		} finally {
+			ini_set( 'max_execution_time', (string) $old ); // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
+		}
+	}
+
+	/**
+	 * Cached results are returned unchanged, even with little PHP time left.
+	 */
+	public function test_cached_path_unchanged() {
+		$client = $this->client( array( new Response( 200, array(), $this->fixture() ) ) );
+		$client->get_summary( '/', 'mobile' );
+		$this->assertCount( 1, $this->history );
+
+		$this->with_low_time(
+			function () use ( $client ) {
+				$out = $this->decode( $this->abilities_for( $client )->execute_get_page_speed( array( 'url' => '/' ) ) );
+				$this->assertSame( 32, $out['score'] );
+				$this->assertArrayNotHasKey( 'status', $out );
+			}
+		);
+		$this->assertCount( 1, $this->history );
+		$this->assertArrayNotHasKey( 'specflux_mac_test_single', $GLOBALS );
+	}
+
+	/**
+	 * Uncached with little time: queued, no HTTP call, no fake score.
+	 */
+	public function test_uncached_low_time_is_queued() {
+		$client = $this->client( array() );
+
+		$this->with_low_time(
+			function () use ( $client ) {
+				$abilities = $this->abilities_for( $client );
+				$out       = $this->decode( $abilities->execute_get_page_speed( array( 'url' => '/' ) ) );
+				$this->assertSame( 'queued', $out['status'] );
+				$this->assertSame( 'https://example.com/', $out['url'] );
+				$this->assertSame( 'mobile', $out['strategy'] );
+				$this->assertSame( 60, $out['retry_after_seconds'] );
+				$this->assertArrayNotHasKey( 'score', $out );
+
+				$cwv = $this->decode( $abilities->execute_get_core_web_vitals( array( 'url' => '/pricing/', 'strategy' => 'desktop' ) ) );
+				$this->assertSame( 'queued', $cwv['status'] );
+				$this->assertArrayNotHasKey( 'page_assessment', $cwv );
+			}
+		);
+		$this->assertCount( 0, $this->history );
+		$this->assertSame( PageSpeed_Client::CRON_HOOK, $GLOBALS['specflux_mac_test_single'][0][0] );
+		$this->assertSame( array( 'https://example.com/', 'mobile' ), $GLOBALS['specflux_mac_test_single'][0][1] );
+		$this->assertSame( 2, $GLOBALS['specflux_mac_test_spawn_cron'] );
+	}
+
+	/**
+	 * Uncached with enough time (unlimited) runs inline; the filter can veto that.
+	 */
+	public function test_uncached_enough_time_runs_sync_unless_filtered() {
+		$client = $this->client( array( new Response( 200, array(), $this->fixture() ) ) );
+		$out    = $this->decode( $this->abilities_for( $client )->execute_get_page_speed( array( 'url' => '/' ) ) );
+		$this->assertSame( 32, $out['score'] );
+		$this->assertCount( 1, $this->history );
+		$this->assertArrayNotHasKey( 'specflux_mac_test_single', $GLOBALS );
+
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_pagespeed_sync'] = static function () {
+			return false;
+		};
+		$out = $this->decode( $this->abilities_for( $this->client( array() ) )->execute_get_page_speed( array( 'url' => '/about/' ) ) );
+		$this->assertSame( 'queued', $out['status'] );
+		$this->assertCount( 1, $this->history );
+	}
+
+	/**
+	 * A second request does not schedule a duplicate while locked or already scheduled.
+	 */
+	public function test_queue_dedupes() {
+		$client = $this->client( array() );
+		$this->assertTrue( $client->queue( '/', 'mobile' ) );
+		$this->assertFalse( $client->queue( '/', 'mobile' ) );
+		$this->assertCount( 1, $GLOBALS['specflux_mac_test_single'] );
+
+		// Lock gone but event still scheduled: still no duplicate.
+		global $mock_transients;
+		$mock_transients = array();
+		$this->assertFalse( $client->queue( '/', 'mobile' ) );
+		$this->assertCount( 1, $GLOBALS['specflux_mac_test_single'] );
+		$this->assertSame( 1, $GLOBALS['specflux_mac_test_spawn_cron'] );
+	}
+
+	/**
+	 * The cron hook stores the result in the cache and releases the lock.
+	 */
+	public function test_cron_hook_stores_result() {
+		$stack  = HandlerStack::create( new MockHandler( array( new Response( 200, array(), $this->fixture() ) ) ) );
+		$stack->push( Middleware::history( $this->history ) );
+		$client = new PageSpeed_Client( '', new Client( array( 'handler' => $stack, 'http_errors' => false ) ) );
+		$client->queue( '/', 'mobile' );
+		$lock = 'specflux_mac_psi_lock_' . md5( 'https://example.com/|mobile' );
+		$this->assertNotFalse( get_transient( $lock ) );
+		$this->assertFalse( $client->is_cached( '/', 'mobile' ) );
+
+		PageSpeed_Client::run_background( 'https://example.com/', 'mobile', $client );
+
+		$this->assertTrue( $client->is_cached( '/', 'mobile' ) );
+		$this->assertFalse( get_transient( $lock ) );
+		$this->assertCount( 1, $this->history );
+	}
+
+	/**
+	 * A failed background run is swallowed, not cached, and releases the lock.
+	 */
+	public function test_cron_hook_failure_is_not_cached() {
+		$client = $this->client( array( new Response( 429, array(), '{"error":{"message":"quota"}}' ) ) );
+		$client->queue( '/', 'mobile' );
+
+		PageSpeed_Client::run_background( 'https://example.com/', 'mobile', $client );
+
+		$this->assertFalse( $client->is_cached( '/', 'mobile' ) );
+		$this->assertFalse( get_transient( 'specflux_mac_psi_lock_' . md5( 'https://example.com/|mobile' ) ) );
+	}
+
+	/**
+	 * Audit ranks cached pages immediately and queues the rest.
+	 */
+	public function test_audit_mixes_cached_and_queued() {
+		$client = $this->client( array( new Response( 200, array(), $this->fixture() ) ) );
+		$client->get_summary( '/', 'mobile' );
+
+		$audit = $this->decode( $this->abilities_for( $client, array( '/', '/pricing/', '/blog/' ) )->execute_audit_top_pages_speed( array( 'limit' => 3 ) ) );
+		$this->assertCount( 1, $audit['rows'] );
+		$this->assertSame( 32, $audit['rows'][0]['score'] );
+		$this->assertFalse( $audit['complete'] );
+		$this->assertSame( array( 'https://example.com/pricing/', 'https://example.com/blog/' ), $audit['queued'] );
+		$this->assertNotEmpty( $audit['message'] );
+		$this->assertCount( 2, $GLOBALS['specflux_mac_test_single'] );
+		$this->assertCount( 1, $this->history );
 	}
 }
 }

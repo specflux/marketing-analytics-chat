@@ -20,11 +20,6 @@ defined( 'ABSPATH' ) || exit;
 class PageSpeed_Abilities {
 
 	/**
-	 * Seconds reserved for one uncached Lighthouse run when budgeting time.
-	 */
-	const RUN_HEADROOM = 45;
-
-	/**
 	 * Register abilities (only when an API key is saved).
 	 */
 	public function register() {
@@ -35,7 +30,7 @@ class PageSpeed_Abilities {
 		$this->register_tool(
 			'marketing-analytics/get-page-speed',
 			__( 'Get Page Speed', 'specflux-marketing-analytics-chat' ),
-			__( 'Run PageSpeed Insights (Lighthouse) for a page and return its performance score (0-100), lab metrics (LCP, CLS, TBT, FCP, Speed Index, TTI), real-user field data when available, and the top 5 fixes with estimated savings. Use for "why is my site/page slow" or "how fast is /pricing/". Takes 10-40 seconds when not cached; results are cached for 24 hours.', 'specflux-marketing-analytics-chat' ),
+			__( 'Run PageSpeed Insights (Lighthouse) for a page and return its performance score (0-100), lab metrics (LCP, CLS, TBT, FCP, Speed Index, TTI), real-user field data when available, and the top 5 fixes with estimated savings. Use for "why is my site/page slow" or "how fast is /pricing/". Results are cached for 24 hours. When not cached, the measurement takes 10-40 seconds and usually runs in the background: the tool then returns status "queued" with no score. On "queued", tell the user the page is being measured and to ask again in about a minute; do not call this tool again in the same turn.', 'specflux-marketing-analytics-chat' ),
 			array(
 				'url'      => array(
 					'type'        => 'string',
@@ -54,7 +49,7 @@ class PageSpeed_Abilities {
 		$this->register_tool(
 			'marketing-analytics/get-core-web-vitals',
 			__( 'Get Core Web Vitals', 'specflux-marketing-analytics-chat' ),
-			__( 'Return real-user Core Web Vitals field data (Chrome UX Report: LCP, INP, CLS, FCP, TTFB with FAST/AVERAGE/SLOW) for a page and its whole origin, plus a pass/fail assessment. Use for "do we pass Core Web Vitals" questions. PageSpeed Insights always runs Lighthouse too, so this reuses a cached run when available; otherwise it takes 10-40 seconds.', 'specflux-marketing-analytics-chat' ),
+			__( 'Return real-user Core Web Vitals field data (Chrome UX Report: LCP, INP, CLS, FCP, TTFB with FAST/AVERAGE/SLOW) for a page and its whole origin, plus a pass/fail assessment. Use for "do we pass Core Web Vitals" questions. PageSpeed Insights always runs Lighthouse too, so this reuses a cached run when available; otherwise the measurement runs in the background and the tool returns status "queued" with no data. On "queued", tell the user the page is being measured and to ask again shortly; do not retry in the same turn.', 'specflux-marketing-analytics-chat' ),
 			array(
 				'url'      => array(
 					'type'        => 'string',
@@ -73,7 +68,7 @@ class PageSpeed_Abilities {
 		$this->register_tool(
 			'marketing-analytics/audit-top-pages-speed',
 			__( 'Audit Top Pages Speed', 'specflux-marketing-analytics-chat' ),
-			__( 'Check mobile page speed for the site\'s top pages (by Google Analytics 4 views when connected, otherwise the home page and latest posts) and return a table ranked slowest first with score, LCP, CLS, TBT and Core Web Vitals status. Use for "which of my pages are slowest" or a site-wide speed review. Runs sequentially and may stop early with a partial note; re-run to continue using cached results.', 'specflux-marketing-analytics-chat' ),
+			__( 'Check mobile page speed for the site\'s top pages (by Google Analytics 4 views when connected, otherwise the home page and latest posts) and return a table ranked slowest first with score, LCP, CLS, TBT and Core Web Vitals status. Use for "which of my pages are slowest" or a site-wide speed review. Returns cached pages immediately and measures uncached pages in the background; when the result has complete=false, tell the user the remaining pages (listed in queued) are being measured and to ask again in about a minute. Do not call this tool again in the same turn.', 'specflux-marketing-analytics-chat' ),
 			array(
 				'limit' => array(
 					'type'        => 'integer',
@@ -141,7 +136,7 @@ class PageSpeed_Abilities {
 			function () use ( $args ) {
 				$args = is_array( $args ) ? $args : array();
 
-				return $this->make_client()->get_summary( $args['url'] ?? '', $args['strategy'] ?? 'mobile' );
+				return $this->make_client()->get_summary_or_queue( $args['url'] ?? '', $args['strategy'] ?? 'mobile' );
 			}
 		);
 	}
@@ -156,7 +151,10 @@ class PageSpeed_Abilities {
 		return Ability_Response::tool(
 			function () use ( $args ) {
 				$args    = is_array( $args ) ? $args : array();
-				$summary = $this->make_client()->get_summary( $args['url'] ?? '', $args['strategy'] ?? 'mobile' );
+				$summary = $this->make_client()->get_summary_or_queue( $args['url'] ?? '', $args['strategy'] ?? 'mobile' );
+				if ( isset( $summary['status'] ) && 'queued' === $summary['status'] ) {
+					return $summary;
+				}
 
 				return array(
 					'url'                => $summary['url'],
@@ -187,23 +185,13 @@ class PageSpeed_Abilities {
 				$client = $this->make_client();
 				$pages  = $this->pick_pages( $limit );
 
-				$max_exec = (int) ini_get( 'max_execution_time' );
-				$budget   = $max_exec > 0 ? max( 0, $max_exec - 5 ) : 300;
-				/**
-				 * Filter the seconds the audit may spend before stopping with a partial result.
-				 *
-				 * @param int $budget Seconds.
-				 */
-				$budget = (int) apply_filters( 'specflux_mac_pagespeed_time_budget', $budget );
-				$start  = microtime( true );
-
-				$rows    = array();
-				$skipped = 0;
+				$rows   = array();
+				$queued = array();
 				foreach ( $pages['pages'] as $page ) {
 					try {
-						$cached = $client->is_cached( $page['path'], 'mobile' );
-						if ( ! $cached && ( microtime( true ) - $start ) + self::RUN_HEADROOM > $budget ) {
-							++$skipped;
+						if ( ! $client->is_cached( $page['path'], 'mobile' ) ) {
+							$client->queue( $page['path'], 'mobile' );
+							$queued[] = $client->resolve_url( $page['path'] );
 							continue;
 						}
 
@@ -244,10 +232,12 @@ class PageSpeed_Abilities {
 					'source'   => $pages['source'],
 					'strategy' => 'mobile',
 					'rows'     => $rows,
-					'partial'  => $skipped > 0,
+					'complete' => empty( $queued ),
 				);
-				if ( $skipped > 0 ) {
-					$result['note'] = sprintf( 'Stopped early to respect the PHP time limit; %d page(s) not checked. Run again to continue (finished pages are cached).', $skipped );
+				if ( ! empty( $queued ) ) {
+					$result['queued']              = $queued;
+					$result['retry_after_seconds'] = 60;
+					$result['message']             = sprintf( 'Measuring %d more page(s) now; ask again in about a minute for the full ranking. Do not retry in this turn.', count( $queued ) );
 				}
 
 				return $result;
