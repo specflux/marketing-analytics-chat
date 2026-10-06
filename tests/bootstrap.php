@@ -422,6 +422,7 @@ if ( ! function_exists( 'get_bloginfo' ) ) {
             'name'    => 'Test Blog',
             'admin_email' => 'admin@example.com',
             'url'     => 'https://example.com',
+            'charset' => 'UTF-8',
         );
         return isset( $info[ $show ] ) ? $info[ $show ] : '';
     }

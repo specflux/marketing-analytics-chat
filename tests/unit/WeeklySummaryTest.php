@@ -374,6 +374,7 @@ class WeeklySummaryTest extends TestCase {
 		global $mock_options;
 		$scheduler = new Weekly_Summary_Scheduler();
 
+		$mock_options[ Weekly_Summary_Scheduler::OPTION_ENABLED ] = 1;
 		$scheduler->sync_schedule();
 		$this->assertCount( 1, $GLOBALS['specflux_mac_test_cron_log'] );
 		$this->assertSame( 'weekly', $GLOBALS['specflux_mac_test_cron_log'][0][1] );
@@ -389,10 +390,75 @@ class WeeklySummaryTest extends TestCase {
 	}
 
 	/**
-	 * Enabled defaults to on.
+	 * A missing option means off, so updating sites must opt in.
 	 */
-	public function test_enabled_by_default(): void {
+	public function test_disabled_when_option_missing(): void {
+		$this->assertFalse( ( new Weekly_Summary_Scheduler() )->is_enabled() );
+	}
+
+	/**
+	 * Fresh activation seeds the option on.
+	 */
+	public function test_activate_seeds_enabled(): void {
+		Weekly_Summary_Scheduler::activate();
+
 		$this->assertTrue( ( new Weekly_Summary_Scheduler() )->is_enabled() );
+	}
+
+	/**
+	 * Nothing is mailed when every connected platform failed.
+	 */
+	public function test_send_skipped_when_all_platforms_failed(): void {
+		$scheduler = new Weekly_Summary_Scheduler( $this->summary( array( 'gsc' => new Throwing_Client() ) ) );
+		$result    = $scheduler->send();
+
+		$this->assertFalse( $result['sent'] );
+		$this->assertStringContainsString( 'no summary was sent', $result['message'] );
+		$this->assertEmpty( $GLOBALS['specflux_mac_test_mail'] ?? array() );
+	}
+
+	/**
+	 * Average position is unavailable, not 0, without impressions.
+	 */
+	public function test_position_is_null_without_impressions(): void {
+		$gsc = new class() {
+			/**
+			 * Zero impressions in the current window only.
+			 *
+			 * @param string $range      Range.
+			 * @param array  $dimensions Dimensions.
+			 * @return array
+			 */
+			public function query_search_analytics( $range = '', $dimensions = array() ) {
+				if ( array() !== $dimensions ) {
+					return array( 'rows' => array() );
+				}
+				$is_current = false === strpos( $range, '2026-09-23' );
+				return array(
+					'rows' => array(
+						array(
+							'clicks'      => 0,
+							'impressions' => $is_current ? 0 : 50,
+							'ctr'         => 0,
+							'position'    => $is_current ? 0 : 7.5,
+						),
+					),
+				);
+			}
+		};
+
+		$context  = $this->summary( array( 'gsc' => $gsc ) )->collect( $this->now() );
+		$position = null;
+		foreach ( $context['platforms']['gsc']['data']['metrics'] as $metric ) {
+			if ( 'position' === $metric['key'] ) {
+				$position = $metric;
+			}
+		}
+
+		$this->assertNotNull( $position );
+		$this->assertNull( $position['current'] );
+		$this->assertNull( $position['change'] );
+		$this->assertSame( '—', ( new Weekly_Summary_Email() )->format_value( null, 'position' ) );
 	}
 
 	/**

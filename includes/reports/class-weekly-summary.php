@@ -224,6 +224,27 @@ class Weekly_Summary {
 	}
 
 	/**
+	 * Average position metric. With no impressions there is no position, so the
+	 * value (and the change) is null instead of a misleading 0.
+	 *
+	 * @param array $current Current window headline row.
+	 * @param array $prior   Previous window headline row.
+	 * @return array Metric row.
+	 */
+	private function position_metric( array $current, array $prior ) {
+		$current_position = ( (float) ( $current['impressions'] ?? 0 ) > 0 ) ? (float) ( $current['position'] ?? 0 ) : null;
+		$prior_position   = ( (float) ( $prior['impressions'] ?? 0 ) > 0 ) ? (float) ( $prior['position'] ?? 0 ) : null;
+
+		$metric = $this->metric( 'position', __( 'Avg. position', 'specflux-marketing-analytics-chat' ), (float) $current_position, (float) $prior_position, 'position', true );
+
+		$metric['current']  = $current_position;
+		$metric['previous'] = $prior_position;
+		$metric['change']   = ( null === $current_position || null === $prior_position ) ? null : $metric['change'];
+
+		return $metric;
+	}
+
+	/**
 	 * Get a GA4 client.
 	 *
 	 * @return GA4_Client|object
@@ -343,7 +364,7 @@ class Weekly_Summary {
 			$this->metric( 'clicks', __( 'Clicks', 'specflux-marketing-analytics-chat' ), (float) ( $current['clicks'] ?? 0 ), (float) ( $prior['clicks'] ?? 0 ) ),
 			$this->metric( 'impressions', __( 'Impressions', 'specflux-marketing-analytics-chat' ), (float) ( $current['impressions'] ?? 0 ), (float) ( $prior['impressions'] ?? 0 ) ),
 			$this->metric( 'ctr', __( 'Avg. CTR', 'specflux-marketing-analytics-chat' ), (float) ( $current['ctr'] ?? 0 ) * 100, (float) ( $prior['ctr'] ?? 0 ) * 100, 'percent' ),
-			$this->metric( 'position', __( 'Avg. position', 'specflux-marketing-analytics-chat' ), (float) ( $current['position'] ?? 0 ), (float) ( $prior['position'] ?? 0 ), 'position', true ),
+			$this->position_metric( $current, $prior ),
 		);
 
 		$queries = array();

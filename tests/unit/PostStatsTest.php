@@ -589,4 +589,86 @@ class PostStatsTest extends TestCase {
 		$this->assertTrue( $mock_json_responses[0]['success'] );
 		$this->assertStringContainsString( '1,204 views', $mock_json_responses[0]['data']['cells'][1] );
 	}
+
+	/**
+	 * A capped report cannot prove a missing post has zero views.
+	 */
+	public function test_capped_ga4_map_shows_dash_for_missing_post() {
+		$subject = $this->subject();
+		$rows    = array();
+		for ( $i = 0; $i < 2000; $i++ ) {
+			$rows[] = array(
+				'pagePath'        => '/other-' . $i . '/',
+				'screenPageViews' => '1',
+			);
+		}
+		$subject->ga4_response = array( 'rows' => $rows );
+
+		$cache = $subject->build_cache();
+		$this->assertTrue( $cache['capped']['ga4'] );
+		$this->assertArrayNotHasKey( 'gsc', $cache['capped'] );
+
+		$html = $subject->get_cell_html( 1, $cache );
+		$this->assertStringContainsString( '— views', $html );
+		$this->assertStringNotContainsString( '0 views', $html );
+	}
+
+	/**
+	 * An uncapped report keeps the honest zero.
+	 */
+	public function test_uncapped_ga4_map_shows_zero_for_missing_post() {
+		$subject               = $this->subject();
+		$subject->ga4_response = array(
+			'rows' => array(
+				array(
+					'pagePath'        => '/other/',
+					'screenPageViews' => '5',
+				),
+			),
+		);
+
+		$cache = $subject->build_cache();
+		$this->assertArrayNotHasKey( 'ga4', $cache['capped'] );
+		$this->assertStringContainsString( '0 views', $subject->get_cell_html( 1, $cache ) );
+	}
+
+	/**
+	 * Credentials are resolved a bounded number of times however many rows render.
+	 */
+	public function test_platform_and_cache_lookups_are_memoised() {
+		$calls       = 0;
+		$credentials = $this->createMock( Credential_Manager::class );
+		$credentials->method( 'has_credentials' )->willReturnCallback(
+			function () use ( &$calls ) {
+				++$calls;
+				return true;
+			}
+		);
+		$subject = new Post_Stats_Testable( $credentials );
+		$subject->build_cache();
+		$after_build = $calls;
+
+		ob_start();
+		for ( $i = 0; $i < 25; $i++ ) {
+			$subject->render_column( Post_Stats::COLUMN, 1 );
+		}
+		ob_end_clean();
+
+		$this->assertSame( $after_build, $calls );
+		$this->assertLessThanOrEqual( 2, $calls );
+	}
+
+	/**
+	 * Entities in the title are decoded before they reach the prompt.
+	 */
+	public function test_chat_url_decodes_title_entities() {
+		global $mock_posts;
+		$mock_posts[1]['title'] = 'Q&amp;A &#8211; Tips';
+
+		$subject = $this->subject();
+		$html    = $subject->get_cell_html( 1, $subject->build_cache() );
+
+		$this->assertStringContainsString( 'Q%26A%20', $html );
+		$this->assertStringNotContainsString( 'amp%3B', $html );
+	}
 }

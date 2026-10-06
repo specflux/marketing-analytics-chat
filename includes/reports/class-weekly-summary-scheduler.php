@@ -20,7 +20,7 @@ class Weekly_Summary_Scheduler {
 	const HOOK = 'specflux_mac_weekly_summary';
 
 	/**
-	 * Option: whether the weekly email is enabled (1 or 0, default on).
+	 * Option: whether the weekly email is enabled (1 or 0; missing means off, activation seeds 1).
 	 */
 	const OPTION_ENABLED = 'specflux_mac_weekly_summary_enabled';
 
@@ -66,12 +66,13 @@ class Weekly_Summary_Scheduler {
 	}
 
 	/**
-	 * Whether the weekly email is switched on. Defaults to on.
+	 * Whether the weekly email is switched on. Defaults to off when the option
+	 * has never been saved, so sites updating from an earlier version must opt in.
 	 *
 	 * @return bool
 	 */
 	public function is_enabled() {
-		return (bool) (int) get_option( self::OPTION_ENABLED, 1 );
+		return (bool) (int) get_option( self::OPTION_ENABLED, 0 );
 	}
 
 	/**
@@ -214,9 +215,26 @@ class Weekly_Summary_Scheduler {
 			);
 		}
 
-		$context = $this->summary->collect();
+		$context  = $this->summary->collect();
+		$sections = $this->email->build_sections( $context );
+
+		$has_data = false;
+		foreach ( (array) ( $context['platforms'] ?? array() ) as $result ) {
+			if ( is_array( $result ) && 'ok' === ( $result['status'] ?? '' ) ) {
+				$has_data = true;
+				break;
+			}
+		}
+
+		if ( ! $has_data || empty( $sections ) ) {
+			return array(
+				'sent'    => false,
+				'message' => __( "Couldn't load data from any connected platform, so no summary was sent. Check the Connections screen.", 'specflux-marketing-analytics-chat' ),
+			);
+		}
+
 		$subject = $this->email->get_subject( $context );
-		$body    = $this->email->render( $context );
+		$body    = $this->email->render( $context, $sections );
 
 		$sent = wp_mail( $recipients, $subject, $body, array( 'Content-Type: text/html; charset=UTF-8' ) );
 

@@ -190,11 +190,15 @@ class Weekly_Summary_Email {
 	/**
 	 * Format a metric value.
 	 *
-	 * @param float  $value  Value.
-	 * @param string $format int, percent or position.
+	 * @param float|null $value  Value, or null when unavailable.
+	 * @param string     $format int, percent or position.
 	 * @return string Plain text.
 	 */
 	public function format_value( $value, $format ) {
+		if ( null === $value ) {
+			return '—';
+		}
+
 		if ( 'percent' === $format ) {
 			return number_format_i18n( $value, 1 ) . '%';
 		}
@@ -251,7 +255,9 @@ class Weekly_Summary_Email {
 			$html .= '<td width="' . esc_attr( $width ) . '%" valign="top" style="padding:0 8px 0 0;">';
 			$html .= '<div style="font-size:12px;line-height:16px;color:' . esc_attr( self::COLOR_MUTED ) . ';">' . esc_html( $metric['label'] ) . '</div>';
 			$html .= '<div style="font-size:22px;line-height:30px;font-weight:700;color:' . esc_attr( self::COLOR_TEXT ) . ';">' . esc_html( $this->format_value( $metric['current'], $metric['format'] ) ) . '</div>';
-			$html .= $this->format_change( $metric['change'], ! empty( $metric['lower_is_better'] ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in format_change().
+			if ( null !== $metric['current'] ) {
+				$html .= $this->format_change( $metric['change'], ! empty( $metric['lower_is_better'] ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in format_change().
+			}
 			$html .= '</td>';
 		}
 

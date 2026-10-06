@@ -69,6 +69,20 @@ class Post_Stats {
 	private $credentials;
 
 	/**
+	 * Request-scoped memo of get_connected_platforms().
+	 *
+	 * @var string[]|null
+	 */
+	private $platforms_memo = null;
+
+	/**
+	 * Request-scoped memo of get_cached(); false means not yet read.
+	 *
+	 * @var array|null|false
+	 */
+	private $cached_memo = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Credential_Manager|null $credentials Optional credential manager.
@@ -123,12 +137,19 @@ class Post_Stats {
 	 * @return string[] Subset of array( 'ga4', 'gsc' ).
 	 */
 	public function get_connected_platforms() {
+		if ( null !== $this->platforms_memo ) {
+			return $this->platforms_memo;
+		}
+
 		$connected = array();
 		foreach ( array( 'ga4', 'gsc' ) as $platform ) {
 			if ( $this->credentials->has_credentials( $platform ) ) {
 				$connected[] = $platform;
 			}
 		}
+
+		$this->platforms_memo = $connected;
+
 		return $connected;
 	}
 
@@ -279,13 +300,17 @@ class Post_Stats {
 	 * @return array|null Cache payload or null when cold.
 	 */
 	public function get_cached() {
+		if ( false !== $this->cached_memo ) {
+			return $this->cached_memo;
+		}
+
 		$cache = get_transient( self::TRANSIENT );
-		if ( ! is_array( $cache ) || ! isset( $cache['platforms'], $cache['ga4'], $cache['gsc'] ) ) {
-			return null;
+		if ( ! is_array( $cache ) || ! isset( $cache['platforms'], $cache['ga4'], $cache['gsc'] ) || $cache['platforms'] !== $this->get_connected_platforms() ) {
+			$cache = null;
 		}
-		if ( $cache['platforms'] !== $this->get_connected_platforms() ) {
-			return null;
-		}
+
+		$this->cached_memo = $cache;
+
 		return $cache;
 	}
 
@@ -303,6 +328,7 @@ class Post_Stats {
 			'ga4'       => array(),
 			'gsc'       => array(),
 			'errors'    => array(),
+			'capped'    => array(),
 		);
 
 		if ( in_array( 'ga4', $platforms, true ) ) {
@@ -317,6 +343,10 @@ class Post_Stats {
 					)
 				);
 				$cache['ga4'] = self::build_ga4_map( $report );
+
+				if ( is_array( $report ) && count( (array) ( $report['rows'] ?? array() ) ) >= 2000 ) {
+					$cache['capped']['ga4'] = true;
+				}
 			} catch ( \Throwable $e ) {
 				$cache['errors']['ga4'] = true;
 				Logger::error( 'Post stats GA4 fetch failed: ' . $e->getMessage() );
@@ -334,6 +364,10 @@ class Post_Stats {
 					array( 'row_limit' => 5000 )
 				);
 				$cache['gsc'] = self::build_gsc_map( $data );
+
+				if ( is_array( $data ) && count( (array) ( $data['rows'] ?? array() ) ) >= 5000 ) {
+					$cache['capped']['gsc'] = true;
+				}
 			} catch ( \Throwable $e ) {
 				$cache['errors']['gsc'] = true;
 				Logger::error( 'Post stats GSC fetch failed: ' . $e->getMessage() );
@@ -341,6 +375,8 @@ class Post_Stats {
 		}
 
 		set_transient( self::TRANSIENT, $cache, empty( $cache['errors'] ) ? self::TTL_OK : self::TTL_ERROR );
+
+		$this->cached_memo = $cache;
 
 		return $cache;
 	}
@@ -529,6 +565,7 @@ class Post_Stats {
 		}
 
 		$errors    = isset( $cache['errors'] ) ? (array) $cache['errors'] : array();
+		$capped    = isset( $cache['capped'] ) ? (array) $cache['capped'] : array();
 		$platforms = isset( $cache['platforms'] ) ? (array) $cache['platforms'] : array();
 		$parts     = array();
 		$position  = null;
@@ -538,9 +575,11 @@ class Post_Stats {
 			if ( ! empty( $errors['ga4'] ) ) {
 				++$failed;
 			} else {
-				$views = (int) ( $cache['ga4'][ $path ] ?? 0 );
+				// A capped report omits the long tail, so a missing path is unknown rather than zero.
+				$unknown = ! empty( $capped['ga4'] ) && ! isset( $cache['ga4'][ $path ] );
+				$views   = (int) ( $cache['ga4'][ $path ] ?? 0 );
 				/* translators: %s: formatted number of page views. */
-				$parts[] = sprintf( _n( '%s view', '%s views', $views, 'specflux-marketing-analytics-chat' ), number_format_i18n( $views ) );
+				$parts[] = sprintf( _n( '%s view', '%s views', $views, 'specflux-marketing-analytics-chat' ), $unknown ? '—' : number_format_i18n( $views ) );
 			}
 		}
 
@@ -548,10 +587,12 @@ class Post_Stats {
 			if ( ! empty( $errors['gsc'] ) ) {
 				++$failed;
 			} else {
-				$row    = $cache['gsc'][ $path ] ?? array( 0, 0, 0.0 );
-				$clicks = (int) $row[0];
+				// A capped report omits the long tail, so a missing path is unknown rather than zero.
+				$unknown = ! empty( $capped['gsc'] ) && ! isset( $cache['gsc'][ $path ] );
+				$row     = $cache['gsc'][ $path ] ?? array( 0, 0, 0.0 );
+				$clicks  = (int) $row[0];
 				/* translators: %s: formatted number of search clicks. */
-				$parts[] = sprintf( _n( '%s click', '%s clicks', $clicks, 'specflux-marketing-analytics-chat' ), number_format_i18n( $clicks ) );
+				$parts[] = sprintf( _n( '%s click', '%s clicks', $clicks, 'specflux-marketing-analytics-chat' ), $unknown ? '—' : number_format_i18n( $clicks ) );
 				if ( (float) $row[2] > 0 ) {
 					$position = (float) $row[2];
 				}
@@ -580,8 +621,10 @@ class Post_Stats {
 	 * @return string
 	 */
 	private function get_chat_url( $post_id ) {
+		$title = html_entity_decode( wp_strip_all_tags( get_the_title( $post_id ) ), ENT_QUOTES, (string) get_bloginfo( 'charset' ) );
+
 		/* translators: %s: post title. */
-		$prompt = sprintf( __( 'How has "%s" performed over the last 28 days, and what should I improve?', 'specflux-marketing-analytics-chat' ), wp_strip_all_tags( get_the_title( $post_id ) ) );
+		$prompt = sprintf( __( 'How has "%s" performed over the last 28 days, and what should I improve?', 'specflux-marketing-analytics-chat' ), $title );
 
 		return admin_url( 'admin.php?page=specflux-mac-ai-assistant&prompt=' . rawurlencode( $prompt ) );
 	}

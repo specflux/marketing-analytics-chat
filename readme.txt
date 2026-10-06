@@ -25,7 +25,7 @@ Connecting Google Analytics 4 and Search Console takes one click: sign in with G
 
 = Weekly Email Summary & Per-Post Stats =
 
-* **Weekly Email Summary** - Every Monday morning, a short email compares last week with the week before: sessions, users, and page views, top pages and traffic sources, Search Console clicks, impressions, CTR, and position with your top queries, plus Clarity engagement. On by default for the site admin; change recipients or turn it off under Settings > Email
+* **Weekly Email Summary** - Every Monday morning, a short email compares last week with the week before: sessions, users, and page views, top pages and traffic sources, Search Console clicks, impressions, CTR, and position with your top queries, plus Clarity engagement. On for new installs (sent to the site admin); sites updating from an earlier version can turn it on under Settings > Email, where you can also change recipients
 * **Views and Clicks on Every Post** - An "Analytics (28d)" column in your Posts and Pages lists shows each post's Google Analytics views and Search Console clicks and average position. Click a number to ask the AI how that post can do better
 
 = AI Chat & MCP Features =
@@ -225,7 +225,7 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 == Changelog ==
 
 = Unreleased =
-* Added: Weekly email summary. Every Monday at 08:00 site time the site admin gets last week's numbers from each connected platform compared with the week before, with top pages, traffic sources, and search queries. Recipients, on/off, and a "Send a test summary now" button are under Settings > Email
+* Added: Weekly email summary. Every Monday at 08:00 site time the site admin gets last week's numbers from each connected platform compared with the week before, with top pages, traffic sources, and search queries. Recipients, on/off, and a "Send a test summary now" button are under Settings > Email. New installs have it on; sites updating from an earlier version can turn it on under Settings > Email
 * Added: An "Analytics (28d)" column in the Posts and Pages lists with each post's views, search clicks, and average position. Numbers are fetched once and cached for 12 hours, and each one links to the AI Assistant with a question about that post
 * Added: A "Get started" link in the plugin's row on the Plugins screen
 * Changed: Top pages and traffic sources are now explicitly sorted by their metric
