@@ -42,6 +42,7 @@ class Bing_Integration {
 			'cache_ttl'       => 6 * HOUR_IN_SECONDS, // Bing refreshes traffic daily and query/page stats weekly.
 			'description'     => __( 'See Bing and Microsoft Copilot search traffic: clicks, impressions, top queries, top pages and crawl health. Enter your Webmaster API key and the site URL exactly as it appears in Bing Webmaster Tools (for example https://example.com/).', 'specflux-marketing-analytics-chat' ),
 			'help_url'        => 'https://learn.microsoft.com/en-us/bingwebmaster/getting-started',
+			'prompt_hint'     => 'Bing and Microsoft Copilot organic search: clicks, impressions, queries, pages and crawl health. Combine with Google Search Console for total organic search.',
 			'connection_test' => array( __CLASS__, 'test_connection' ),
 		);
 
