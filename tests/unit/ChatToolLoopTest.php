@@ -239,11 +239,13 @@ class Fake_MCP_Client extends MCP_Client {
 				'name'        => 'wpab__marketing-analytics__get-ga4-metrics',
 				'description' => 'Get GA4 metrics.',
 				'inputSchema' => array( 'type' => 'object' ),
+				'annotations' => array( 'readonly' => true ),
 			),
 			array(
 				'name'        => 'wpab__marketing-analytics__compare-periods',
 				'description' => 'Compare two periods.',
 				'inputSchema' => array( 'type' => 'object' ),
+				'annotations' => array( 'readonly' => true ),
 			),
 		);
 	}

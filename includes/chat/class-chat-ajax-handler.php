@@ -473,8 +473,9 @@ class Chat_Ajax_Handler {
 			$mcp_tools = array(); // Fallback to no tools if MCP server is unavailable.
 		}
 
-		// Filter tools based on settings.
-		$filtered_tools = $this->filter_tools( $mcp_tools );
+		// Filter tools based on settings, then apply the safety policy: read-only
+		// abilities from enabled providers (write abilities only when allowed), capped.
+		$filtered_tools = Tool_Policy::select( $this->filter_tools( $mcp_tools ) );
 
 		// Send message to LLM.
 		$response = $this->llm_provider->send_message( $formatted_messages, $filtered_tools, $this->get_provider_options() );
@@ -544,7 +545,7 @@ class Chat_Ajax_Handler {
 		}
 
 		for ( $round = 1; $round <= $max_rounds; $round++ ) {
-			$failed_tools = array_merge( $failed_tools, $this->execute_tool_calls( $conversation_id, $tool_calls ) );
+			$failed_tools = array_merge( $failed_tools, $this->execute_tool_calls( $conversation_id, $tool_calls, $tools ) );
 
 			// Get updated conversation history with tool results.
 			$formatted_messages = $this->format_messages_for_llm(
@@ -622,14 +623,45 @@ class Chat_Ajax_Handler {
 	 *
 	 * @param int   $conversation_id Conversation ID.
 	 * @param array $tool_calls Tool calls from the model.
+	 * @param array $offered Tools that were offered to the model this turn.
 	 * @return array Failed tool entries (name, id, error, arguments).
 	 */
-	private function execute_tool_calls( $conversation_id, $tool_calls ) {
+	private function execute_tool_calls( $conversation_id, $tool_calls, $offered = array() ) {
 		$failed_tools = array();
+
+		$offered_by_name = array();
+		foreach ( (array) $offered as $offered_tool ) {
+			if ( ! empty( $offered_tool['name'] ) ) {
+				$offered_by_name[ Tool_Policy::canonical_name( $offered_tool['name'] ) ] = $offered_tool;
+			}
+		}
 
 		foreach ( $tool_calls as $tool_call ) {
 			$tool_name = $tool_call['name'];
 			$arguments = $tool_call['arguments'] ?? array();
+			$arguments = is_array( $arguments ) ? $arguments : array();
+
+			// Never trust the model: only run what was offered this turn, and
+			// never run a write ability directly.
+			$canonical = Tool_Policy::canonical_name( $tool_name );
+			$offer     = $offered_by_name[ $canonical ] ?? null;
+
+			if ( null === $offer || ( 'write' === Tool_Policy::classify_tool( $offer ) && ! Tool_Policy::allow_write() ) ) {
+				$message        = __( 'This tool is not available.', 'specflux-marketing-analytics-chat' );
+				$failed_tools[] = array(
+					'name'      => $tool_name,
+					'id'        => $tool_call['id'],
+					'error'     => $message,
+					'arguments' => $arguments,
+				);
+				$this->chat_manager->add_tool_result( $conversation_id, $tool_call['id'], $tool_name, 'Error: ' . $message );
+				continue;
+			}
+
+			if ( 'write' === Tool_Policy::classify_tool( $offer ) ) {
+				$this->chat_manager->add_tool_result( $conversation_id, $tool_call['id'], $tool_name, $this->propose_ability_run( $conversation_id, $canonical, $offer, $arguments ) );
+				continue;
+			}
 
 			// Call the MCP tool.
 			$result = $this->mcp_client->call_tool( $tool_name, $arguments );
@@ -671,6 +703,45 @@ class Chat_Ajax_Handler {
 		}
 
 		return $failed_tools;
+	}
+
+	/**
+	 * Turn a write-ability call into a pending proposal instead of running it.
+	 *
+	 * @param int    $conversation_id Conversation ID.
+	 * @param string $ability         Ability name (vendor/ability).
+	 * @param array  $offer           Offered tool definition.
+	 * @param array  $arguments       Arguments the model supplied.
+	 * @return string JSON tool result for the model.
+	 */
+	private function propose_ability_run( $conversation_id, $ability, $offer, $arguments ) {
+		$action = Pending_Actions::create(
+			array(
+				'type'       => 'run_ability',
+				'label'      => __( 'Run', 'specflux-marketing-analytics-chat' ),
+				'summary'    => Tool_Policy::summarize_call( $offer, $arguments ),
+				'payload'    => array(
+					'ability' => $ability,
+					'input'   => $arguments,
+				),
+				'capability' => 'manage_options',
+				'conversation_id' => (int) $conversation_id,
+			)
+		);
+
+		if ( empty( $action['id'] ) ) {
+			return 'Error: ' . __( 'This change could not be proposed.', 'specflux-marketing-analytics-chat' );
+		}
+
+		$this->turn_actions[] = $action;
+
+		return wp_json_encode(
+			array(
+				'status'          => 'awaiting_approval',
+				'proposed_action' => $action,
+				'message'         => 'Not run yet. The user must click Run to apply it.',
+			)
+		);
 	}
 
 	/**
