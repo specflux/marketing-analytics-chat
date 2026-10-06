@@ -1438,3 +1438,9 @@ if ( ! function_exists( 'wp_get_ability' ) ) {
 		return $callback ? new WP_Ability( $callback ) : null;
 	}
 }
+
+if ( ! function_exists( 'home_url' ) ) {
+	function home_url( $path = '' ) {
+		return 'https://example.com' . $path;
+	}
+}

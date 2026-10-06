@@ -461,7 +461,7 @@ class Chat_Ajax_Handler {
 		$filtered_tools = $this->filter_tools( $mcp_tools );
 
 		// Send message to LLM.
-		$response = $this->llm_provider->send_message( $formatted_messages, $filtered_tools );
+		$response = $this->llm_provider->send_message( $formatted_messages, $filtered_tools, $this->get_provider_options() );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -519,7 +519,7 @@ class Chat_Ajax_Handler {
 			// The last allowed round gets no tools, forcing a written answer.
 			$round_tools = $round < $max_rounds ? $tools : array();
 
-			$response = $this->llm_provider->send_message( $formatted_messages, $round_tools );
+			$response = $this->llm_provider->send_message( $formatted_messages, $round_tools, $this->get_provider_options() );
 
 			if ( is_wp_error( $response ) ) {
 				return $response;
@@ -646,6 +646,17 @@ class Chat_Ajax_Handler {
 	}
 
 	/**
+	 * Provider options carrying the chat system prompt.
+	 *
+	 * @return array Options passed to every send_message() call.
+	 */
+	private function get_provider_options() {
+		return array(
+			'system' => ( new System_Prompt() )->build(),
+		);
+	}
+
+	/**
 	 * Pull a readable error message out of an isError tool result.
 	 *
 	 * @param array $result Tool result carrying isError.
@@ -760,7 +771,7 @@ class Chat_Ajax_Handler {
 			),
 		);
 
-		$response = $this->llm_provider->send_message( $messages, array() );
+		$response = $this->llm_provider->send_message( $messages, array(), $this->get_provider_options() );
 
 		if ( is_wp_error( $response ) ) {
 			return $result;

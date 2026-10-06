@@ -337,6 +337,7 @@ class Fake_LLM_Provider implements LLM_Provider_Interface {
 		$this->sent[] = array(
 			'messages' => $messages,
 			'tools'    => $tools,
+			'options'  => $options,
 		);
 
 		$response = array_shift( $this->responses );
@@ -717,6 +718,18 @@ class ChatToolLoopTest extends TestCase {
 		$this->assertSame( 'Forced answer.', $this->last_json_response()['data']['content'] );
 
 		unset( $GLOBALS['specflux_mac_test_filters']['specflux_mac_chat_max_tool_rounds'] );
+	}
+
+	/**
+	 * Every provider call carries the system prompt.
+	 */
+	public function test_every_provider_call_receives_the_system_prompt(): void {
+		$this->make_handler()->send_message();
+
+		$this->assertCount( 2, $this->provider->sent );
+		foreach ( $this->provider->sent as $call ) {
+			$this->assertStringContainsString( 'marketing analytics assistant', $call['options']['system'] );
+		}
 	}
 
 	/**
