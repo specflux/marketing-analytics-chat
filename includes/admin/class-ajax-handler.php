@@ -40,6 +40,7 @@ class Ajax_Handler {
 
 		add_action( 'wp_ajax_specflux_mac_test_connection', array( $this, 'test_connection' ) );
 		add_action( 'wp_ajax_specflux_mac_save_credentials', array( $this, 'save_credentials' ) );
+		add_action( 'wp_ajax_specflux_mac_disconnect_platform', array( $this, 'disconnect_platform' ) );
 		add_action( 'wp_ajax_specflux_mac_clear_caches', array( $this, 'clear_caches' ) );
 		add_action( 'wp_ajax_specflux_mac_list_ga4_properties', array( $this, 'list_ga4_properties' ) );
 		add_action( 'wp_ajax_specflux_mac_save_ga4_property', array( $this, 'save_ga4_property' ) );
@@ -332,8 +333,14 @@ class Ajax_Handler {
 		Logger::debug( sprintf( 'Saving credentials for platform: %s', $platform ) );
 
 		if ( 'clarity' !== $platform ) {
-			Logger::debug( sprintf( 'ERROR: Unsupported platform: %s', $platform ) );
-			throw new \RuntimeException( 'Unsupported platform.' );
+			$definition = Platform_Registry::get( $platform );
+
+			if ( null === $definition || 'api_key' !== $definition['auth'] ) {
+				Logger::debug( sprintf( 'ERROR: Unsupported platform: %s', $platform ) );
+				throw new \RuntimeException( 'Unsupported platform.' );
+			}
+
+			return $this->save_registered_platform( $definition );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in verify_request().
@@ -366,6 +373,92 @@ class Ajax_Handler {
 		return array(
 			'message' => 'Credentials saved successfully!',
 		);
+	}
+
+	/**
+	 * Save and test credentials for a registry-defined api_key platform.
+	 *
+	 * Reads only the definition's fields from $_POST['fields'][ name ]. A blank
+	 * secret field (or the displayed mask) keeps the stored value.
+	 *
+	 * @param array $definition Platform definition.
+	 * @return array Success payload for the JSON response.
+	 */
+	private function save_registered_platform( array $definition ) {
+		$platform = $definition['slug'];
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in verify_request(); each value is sanitised per field below.
+		$posted = isset( $_POST['fields'] ) && is_array( $_POST['fields'] ) ? wp_unslash( $_POST['fields'] ) : array();
+
+		$credential_manager = new Credential_Manager();
+		$existing           = $credential_manager->get_credentials( $platform );
+		$existing           = is_array( $existing ) ? $existing : array();
+		$mask               = Platform_Registry::SECRET_MASK;
+		$credentials        = array();
+		$missing            = array();
+
+		foreach ( $definition['fields'] as $field ) {
+			$value = isset( $posted[ $field ] ) && is_scalar( $posted[ $field ] ) ? (string) $posted[ $field ] : '';
+			$value = (bool) preg_match( '/url$/i', $field ) ? esc_url_raw( $value ) : sanitize_text_field( $value );
+
+			if ( Platform_Registry::is_secret_field( $field ) && ( '' === $value || $mask === $value ) && ! empty( $existing[ $field ] ) ) {
+				$value = $existing[ $field ];
+			}
+
+			if ( '' === $value && ! in_array( $field, $definition['optional_fields'], true ) ) {
+				$missing[] = $field;
+			}
+
+			$credentials[ $field ] = $value;
+		}
+
+		if ( ! empty( $missing ) ) {
+			throw new \RuntimeException( 'Missing required fields: ' . esc_html( implode( ', ', $missing ) ) );
+		}
+
+		if ( empty( $credentials ) || ! $credential_manager->save_credentials( $platform, $credentials ) ) {
+			throw new \RuntimeException( 'Failed to save credentials.' );
+		}
+
+		/** This action is documented in includes/admin/class-ajax-handler.php */
+		do_action( 'specflux_mac_platform_connected', $platform );
+
+		$tester = new Connection_Tester();
+		$result = $tester->test_connection( $platform );
+
+		if ( empty( $result['success'] ) ) {
+			throw new \RuntimeException( esc_html( 'Credentials saved, but the connection test failed: ' . ( $result['message'] ?? '' ) ) );
+		}
+
+		return array(
+			'message' => $result['message'],
+			'data'    => $result['data'] ?? null,
+		);
+	}
+
+	/**
+	 * Disconnect a registry-defined (non-Google) platform
+	 *
+	 * @return void
+	 */
+	public function disconnect_platform() {
+		if ( ! $this->verify_request() ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in verify_request().
+		$platform   = isset( $_POST['platform'] ) ? sanitize_key( wp_unslash( $_POST['platform'] ) ) : '';
+		$definition = Platform_Registry::get( $platform );
+
+		if ( null === $definition || 'api_key' !== $definition['auth'] ) {
+			wp_send_json_error( array( 'message' => 'Unsupported platform.' ) );
+			return;
+		}
+
+		$credential_manager = new Credential_Manager();
+		$credential_manager->delete_credentials( $platform );
+
+		wp_send_json_success( array( 'message' => 'Disconnected.' ) );
 	}
 
 	/**

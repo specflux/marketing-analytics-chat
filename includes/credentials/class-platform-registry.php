@@ -27,9 +27,17 @@ defined( 'ABSPATH' ) || exit;
  * - connection_test (callable|null) Returns array( 'success' => bool, 'message' => string ).
  * - scopes          (string[])      OAuth scopes (google_oauth platforms only).
  * - tab             (bool)          Whether to show a Connections tab. Default true.
+ * - optional_fields  (string[])      Subset of `fields` that may be left blank (api_key platforms).
+ * - description     (string)        Short intro shown on the default connection panel.
+ * - help_url        (string)        Link to where the user obtains credentials.
  * - cleanup_options  (string[])      Option names deleted when the platform is disconnected.
  */
 class Platform_Registry {
+
+	/**
+	 * Placeholder shown in secret inputs when a value is already stored.
+	 */
+	const SECRET_MASK = '••••••••';
 
 	/**
 	 * Per-request cache of the filtered platform list.
@@ -105,6 +113,16 @@ class Platform_Registry {
 	}
 
 	/**
+	 * Whether a credential field holds a secret (rendered as a password input, masked when saved)
+	 *
+	 * @param string $field Field name.
+	 * @return bool
+	 */
+	public static function is_secret_field( $field ) {
+		return (bool) preg_match( '/key|token|secret|password/i', $field );
+	}
+
+	/**
 	 * Drop the per-request cache (for tests and late registrations).
 	 *
 	 * @return void
@@ -130,6 +148,9 @@ class Platform_Registry {
 			'connection_test' => null,
 			'scopes'          => array(),
 			'tab'             => true,
+			'optional_fields' => array(),
+			'description'     => '',
+			'help_url'        => '',
 			'cleanup_options' => array(),
 		);
 
