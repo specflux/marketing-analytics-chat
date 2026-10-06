@@ -4,7 +4,7 @@ Donate link: https://www.specflux.com/
 Tags: google analytics, search console, microsoft clarity, ai chat, mcp
 Requires at least: 7.0
 Tested up to: 7.0
-Stable tag: 0.4.0
+Stable tag: 0.5.0
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -26,7 +26,7 @@ Connecting Google Analytics 4 and Search Console takes one click: sign in with G
 = Weekly Email Summary & Per-Post Stats =
 
 * **Weekly Email Summary** - Every Monday morning, a short email compares last week with the week before: sessions, users, and page views, top pages and traffic sources, Search Console clicks, impressions, CTR, and position with your top queries, plus Clarity engagement. On for new installs (sent to the site admin); sites updating from an earlier version can turn it on under Settings > Email, where you can also change recipients
-* **Views and Clicks on Every Post** - An "Analytics (28d)" column in your Posts and Pages lists shows each post's Google Analytics views and Search Console clicks and average position. Click a number to ask the AI how that post can do better
+* **Views and Clicks on Every Post** - An "Analytics (28d)" column in your Posts and Pages lists shows each post's Google Analytics views and Search Console clicks and average position. Click a number to ask the AI how that post can do better. The same numbers appear in an "Analytics (28 days)" panel in the block editor
 
 = AI Chat & MCP Features =
 
@@ -227,10 +227,16 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 
 == Changelog ==
 
-= Unreleased =
+= 0.5.0 - 2026-10-06 =
 * Added: Weekly email summary. Every Monday at 08:00 site time the site admin gets last week's numbers from each connected platform compared with the week before, with top pages, traffic sources, and search queries. Recipients, on/off, and a "Send a test summary now" button are under Settings > Email. New installs have it on; sites updating from an earlier version can turn it on under Settings > Email
 * Added: An "Analytics (28d)" column in the Posts and Pages lists with each post's views, search clicks, and average position. Numbers are fetched once and cached for 12 hours, and each one links to the AI Assistant with a question about that post
+* Added: An "Analytics (28 days)" panel in the block editor sidebar with the post's views, search clicks, impressions, and average position, and a link to ask the AI how to improve it
+* Added: The Dashboard widget loads on its own and shows this week's GA4 sessions, Search Console clicks, and Clarity sessions with the change from last week
+* Added: The weekly email, the Dashboard widget, and the empty chat screen now offer questions built from your own numbers, and links into the AI Assistant arrive with the question already typed in
+* Added: "Preview this week's email" under Settings > Email
 * Added: A "Get started" link in the plugin's row on the Plugins screen
+* Added: The Live Preview on WordPress.org now opens with demo data
+* Fixed: The Dashboard widget's styles never loaded on the WordPress Dashboard
 * Changed: Top pages and traffic sources are now explicitly sorted by their metric
 * Readme: installation steps and the chat FAQ now describe one-click Google sign-in and the WordPress AI Client
 
@@ -318,6 +324,9 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 * Smart caching system
 
 == Upgrade Notice ==
+
+= 0.5.0 =
+Adds a weekly email summary, views and clicks for every post in the Posts list and the block editor, and a Dashboard widget that shows this week's numbers. Sites updating from an earlier version can turn the weekly email on under Settings > Email.
 
 = 0.4.0 =
 Connecting Google now picks the right Search Console site and Google Analytics 4 property automatically when there is one clear match, and fixes three analytics abilities that returned errors.
