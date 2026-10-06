@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use Specflux_Marketing_Analytics\Chat\Chat_Ajax_Handler;
 use Specflux_Marketing_Analytics\Chat\Chat_Manager;
+use Specflux_Marketing_Analytics\Chat\Pending_Actions;
 use Specflux_Marketing_Analytics\Admin\Widget_Headline;
 use Specflux_Marketing_Analytics\Reports\Weekly_Prompt_Builder;
 
@@ -196,6 +197,38 @@ if ( ! function_exists( 'specflux_mac_format_chat_markdown' ) ) {
 											</ul>
 										</div>
 									<?php endif; ?>
+									<?php
+									$msg_actions = ( 'assistant' === $msg_role && is_array( $message->metadata ) && ! empty( $message->metadata['actions'] ) && is_array( $message->metadata['actions'] ) ) ? $message->metadata['actions'] : array();
+									foreach ( $msg_actions as $msg_action ) :
+										if ( empty( $msg_action['id'] ) ) {
+											continue;
+										}
+										$action_state  = Pending_Actions::status_for_display( (string) $msg_action['id'], get_current_user_id() );
+										$action_status = $action_state['status'];
+										?>
+										<div class="smac-action smac-action--<?php echo esc_attr( $action_status ); ?>" data-action-id="<?php echo esc_attr( (string) $msg_action['id'] ); ?>">
+											<?php if ( 'pending' === $action_status ) : ?>
+												<div class="smac-action-summary"><?php echo esc_html( (string) ( $msg_action['summary'] ?? '' ) ); ?></div>
+												<div class="smac-action-buttons">
+													<button type="button" class="button button-primary smac-action-apply"><?php echo esc_html( (string) ( $msg_action['label'] ?? __( 'Apply', 'specflux-marketing-analytics-chat' ) ) ); ?></button>
+													<a href="#" class="smac-action-dismiss"><?php esc_html_e( 'Dismiss', 'specflux-marketing-analytics-chat' ); ?></a>
+												</div>
+												<div class="smac-action-status" role="status"><?php echo esc_html( (string) $action_state['result'] ); ?></div>
+											<?php else : ?>
+												<div class="smac-action-status" role="status">
+													<?php
+													$status_labels = array(
+														'applied'   => __( 'Applied', 'specflux-marketing-analytics-chat' ),
+														'dismissed' => __( 'Dismissed', 'specflux-marketing-analytics-chat' ),
+														'expired'   => __( 'Expired', 'specflux-marketing-analytics-chat' ),
+													);
+													$status_text   = $status_labels[ $action_status ] ?? $action_status;
+													echo esc_html( trim( $status_text . ': ' . (string) ( $msg_action['summary'] ?? '' ) . ( $action_state['result'] ? ' - ' . $action_state['result'] : '' ) ) );
+													?>
+												</div>
+											<?php endif; ?>
+										</div>
+									<?php endforeach; ?>
 									<div class="message-time">
 										<?php echo esc_html( human_time_diff( strtotime( $message->created_at ), time() ) . ' ago' ); ?>
 									</div>

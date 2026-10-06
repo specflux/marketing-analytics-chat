@@ -123,6 +123,18 @@ class System_Prompt {
 		$lines[] = '- Call several tools when one is not enough, and prefer the most specific tool for the question.';
 		$lines[] = '- Keep answers short and decision-oriented. Lead with the answer.';
 		$lines[] = '- End every answer with 1 to 3 concrete next actions the user can take.';
+
+		/**
+		 * Filters whether the chat can show proposed changes as Apply buttons.
+		 *
+		 * An add-on that registers handlers for proposed actions returns true so
+		 * the model is told about the feature; free-only sites are not.
+		 *
+		 * @param bool $enabled Default false.
+		 */
+		if ( apply_filters( 'specflux_mac_chat_actions_enabled', false ) ) {
+			$lines[] = '- When a tool proposes a change, it appears to the user as an Apply button under your answer. Nothing changes until the user clicks it, so describe it as a proposal and never claim a change was made.';
+		}
 		$lines[] = '';
 		$lines[] = '## Formatting';
 		$lines[] = 'The chat renders a limited Markdown subset. Use only: headings (#, ##, ###), bullet lists with "- ", pipe tables, **bold**, *italic*, `inline code`, fenced code blocks and [links](https://...). Do not nest lists, do not use horizontal rules, and do not use HTML. Use a pipe table for any comparison of three or more rows or metrics.';

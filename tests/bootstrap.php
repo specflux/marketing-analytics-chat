@@ -445,8 +445,13 @@ if ( ! function_exists( 'has_filter' ) ) {
 $mock_user_can = true;
 
 if ( ! function_exists( 'current_user_can' ) ) {
-    function current_user_can( $capability ) {
+    function current_user_can( $capability, ...$args ) {
         global $mock_user_can;
+        $GLOBALS['mock_user_can_calls'][] = array_merge( array( $capability ), $args );
+        // Tests can deny single capabilities via $GLOBALS['mock_denied_caps'].
+        if ( in_array( $capability, (array) ( $GLOBALS['mock_denied_caps'] ?? array() ), true ) ) {
+            return false;
+        }
         return ( null === $mock_user_can ) ? true : (bool) $mock_user_can;
     }
 }
@@ -1164,6 +1169,11 @@ if ( ! function_exists( 'wp_send_json_error' ) ) {
 
 if ( ! function_exists( 'check_ajax_referer' ) ) {
 	function check_ajax_referer( $action = -1, $query_arg = false, $stop = true ) {
+		global $mock_nonce_valid;
+		if ( false === $mock_nonce_valid ) {
+			// The real function dies with a -1 response; tests catch this instead.
+			throw new \RuntimeException( 'check_ajax_referer failed' );
+		}
 		return 1; // Mock as a valid, freshly generated nonce.
 	}
 }
