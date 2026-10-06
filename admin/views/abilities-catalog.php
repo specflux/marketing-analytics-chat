@@ -90,6 +90,40 @@ if ( empty( $mac_abilities ) ) {
 			'icon'        => 'dashicons-search',
 		),
 
+		// Bing Webmaster Tools abilities.
+		array(
+			'name'        => __( 'Get Bing Search Performance', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-bing-search-performance',
+			'description' => __( 'Daily clicks and impressions from Bing and Microsoft Copilot search.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'bing',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-search',
+		),
+		array(
+			'name'        => __( 'Get Bing Top Queries', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-bing-top-queries',
+			'description' => __( 'Top Bing search queries with clicks, impressions, CTR, and position.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'bing',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-search',
+		),
+		array(
+			'name'        => __( 'Get Bing Top Pages', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-bing-top-pages',
+			'description' => __( 'Top pages by Bing clicks and impressions.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'bing',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-search',
+		),
+		array(
+			'name'        => __( 'Get Bing Crawl Stats', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-bing-crawl-stats',
+			'description' => __( 'Bing crawl errors, indexed pages, and HTTP status counts.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'bing',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-search',
+		),
+
 		// Clarity abilities.
 		array(
 			'name'        => __( 'Get Clarity Insights', 'specflux-marketing-analytics-chat' ),
@@ -148,6 +182,9 @@ $mac_mcp_endpoint = rest_url( 'mcp/mcp-adapter-default-server' );
 		</button>
 		<button type="button" class="smac-abilities-filter-btn" data-filter="gsc">
 			<?php esc_html_e( 'Search Console', 'specflux-marketing-analytics-chat' ); ?>
+		</button>
+		<button type="button" class="smac-abilities-filter-btn" data-filter="bing">
+			<?php esc_html_e( 'Bing', 'specflux-marketing-analytics-chat' ); ?>
 		</button>
 		<button type="button" class="smac-abilities-filter-btn" data-filter="clarity">
 			<?php esc_html_e( 'Clarity', 'specflux-marketing-analytics-chat' ); ?>
