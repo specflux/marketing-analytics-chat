@@ -223,8 +223,12 @@ class Chat_Ajax_Handler {
 
 		// If there were tool calls, execute them and get a final response.
 		if ( $tool_calls ) {
-			$final_response = $this->handle_tool_calls( $conversation_id, $tool_calls, $usage );
+			$final_response = $this->handle_tool_calls( $conversation_id, $tool_calls, $usage, $ai_response_result['tools_offered'] ?? array() );
 			if ( ! is_wp_error( $final_response ) ) {
+				// Any interim assistant text from intermediate tool rounds.
+				foreach ( $final_response['interim_messages'] ?? array() as $interim_message ) {
+					$all_messages[] = $interim_message;
+				}
 				// Add the final response as a separate message.
 				$all_messages[] = array(
 					'role'    => 'assistant',
@@ -463,6 +467,9 @@ class Chat_Ajax_Handler {
 			return $response;
 		}
 
+		// Tools to keep offering the model across follow-up tool rounds.
+		$response['tools_offered'] = $filtered_tools;
+
 		// Add tool metadata to response.
 		$response['tool_metadata'] = array(
 			'total_available' => count( $mcp_tools ),
@@ -476,16 +483,104 @@ class Chat_Ajax_Handler {
 	/**
 	 * Handle tool calls from AI
 	 *
+	 * Executes the requested tools, feeds the results back, and keeps going for
+	 * as long as the model asks for more tools, up to a capped number of
+	 * follow-up rounds. The final allowed round is sent without tools so the
+	 * model has to answer.
+	 *
 	 * @param int   $conversation_id Conversation ID.
 	 * @param array $tool_calls Tool calls from AI.
 	 * @param array $initial_usage Initial token usage from tool_use request.
-	 * @return array|WP_Error Array with 'content', 'usage', and 'failed_tools', or WP_Error.
+	 * @param array $tools Tools to keep offering the model between rounds.
+	 * @return array|WP_Error Array with 'content', 'usage', 'failed_tools' and 'interim_messages', or WP_Error.
 	 */
-	private function handle_tool_calls( $conversation_id, $tool_calls, $initial_usage = array() ) {
-		$tool_results = array();
+	private function handle_tool_calls( $conversation_id, $tool_calls, $initial_usage = array(), $tools = array() ) {
+		$failed_tools     = array();
+		$interim_messages = array();
+		$cumulative_usage = is_array( $initial_usage ) ? $initial_usage : array();
+
+		/**
+		 * Filters how many follow-up model calls a single chat turn may make.
+		 *
+		 * The last allowed call is made without tools, so the model must answer.
+		 *
+		 * @param int $max_rounds Maximum rounds. Default 5.
+		 */
+		$max_rounds = max( 1, (int) apply_filters( 'specflux_mac_chat_max_tool_rounds', 5 ) );
+
+		for ( $round = 1; $round <= $max_rounds; $round++ ) {
+			$failed_tools = array_merge( $failed_tools, $this->execute_tool_calls( $conversation_id, $tool_calls ) );
+
+			// Get updated conversation history with tool results.
+			$formatted_messages = $this->format_messages_for_llm(
+				$this->chat_manager->get_messages( $conversation_id )
+			);
+
+			// The last allowed round gets no tools, forcing a written answer.
+			$round_tools = $round < $max_rounds ? $tools : array();
+
+			$response = $this->llm_provider->send_message( $formatted_messages, $round_tools );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$cumulative_usage = $this->add_usage( $cumulative_usage, $response['usage'] ?? array() );
+
+			// More tools requested and rounds remain: persist and loop.
+			if ( ! empty( $response['tool_calls'] ) && ! empty( $round_tools ) ) {
+				$tool_calls = $response['tool_calls'];
+
+				// add_tool_message stores the interim text with the calls, so
+				// it must not also be saved through add_message.
+				$this->chat_manager->add_tool_message(
+					$conversation_id,
+					$tool_calls,
+					$response['content'] ?? ''
+				);
+
+				if ( ! empty( $response['content'] ) ) {
+					$interim_messages[] = array(
+						'role'       => 'assistant',
+						'content'    => $response['content'],
+						'usage'      => $response['usage'] ?? null,
+						'tool_calls' => $tool_calls,
+					);
+				}
+
+				continue;
+			}
+
+			// Save final response with cumulative usage.
+			$this->chat_manager->add_message(
+				$conversation_id,
+				'assistant',
+				$response['content'],
+				$cumulative_usage ? array( 'usage' => $cumulative_usage ) : array()
+			);
+
+			return array(
+				'content'          => $response['content'],
+				'usage'            => $cumulative_usage,
+				'failed_tools'     => $failed_tools,
+				'interim_messages' => $interim_messages,
+			);
+		}
+
+		// Unreachable: the last round never continues. Satisfies static analysis.
+		return new \WP_Error( 'tool_loop_exhausted', __( 'The tool loop ended without an answer.', 'specflux-marketing-analytics-chat' ) );
+	}
+
+	/**
+	 * Execute one batch of tool calls and persist their results.
+	 *
+	 * @param int   $conversation_id Conversation ID.
+	 * @param array $tool_calls Tool calls from the model.
+	 * @return array Failed tool entries (name, id, error, arguments).
+	 */
+	private function execute_tool_calls( $conversation_id, $tool_calls ) {
 		$failed_tools = array();
 
-		// Execute each tool call.
 		foreach ( $tool_calls as $tool_call ) {
 			$tool_name = $tool_call['name'];
 			$arguments = $tool_call['arguments'] ?? array();
@@ -523,51 +618,30 @@ class Chat_Ajax_Handler {
 				$tool_name,
 				$result_content
 			);
-
-			$tool_results[] = array(
-				'role'         => 'tool',
-				'content'      => $result_content,
-				'tool_call_id' => $tool_call['id'],
-			);
 		}
 
-		// Get updated conversation history with tool results.
-		$formatted_messages = $this->format_messages_for_llm(
-			$this->chat_manager->get_messages( $conversation_id )
-		);
+		return $failed_tools;
+	}
 
-		// Get final response from AI with tool results.
-		$final_response = $this->llm_provider->send_message( $formatted_messages, array() );
-
-		if ( is_wp_error( $final_response ) ) {
-			return $final_response;
+	/**
+	 * Add two token usage arrays together.
+	 *
+	 * @param array $total Running total.
+	 * @param array $extra Usage to add.
+	 * @return array Combined usage, or the running total when there is nothing to add.
+	 */
+	private function add_usage( $total, $extra ) {
+		if ( empty( $extra ) || ! is_array( $extra ) ) {
+			return $total;
 		}
 
-		// Accumulate token usage from both API calls.
-		$cumulative_usage = array();
-		if ( ! empty( $initial_usage ) && ! empty( $final_response['usage'] ) ) {
-			$cumulative_usage = array(
-				'input_tokens'  => ( $initial_usage['input_tokens'] ?? 0 ) + ( $final_response['usage']['input_tokens'] ?? 0 ),
-				'output_tokens' => ( $initial_usage['output_tokens'] ?? 0 ) + ( $final_response['usage']['output_tokens'] ?? 0 ),
-			);
-		} elseif ( ! empty( $final_response['usage'] ) ) {
-			$cumulative_usage = $final_response['usage'];
-		} elseif ( ! empty( $initial_usage ) ) {
-			$cumulative_usage = $initial_usage;
+		if ( empty( $total ) ) {
+			return $extra;
 		}
-
-		// Save final response with cumulative usage.
-		$this->chat_manager->add_message(
-			$conversation_id,
-			'assistant',
-			$final_response['content'],
-			$cumulative_usage ? array( 'usage' => $cumulative_usage ) : array()
-		);
 
 		return array(
-			'content'      => $final_response['content'],
-			'usage'        => $cumulative_usage,
-			'failed_tools' => $failed_tools,
+			'input_tokens'  => ( $total['input_tokens'] ?? 0 ) + ( $extra['input_tokens'] ?? 0 ),
+			'output_tokens' => ( $total['output_tokens'] ?? 0 ) + ( $extra['output_tokens'] ?? 0 ),
 		);
 	}
 

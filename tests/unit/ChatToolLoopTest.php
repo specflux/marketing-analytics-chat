@@ -541,7 +541,7 @@ class ChatToolLoopTest extends TestCase {
 		$this->assertCount( 2, $this->provider->sent, 'Provider should be called twice: tool request, then answer' );
 
 		$follow_up = $this->provider->sent[1];
-		$this->assertSame( array(), $follow_up['tools'], 'Follow-up turn offers no tools' );
+		$this->assertNotEmpty( $follow_up['tools'], 'Follow-up turn keeps offering tools so the model can chain calls' );
 
 		$tool_messages = array_values(
 			array_filter(
@@ -626,6 +626,97 @@ class ChatToolLoopTest extends TestCase {
 		$response = $this->last_json_response();
 		$this->assertCount( 1, $response['data']['failed_tools'] );
 		$this->assertSame( 'GA4 quota exceeded', $response['data']['failed_tools'][0]['error'] );
+	}
+
+	/**
+	 * Build a scripted tool-call response.
+	 *
+	 * @param string $id Call id.
+	 * @return array
+	 */
+	private function tool_turn( $id ) {
+		return array(
+			'content'    => 'Checking ' . $id,
+			'tool_calls' => array(
+				array(
+					'id'        => $id,
+					'name'      => $this->tool_name,
+					'arguments' => array(),
+				),
+			),
+			'usage'      => array(
+				'input_tokens'  => 1,
+				'output_tokens' => 1,
+			),
+		);
+	}
+
+	/**
+	 * The model may chain several tool rounds before answering.
+	 */
+	public function test_multiple_tool_rounds_then_answer(): void {
+		$this->provider = new Fake_LLM_Provider(
+			array(
+				$this->tool_turn( 'call_1' ),
+				$this->tool_turn( 'call_2' ),
+				array(
+					'content' => 'All done.',
+					'usage'   => array(
+						'input_tokens'  => 1,
+						'output_tokens' => 1,
+					),
+				),
+			)
+		);
+
+		$this->make_handler()->send_message();
+
+		$this->assertCount( 2, $this->mcp_client->calls );
+		$this->assertCount( 3, $this->provider->sent );
+		$this->assertNotEmpty( $this->provider->sent[1]['tools'], 'Tools stay available on a middle round' );
+
+		$response = $this->last_json_response();
+		$this->assertSame( 'All done.', $response['data']['content'] );
+		$this->assertSame( 3, $response['data']['usage']['input_tokens'] );
+		$this->assertSame( 3, $response['data']['usage']['output_tokens'] );
+
+		// Interim text is stored exactly once (as a tool message, not a plain one).
+		$interim = array_filter(
+			$this->chat_manager->messages,
+			static function ( $m ) {
+				return 'Checking call_2' === $m->content;
+			}
+		);
+		$this->assertCount( 1, $interim );
+	}
+
+	/**
+	 * The last allowed round is sent without tools.
+	 */
+	public function test_last_round_is_sent_without_tools(): void {
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_chat_max_tool_rounds'] = static function () {
+			return 2;
+		};
+
+		$this->provider = new Fake_LLM_Provider(
+			array(
+				$this->tool_turn( 'call_1' ),
+				$this->tool_turn( 'call_2' ),
+				array(
+					'content' => 'Forced answer.',
+					'usage'   => array(),
+				),
+			)
+		);
+
+		$this->make_handler()->send_message();
+
+		$this->assertCount( 3, $this->provider->sent );
+		$this->assertNotEmpty( $this->provider->sent[1]['tools'] );
+		$this->assertSame( array(), $this->provider->sent[2]['tools'] );
+		$this->assertSame( 'Forced answer.', $this->last_json_response()['data']['content'] );
+
+		unset( $GLOBALS['specflux_mac_test_filters']['specflux_mac_chat_max_tool_rounds'] );
 	}
 
 	/**
