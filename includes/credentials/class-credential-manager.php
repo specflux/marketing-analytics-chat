@@ -128,6 +128,12 @@ class Credential_Manager {
 			return false;
 		}
 
+		// A key-based platform whose fields are all optional works without any saved value.
+		$definition = Platform_Registry::get( $platform );
+		if ( 'api_key' === $definition['auth'] && ! empty( $definition['fields'] ) && empty( array_diff( $definition['fields'], $definition['optional_fields'] ) ) ) {
+			return true;
+		}
+
 		$credentials = $this->get_credentials( $platform );
 		return ! empty( $credentials );
 	}
