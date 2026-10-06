@@ -219,6 +219,23 @@ class Admin {
 				SPECFLUX_MAC_VERSION,
 				true
 			);
+
+			wp_enqueue_script(
+				'specflux-mac-weekly-summary-settings',
+				SPECFLUX_MAC_URL . 'admin/js/weekly-summary-settings.js',
+				array( 'jquery', 'specflux-mac-admin' ),
+				SPECFLUX_MAC_VERSION,
+				true
+			);
+
+			wp_localize_script(
+				'specflux-mac-weekly-summary-settings',
+				'specfluxMacWeeklySummary',
+				array(
+					'sending' => __( 'Sending…', 'specflux-marketing-analytics-chat' ),
+					'failed'  => __( 'The test summary could not be sent.', 'specflux-marketing-analytics-chat' ),
+				)
+			);
 		}
 
 		// Enqueue sparklines on the dashboard page.

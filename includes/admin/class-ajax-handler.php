@@ -13,6 +13,7 @@ use Specflux_Marketing_Analytics\API_Clients\GSC_Client;
 use Specflux_Marketing_Analytics\Credentials\Connection_Tester;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
+use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Scheduler;
 use Specflux_Marketing_Analytics\Utils\Logger;
 use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
@@ -50,6 +51,9 @@ class Ajax_Handler {
 
 		// Dashboard insights panel refresh (transient reads only).
 		add_action( 'wp_ajax_specflux_mac_refresh_dashboard_metrics', array( $this, 'handle_refresh_dashboard_metrics' ) );
+
+		// Weekly summary email: send a test now.
+		add_action( 'wp_ajax_specflux_mac_send_test_summary', array( $this, 'send_test_summary' ) );
 
 		// Onboarding wizard dismissal.
 		add_action( 'wp_ajax_specflux_mac_dismiss_wizard', array( $this, 'dismiss_onboarding_wizard' ) );
@@ -412,6 +416,44 @@ class Ajax_Handler {
 		return array(
 			'message' => sprintf( 'Cleared %d cache entries', $deleted ),
 		);
+	}
+
+	/**
+	 * Send a test weekly summary immediately
+	 *
+	 * @return void
+	 */
+	public function send_test_summary() {
+		if ( ! $this->verify_request() ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'You do not have permission to perform this action.' ) );
+			return;
+		}
+
+		try {
+			wp_send_json_success( $this->do_send_test_summary() );
+		} catch ( \Throwable $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * Send the weekly summary to the saved recipients.
+	 *
+	 * @return array Success payload for the JSON response.
+	 * @throws \Exception With the user-facing reason when nothing was sent.
+	 */
+	private function do_send_test_summary() {
+		$result = ( new Weekly_Summary_Scheduler() )->send();
+
+		if ( ! $result['sent'] ) {
+			throw new \Exception( esc_html( $result['message'] ) );
+		}
+
+		return array( 'message' => $result['message'] );
 	}
 
 	/**

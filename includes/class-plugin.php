@@ -33,6 +33,7 @@ class Plugin {
 		$this->define_post_stats_hooks();
 		$this->define_abilities_hooks();
 		$this->define_review_prompt_hooks();
+		$this->define_weekly_summary_hooks();
 	}
 
 	/**
@@ -88,6 +89,19 @@ class Plugin {
 	private function define_review_prompt_hooks() {
 		$review_prompt = new Admin\Review_Prompt();
 		$review_prompt->init();
+	}
+
+	/**
+	 * Register the weekly summary email hooks
+	 *
+	 * Outside the `is_admin()` guard: the cron event fires on front-end and
+	 * cron requests, and `init` self-heals a missing event on any request.
+	 */
+	private function define_weekly_summary_hooks() {
+		$scheduler = new Reports\Weekly_Summary_Scheduler();
+
+		$this->loader->add_action( Reports\Weekly_Summary_Scheduler::HOOK, $scheduler, 'run' );
+		$this->loader->add_action( 'init', $scheduler, 'sync_schedule' );
 	}
 
 	/**
