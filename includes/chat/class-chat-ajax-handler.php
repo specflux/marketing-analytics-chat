@@ -448,7 +448,7 @@ class Chat_Ajax_Handler {
 
 		// Get conversation history.
 		$formatted_messages = $this->format_messages_for_llm(
-			$this->chat_manager->get_messages( $conversation_id )
+			$this->chat_manager->get_messages_for_model( $conversation_id )
 		);
 
 		// Get available MCP tools.
@@ -513,7 +513,7 @@ class Chat_Ajax_Handler {
 
 			// Get updated conversation history with tool results.
 			$formatted_messages = $this->format_messages_for_llm(
-				$this->chat_manager->get_messages( $conversation_id )
+				$this->chat_manager->get_messages_for_model( $conversation_id )
 			);
 
 			// The last allowed round gets no tools, forcing a written answer.
