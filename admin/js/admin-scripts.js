@@ -115,6 +115,57 @@
 	}
 
 	/**
+	 * Default panel for registry-defined api_key platforms: save, test, disconnect
+	 */
+	function initGenericPanels() {
+		$('.smac-generic-panel').each(function() {
+			var $panel = $(this);
+			var platform = $panel.data('platform');
+			var $status = $panel.find('.smac-generic-status');
+
+			function post(data, $button, done) {
+				var originalText = $button.text();
+				$button.prop('disabled', true);
+				$status.text('');
+				$.ajax({
+					url: specfluxMacAdmin.ajaxUrl,
+					type: 'POST',
+					data: $.extend({ nonce: specfluxMacAdmin.nonce, platform: platform }, data),
+					success: function(response) {
+						var message = (response.data && response.data.message) || '';
+						$status.text(message);
+						showNotice(response.success ? 'success' : 'error', message || specfluxMacAdmin.strings.error);
+						if (done) { done(response); }
+					},
+					error: function() {
+						showNotice('error', specfluxMacAdmin.strings.error);
+					},
+					complete: function() {
+						$button.text(originalText).prop('disabled', false);
+					}
+				});
+			}
+
+			$panel.find('.smac-generic-save').on('click', function() {
+				var fields = {};
+				$panel.find('.smac-generic-field').each(function() {
+					fields[$(this).data('field')] = $(this).val();
+				});
+				post({ action: 'specflux_mac_save_credentials', fields: fields }, $(this), function(response) {
+					if (response.success) { window.location.reload(); }
+				});
+			});
+
+			$panel.find('.smac-generic-disconnect').on('click', function() {
+				if (!confirm('Disconnect this platform?')) { return; }
+				post({ action: 'specflux_mac_disconnect_platform' }, $(this), function(response) {
+					if (response.success) { window.location.reload(); }
+				});
+			});
+		});
+	}
+
+	/**
 	 * Clear all caches
 	 */
 	function initClearCaches() {
@@ -585,6 +636,7 @@
 		cleanOAuthCallbackUrl();
 		initCopyEndpoint();
 		initTestConnection();
+		initGenericPanels();
 		initClearCaches();
 		initGA4PropertySelector();
 		initGSCSiteSelector();

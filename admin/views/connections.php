@@ -217,7 +217,9 @@ $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 		if ( null !== $panel_definition && file_exists( $panel_file ) ) {
 			include $panel_file;
 		} else {
-			if ( null !== $panel_definition ) {
+			if ( null !== $panel_definition && ! has_action( 'specflux_mac_render_connection_panel_' . $active_tab ) ) {
+				include __DIR__ . '/connections/generic.php';
+			} elseif ( null !== $panel_definition ) {
 				/**
 				 * Render the connection panel for a registered platform.
 				 *
