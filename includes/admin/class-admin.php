@@ -147,6 +147,13 @@ class Admin {
 	public function enqueue_scripts( $hook ) {
 		// Enqueue dashboard widget script on the WP Dashboard.
 		if ( 'index.php' === $hook && Permission_Manager::can_access_plugin() ) {
+			wp_enqueue_style(
+				'specflux-mac-dashboard-widget',
+				SPECFLUX_MAC_URL . 'admin/css/dashboard-widget.css',
+				array(),
+				SPECFLUX_MAC_VERSION
+			);
+
 			wp_enqueue_script(
 				'specflux-mac-dashboard-widget',
 				SPECFLUX_MAC_URL . 'admin/js/dashboard-widget.js',
