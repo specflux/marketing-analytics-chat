@@ -367,10 +367,10 @@ class GA4_Abilities {
 	/**
 	 * Execute ga4-overview resource
 	 *
-	 * @param array $args Resource arguments.
+	 * @param array $args Resource arguments (optional, not used for this resource).
 	 * @return array Resource result.
 	 */
-	public function execute_ga4_overview( $args ) {
+	public function execute_ga4_overview( $args = array() ) {
 		return Ability_Response::resource(
 			'ga4://overview',
 			function () {
@@ -383,7 +383,8 @@ class GA4_Abilities {
 				return array(
 					'property_id' => $client->get_property_id(),
 					'period'      => 'Last 7 days',
-					'key_metrics' => $data['totals'] ?? array(),
+					// A report without dimensions returns its figures as a single row, not as totals.
+					'key_metrics' => ! empty( $data['totals'] ) ? $data['totals'] : ( $data['rows'][0] ?? array() ),
 					'row_count'   => $data['row_count'] ?? 0,
 				);
 			}
