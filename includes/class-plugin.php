@@ -34,6 +34,7 @@ class Plugin {
 		$this->define_abilities_hooks();
 		$this->define_review_prompt_hooks();
 		$this->define_weekly_summary_hooks();
+		( new Integrations\Bing_Integration() )->register_hooks();
 	}
 
 	/**

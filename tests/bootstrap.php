@@ -1081,6 +1081,16 @@ if ( ! function_exists( 'wp_remote_post' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_remote_get' ) ) {
+	/**
+	 * Mock wp_remote_get. Shares $GLOBALS['mock_http_handler'] and
+	 * $GLOBALS['mock_http_requests'] with wp_remote_post.
+	 */
+	function wp_remote_get( $url, $args = array() ) {
+		return wp_remote_post( $url, $args );
+	}
+}
+
 if ( ! function_exists( 'wp_remote_retrieve_response_code' ) ) {
 	function wp_remote_retrieve_response_code( $response ) {
 		if ( is_wp_error( $response ) ) {
