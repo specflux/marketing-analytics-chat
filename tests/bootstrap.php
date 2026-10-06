@@ -1339,6 +1339,25 @@ if ( ! function_exists( 'wp_strip_all_tags' ) ) {
 	}
 }
 
+// Post meta and post type helpers used by the SEO plugin reader. Tests populate
+// $mock_post_meta[ $post_id ][ $meta_key ] = value and $mock_posts[ $id ]['type'].
+$mock_post_meta = array();
+
+if ( ! function_exists( 'get_post_meta' ) ) {
+	function get_post_meta( $post_id, $key = '', $single = false ) {
+		global $mock_post_meta;
+		$value = $mock_post_meta[ $post_id ][ $key ] ?? '';
+		return $single ? $value : array( $value );
+	}
+}
+
+if ( ! function_exists( 'get_post_type' ) ) {
+	function get_post_type( $post_id ) {
+		global $mock_posts;
+		return $mock_posts[ $post_id ]['type'] ?? false;
+	}
+}
+
 // Mocks used by the weekly summary tests.
 if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
 	/**

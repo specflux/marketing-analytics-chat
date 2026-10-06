@@ -162,6 +162,10 @@ class Abilities_Registrar {
 		$cross_platform_abilities = new Cross_Platform_Abilities();
 		$cross_platform_abilities->register();
 
+		// Register WordPress content and SEO abilities.
+		$content_abilities = new Content_Abilities();
+		$content_abilities->register();
+
 		// Register prompts.
 		$prompts = new Prompts();
 		$prompts->register();

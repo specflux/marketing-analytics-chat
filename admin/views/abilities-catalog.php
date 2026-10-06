@@ -186,6 +186,40 @@ if ( empty( $mac_abilities ) ) {
 			'icon'        => 'dashicons-networking',
 		),
 
+		// WordPress content and SEO abilities.
+		array(
+			'name'        => __( 'Get Content Inventory', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-content-inventory',
+			'description' => __( 'List published posts and pages with dates, author, categories, word count, and comment count.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'wpcontent',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-admin-page',
+		),
+		array(
+			'name'        => __( 'Get Content Performance', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-content-performance',
+			'description' => __( 'Join content with 28-day GA4 views and Search Console clicks, impressions, CTR, and position; find stale content to refresh.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'wpcontent',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-admin-page',
+		),
+		array(
+			'name'        => __( 'Get SEO Metadata', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-seo-metadata',
+			'description' => __( 'Read SEO titles, meta descriptions, focus keywords, noindex, and canonicals from Yoast SEO, Rank Math, All in One SEO, or SEOPress.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'wpcontent',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-admin-page',
+		),
+		array(
+			'name'        => __( 'Find SEO Issues', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/find-seo-issues',
+			'description' => __( 'Ranked list of SEO problems: missing or duplicate titles and descriptions, noindex on pages with traffic, and low CTR on high-impression pages.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'wpcontent',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-admin-page',
+		),
+
 	);
 }
 
@@ -220,6 +254,9 @@ $mac_mcp_endpoint = rest_url( 'mcp/mcp-adapter-default-server' );
 		</button>
 		<button type="button" class="smac-abilities-filter-btn" data-filter="cross-platform">
 			<?php esc_html_e( 'Cross-Platform', 'specflux-marketing-analytics-chat' ); ?>
+		</button>
+		<button type="button" class="smac-abilities-filter-btn" data-filter="wpcontent">
+			<?php esc_html_e( 'Content & SEO', 'specflux-marketing-analytics-chat' ); ?>
 		</button>
 	</div>
 
