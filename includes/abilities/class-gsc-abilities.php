@@ -41,7 +41,7 @@ class GSC_Abilities {
 			'marketing-analytics/get-search-performance',
 			array(
 				'label'               => __( 'Get Search Performance', 'specflux-marketing-analytics-chat' ),
-				'description'         => __( 'Retrieve search performance data from Google Search Console including clicks, impressions, CTR, and position.', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Returns Google Search Console clicks, impressions, CTR and average position, optionally grouped by dimensions (query, page, country, device, searchAppearance) and filtered. Use it for organic search trends, which pages earn search clicks, or the search for a page or country performance. For simply the best queries ranked by clicks use get-top-queries; for indexing problems use get-indexing-status. GSC data lags about 3 days.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -50,7 +50,7 @@ class GSC_Abilities {
 						...Ability_Dates::properties( 'gsc' ),
 						'dimensions' => array(
 							'type'        => 'array',
-							'description' => 'Dimensions to group by (query, page, country, device, searchAppearance)',
+							'description' => 'Dimensions to group by: query, page, country, device (DESKTOP, MOBILE, TABLET), searchAppearance. Omit for a single overall total; use ["query"] for keywords and ["page"] for landing pages.',
 							'items'       => array(
 								'type' => 'string',
 								'enum' => array( 'query', 'page', 'country', 'device', 'searchAppearance' ),
@@ -105,7 +105,7 @@ class GSC_Abilities {
 			'marketing-analytics/get-top-queries',
 			array(
 				'label'               => __( 'Get Top Queries', 'specflux-marketing-analytics-chat' ),
-				'description'         => __( 'Get top-performing search queries from Google Search Console.', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Returns the search queries that earn the most clicks in Google Search Console, with clicks, impressions, CTR and position, ignoring queries under min_impressions. Use it to answer which keywords bring organic traffic. For page-level or country-level search data use get-search-performance.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -163,7 +163,7 @@ class GSC_Abilities {
 			'marketing-analytics/get-indexing-status',
 			array(
 				'label'               => __( 'Get Indexing Status', 'specflux-marketing-analytics-chat' ),
-				'description'         => __( 'Check page indexing status and coverage issues in Google Search Console.', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'With page_url, returns the Google index inspection for that URL (is it indexed, last crawl, canonical, errors); without it, returns sitemap submission status for the site. Use it for why a page is not appearing in Google or whether sitemaps are healthy. It has no date range and does not return traffic data.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -215,7 +215,7 @@ class GSC_Abilities {
 			'marketing-analytics/gsc-overview',
 			array(
 				'label'               => __( 'Search Console Overview', 'specflux-marketing-analytics-chat' ),
-				'description'         => __( 'Get Google Search Console site summary with verification status, indexed pages, and top queries.', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Returns a fixed last-7-days Search Console snapshot: the verified site URL, its 10 top queries and an overall performance total. Use it for a quick first look. It takes no inputs, so for other periods or breakdowns use get-search-performance or get-top-queries.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'output_schema'       => array(

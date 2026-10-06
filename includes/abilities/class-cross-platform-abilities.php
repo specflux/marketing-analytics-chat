@@ -71,18 +71,18 @@ class Cross_Platform_Abilities {
 			'marketing-analytics/compare-periods',
 			array(
 				'label'        => __( 'Compare Periods', 'specflux-marketing-analytics-chat' ),
-				'description'  => __( 'Compare analytics metrics between two time periods across connected platforms.', 'specflux-marketing-analytics-chat' ),
+				'description'  => __( 'Compares two periods side by side across the connected platforms (GA4: sessions, users, page views, bounce rate, session duration; GSC: clicks, impressions, CTR, position) and returns the absolute and percentage change. Use it for questions like "how did this month compare to last month". Pass each period as an explicit start,end pair. For a single period without comparison use get-ga4-metrics or generate-summary-report.', 'specflux-marketing-analytics-chat' ),
 				'category'     => 'marketing-analytics',
 				'input_schema' => array(
 					'type'       => 'object',
 					'properties' => array(
 						'period_a'  => array(
 							'type'        => 'string',
-							'description' => 'First period start date (e.g., "14daysAgo", "2024-01-01")',
+							'description' => 'First period (usually the earlier one) as an explicit "YYYY-MM-DD,YYYY-MM-DD" start,end pair, e.g. "2026-08-01,2026-08-31". A single value such as "14daysAgo" is read as that start date through today.',
 						),
 						'period_b'  => array(
 							'type'        => 'string',
-							'description' => 'Second period start date (e.g., "7daysAgo", "2024-01-08")',
+							'description' => 'Second period (usually the more recent one) as an explicit "YYYY-MM-DD,YYYY-MM-DD" start,end pair, e.g. "2026-09-01,2026-09-30", the same length as the first. A single value such as "7daysAgo" is read as that start date through today.',
 						),
 						'platforms' => array(
 							'type'        => 'array',
@@ -91,7 +91,7 @@ class Cross_Platform_Abilities {
 						),
 						'metrics'   => array(
 							'type'        => 'array',
-							'description' => 'Specific metrics to compare (optional)',
+							'description' => 'Specific metrics to compare (optional; defaults to the standard set per platform)',
 							'items'       => array( 'type' => 'string' ),
 						),
 					),
@@ -118,14 +118,14 @@ class Cross_Platform_Abilities {
 			'marketing-analytics/get-top-content',
 			array(
 				'label'        => __( 'Get Top Content', 'specflux-marketing-analytics-chat' ),
-				'description'  => __( 'Get top performing content by combining GA4 engagement and GSC search data.', 'specflux-marketing-analytics-chat' ),
+				'description'  => __( 'Returns a ranked list of pages that merges GA4 page views and engagement with Search Console clicks and impressions for the same period. Use it for which content performs best overall. For GA4-only page breakdowns with other metrics use get-ga4-metrics with the pagePath dimension; for search-only use get-search-performance with the page dimension.', 'specflux-marketing-analytics-chat' ),
 				'category'     => 'marketing-analytics',
 				'input_schema' => array(
 					'type'       => 'object',
 					'properties' => array(
 						'date_range' => array(
 							'type'        => 'string',
-							'description' => 'Date range (default: "7daysAgo")',
+							'description' => 'Date range: "7daysAgo" (default), "28daysAgo", "30daysAgo", "yesterday", or "YYYY-MM-DD,YYYY-MM-DD". Clarity only covers the last 1-3 days regardless.',
 						),
 						'limit'      => array(
 							'type'        => 'integer',
@@ -154,14 +154,14 @@ class Cross_Platform_Abilities {
 			'marketing-analytics/generate-summary-report',
 			array(
 				'label'        => __( 'Generate Summary Report', 'specflux-marketing-analytics-chat' ),
-				'description'  => __( 'Generate a comprehensive analytics summary report from all connected platforms.', 'specflux-marketing-analytics-chat' ),
+				'description'  => __( 'Returns a ready-made overview combining GA4, Search Console and Clarity (whichever are connected) for one period, with key takeaways, as markdown or JSON. Use it for broad questions such as "how is the site doing" or "give me a weekly report". For a specific metric, breakdown or filter use the individual GA4 or GSC tools, which are more precise.', 'specflux-marketing-analytics-chat' ),
 				'category'     => 'marketing-analytics',
 				'input_schema' => array(
 					'type'       => 'object',
 					'properties' => array(
 						'date_range' => array(
 							'type'        => 'string',
-							'description' => 'Date range (default: "7daysAgo")',
+							'description' => 'Date range: "7daysAgo" (default), "28daysAgo", "30daysAgo", "yesterday", or "YYYY-MM-DD,YYYY-MM-DD". Clarity only covers the last 1-3 days regardless.',
 						),
 						'format'     => array(
 							'type'        => 'string',

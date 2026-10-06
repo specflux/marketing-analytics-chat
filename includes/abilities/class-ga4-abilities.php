@@ -42,7 +42,7 @@ class GA4_Abilities {
 			'marketing-analytics/get-ga4-metrics',
 			array(
 				'label'               => __( 'Get GA4 Metrics', 'specflux-marketing-analytics-chat' ),
-				'description'         => __( 'Retrieve Google Analytics 4 metrics for a specified date range with optional dimensions.', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'The general-purpose GA4 report: returns rows of any metrics you name, optionally broken down by dimensions (date, channel, page, device, country...), plus totals and the resolved period. Use it for trends over time, top pages, device or country splits and custom metric combinations. For a quick headline snapshot use ga4-overview; for source/medium/campaign use get-traffic-sources; for event counts use get-ga4-events; for a cross-platform write-up use generate-summary-report.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -50,13 +50,13 @@ class GA4_Abilities {
 					'properties' => array(
 						'metrics'    => array(
 							'type'        => 'array',
-							'description' => 'Array of metric names (e.g., activeUsers, sessions, screenPageViews)',
+							'description' => 'GA4 metric API names. Common valid names: sessions, totalUsers, activeUsers, newUsers, screenPageViews, engagementRate, engagedSessions, bounceRate, averageSessionDuration, sessionsPerUser, eventCount, conversions, keyEvents, totalRevenue, transactions. Names are case-sensitive; do not invent others.',
 							'items'       => array( 'type' => 'string' ),
 						),
 						...Ability_Dates::properties( 'ga4' ),
 						'dimensions' => array(
 							'type'        => 'array',
-							'description' => 'Array of dimension names (e.g., date, country, deviceCategory)',
+							'description' => 'GA4 dimension API names to break the metrics down by. Common valid names: date, sessionDefaultChannelGroup, sessionSource, sessionMedium, sessionCampaignName, pagePath, pageTitle, landingPage, deviceCategory, country, city, eventName. Use date for a trend over time. Omit for a single totals row.',
 							'items'       => array( 'type' => 'string' ),
 						),
 						'limit'      => array(
@@ -109,7 +109,7 @@ class GA4_Abilities {
 			'marketing-analytics/get-ga4-events',
 			array(
 				'label'               => __( 'Get GA4 Events', 'specflux-marketing-analytics-chat' ),
-				'description'         => __( 'Query custom event data from Google Analytics 4.', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Returns GA4 event counts (eventName and eventCount) for a period, or for one event when event_name is given. Use it to check whether a specific event or conversion is firing and how often. For anything beyond event counts (users, sessions, revenue by event) use get-ga4-metrics instead.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -159,7 +159,7 @@ class GA4_Abilities {
 			'marketing-analytics/get-ga4-realtime',
 			array(
 				'label'               => __( 'Get GA4 Real-time Data', 'specflux-marketing-analytics-chat' ),
-				'description'         => __( 'Get real-time user activity from Google Analytics 4.', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Returns GA4 real-time figures for roughly the last 30 minutes (default: activeUsers). Use it only for questions about right now, such as "is anyone on the site" or checking a launch or campaign send. It has no date range and is not suitable for any historical question.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -167,7 +167,7 @@ class GA4_Abilities {
 					'properties' => array(
 						'metrics' => array(
 							'type'        => 'array',
-							'description' => 'Array of real-time metric names (e.g., activeUsers)',
+							'description' => 'GA4 real-time metric names (default activeUsers; also screenPageViews, eventCount, conversions, keyEvents)',
 							'items'       => array( 'type' => 'string' ),
 							'default'     => array( 'activeUsers' ),
 						),
@@ -203,7 +203,7 @@ class GA4_Abilities {
 			'marketing-analytics/get-traffic-sources',
 			array(
 				'label'               => __( 'Get Traffic Sources', 'specflux-marketing-analytics-chat' ),
-				'description'         => __( 'Analyze traffic sources and acquisition channels from GA4.', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Returns GA4 sessions and active users by sessionSource, sessionMedium and sessionCampaignName for a period. Use it to answer where traffic comes from and which campaigns drive visits. For channel-group level views or other metrics (engagement, conversions, revenue by channel) use get-ga4-metrics with the sessionDefaultChannelGroup dimension.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -249,7 +249,7 @@ class GA4_Abilities {
 			'marketing-analytics/ga4-overview',
 			array(
 				'label'               => __( 'GA4 Overview', 'specflux-marketing-analytics-chat' ),
-				'description'         => __( 'Get Google Analytics 4 property summary with key metrics snapshot.', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Returns a fixed snapshot of the last 7 days (activeUsers, sessions, screenPageViews, bounceRate) for the GA4 property. Use it as a quick first look or to orient yourself. It takes no inputs, so for any other period, breakdown or metric use get-ga4-metrics.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'output_schema'       => array(

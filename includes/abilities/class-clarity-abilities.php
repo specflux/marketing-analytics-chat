@@ -41,7 +41,7 @@ class Clarity_Abilities {
 			'marketing-analytics/get-clarity-insights',
 			array(
 				'label'               => __( 'Get Microsoft Clarity Insights', 'specflux-marketing-analytics-chat' ),
-				'description'         => __( 'Retrieve analytics dashboard data from Microsoft Clarity for a specified time period with optional dimension filters.', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Returns Microsoft Clarity behaviour metrics (sessions, scroll depth, dead and rage clicks, quick-backs, excessive scrolling and similar friction signals) for only the last 1, 2 or 3 days, optionally split by up to three dimensions (such as Browser, Device, Country, OS, Source, URL). The 1-3 day window is a Clarity API limit and cannot be extended; for longer periods use GA4. Use it to find UX friction on the site. For traffic volumes or trends use get-ga4-metrics.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -110,7 +110,7 @@ class Clarity_Abilities {
 			'marketing-analytics/get-clarity-recordings',
 			array(
 				'label'               => __( 'Get Clarity Session Recordings', 'specflux-marketing-analytics-chat' ),
-				'description'         => __( 'Fetch session recording URLs from Microsoft Clarity based on filters.', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Returns links to individual Microsoft Clarity session recordings matching the filters. Use it only when the user wants to watch examples of real sessions after a friction problem has been found; it gives no aggregate numbers. For metrics use get-clarity-insights.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -179,7 +179,7 @@ class Clarity_Abilities {
 			'marketing-analytics/analyze-clarity-heatmaps',
 			array(
 				'label'               => __( 'Analyze Clarity Heatmaps', 'specflux-marketing-analytics-chat' ),
-				'description'         => __( 'Get heatmap data and AI-friendly insights from Microsoft Clarity.', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Returns click, scroll or attention heatmap data and plain-language behaviour insights for a single page URL from Microsoft Clarity. Use it for how visitors interact with one specific page. For site-wide behaviour metrics use get-clarity-insights.', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'input_schema'        => array(
@@ -234,7 +234,7 @@ class Clarity_Abilities {
 			'marketing-analytics/clarity-dashboard',
 			array(
 				'label'               => __( 'Clarity Dashboard Summary', 'specflux-marketing-analytics-chat' ),
-				'description'         => __( 'Get current Microsoft Clarity project summary with session counts and user metrics.', 'specflux-marketing-analytics-chat' ),
+				'description'         => __( 'Returns a recent Microsoft Clarity project snapshot with session counts, active users and top insights. Use it as a quick first look at Clarity; it takes no inputs. For breakdowns by device, browser or page use get-clarity-insights (Clarity only covers the last 1-3 days).', 'specflux-marketing-analytics-chat' ),
 				'category'            => 'marketing-analytics',
 
 				'output_schema'       => array(
