@@ -40,7 +40,8 @@ Connecting Google Analytics 4 and Search Console takes one click: sign in with G
 * **Answers grounded in your numbers** - The assistant knows today's date, your site and which sources are connected, pulls from several sources in one answer, states the exact dates its numbers cover, compares with the previous period, and ends with what to do next. It is told never to make up a number
 * **MCP-Native Architecture** - Exposes analytics as MCP abilities for any compatible AI assistant
 * **Interactive Onboarding Wizard** - Step-by-step setup with guided configuration
-* **Analytics at a Glance Dashboard** - Dashboard widget with sparkline trends
+* **Analytics at a Glance Dashboard** - Dashboard widget with sparkline trends and an "SEO: N issues to fix" row with a button that asks the AI what to fix first
+* **Weekly Email Summary** - Last week against the week before for each connected platform, including Bing search and the top SEO issues to fix
 * **Admin Bar Pulse Indicator** - Quick analytics status in the WordPress admin bar
 * **Smart Prompt Templates** - Auto-installed prompts for common analytics questions
 * **MCP Abilities Catalog** - Browse all available analytics abilities in one place
