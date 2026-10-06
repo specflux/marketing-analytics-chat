@@ -314,10 +314,10 @@ class GSC_Abilities {
 	/**
 	 * Execute gsc-overview resource
 	 *
-	 * @param array $args Resource arguments.
+	 * @param array $args Resource arguments (optional, not used for this resource).
 	 * @return array Resource result.
 	 */
-	public function execute_gsc_overview( $args ) {
+	public function execute_gsc_overview( $args = array() ) {
 		return Ability_Response::resource(
 			'gsc://overview',
 			function () {

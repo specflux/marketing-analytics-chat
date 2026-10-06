@@ -289,7 +289,7 @@ class GA4_Client {
 	 * @return array|null Traffic source data or null on failure.
 	 */
 	public function get_traffic_sources( $date_range = '7daysAgo', $limit = 100 ) {
-		$dimensions = array( 'sessionSource', 'sessionMedium', 'sessionCampaign' );
+		$dimensions = array( 'sessionSource', 'sessionMedium', 'sessionCampaignName' );
 		$metrics    = array( 'sessions', 'activeUsers' );
 
 		$options = array( 'limit' => $limit );

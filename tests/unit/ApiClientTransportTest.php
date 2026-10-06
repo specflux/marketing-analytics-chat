@@ -193,6 +193,30 @@ class ApiClientTransportTest extends TestCase {
 	}
 
 	/**
+	 * Traffic sources ask GA4 for dimensions that exist (sessionCampaign is not one; Google rejects the report).
+	 */
+	public function test_ga4_traffic_sources_requests_valid_dimensions(): void {
+		update_option( 'specflux_mac_ga4_property_id', '123456' );
+
+		$service = $this->ga4_service_returning(
+			array( 'sessionSource', 'sessionMedium', 'sessionCampaignName' ),
+			array( 'sessions', 'activeUsers' ),
+			array( array( array( 'google', 'organic', '(organic)' ), array( '10', '8' ) ) )
+		);
+		$client  = new GA4_Client( $service );
+
+		$client->get_traffic_sources( '7daysAgo', 3 );
+
+		$names = array_map(
+			static function ( $dimension ) {
+				return $dimension->getName();
+			},
+			$service->properties->last_request->getDimensions()
+		);
+		$this->assertSame( array( 'sessionSource', 'sessionMedium', 'sessionCampaignName' ), $names );
+	}
+
+	/**
 	 * GSC rows are flattened into the search analytics shape.
 	 */
 	public function test_gsc_parses_search_analytics_from_service(): void {
@@ -422,6 +446,13 @@ class ApiClientTransportTest extends TestCase {
 					public $calls = 0;
 
 					/**
+					 * Most recent report request.
+					 *
+					 * @var object|null
+					 */
+					public $last_request = null;
+
+					/**
 					 * Canned response.
 					 *
 					 * @var object
@@ -446,6 +477,7 @@ class ApiClientTransportTest extends TestCase {
 					 */
 					public function runReport( $property, $request ) { // phpcs:ignore WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid -- Mirrors the Google client API.
 						++$this->calls;
+						$this->last_request = $request;
 						return $this->response;
 					}
 				};

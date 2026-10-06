@@ -4,7 +4,7 @@ Donate link: https://www.specflux.com/
 Tags: google analytics, search console, microsoft clarity, ai chat, mcp
 Requires at least: 7.0
 Tested up to: 7.0
-Stable tag: 0.3.0
+Stable tag: 0.4.0
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -215,6 +215,15 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 
 == Changelog ==
 
+= 0.4.0 - 2026-10-06 =
+* Added: After you connect Google, the Connections screen picks the Search Console site and Google Analytics 4 property for this site on its own when there is exactly one clear match. When there is no clear match it opens the list with the closest match selected, and you can switch at any time with "Change Site" / "Change Property"
+* Fixed: Disconnecting Google Analytics 4 or Search Console now also clears the saved property or site, so reconnecting starts fresh
+* Fixed: The "traffic sources" ability returned an error from Google Analytics on every call
+* Fixed: The Google Analytics 4 and Search Console overview abilities failed when called, and the Google Analytics 4 overview now includes its key metrics
+* Fixed: The Custom Prompts screen and several Connections and Settings styles that had stopped applying
+* Changed: Microsoft Clarity data is cached for up to an hour, including on dashboard refresh, to stay within Clarity's 10 requests a day
+* Readme: corrected the terms and privacy policy links
+
 = 0.3.0 - 2026-08-18 =
 * Added: One-click "Connect with Google" for Google Analytics 4 and Search Console through the Specflux sign-in service, so a Google Cloud project and OAuth client are no longer required. Sites that have already configured their own OAuth client keep using it, and the wizard remains available under Settings > Google API as an advanced option
 * Changed: Documented the Specflux Google sign-in service under External Services
@@ -290,6 +299,9 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 * Smart caching system
 
 == Upgrade Notice ==
+
+= 0.4.0 =
+Connecting Google now picks the right Search Console site and Google Analytics 4 property automatically when there is one clear match, and fixes three analytics abilities that returned errors.
 
 = 0.3.0 =
 Connecting Google Analytics 4 and Search Console no longer needs your own Google Cloud project — use the new "Connect with Google" button. Existing connections and custom OAuth clients keep working unchanged.
