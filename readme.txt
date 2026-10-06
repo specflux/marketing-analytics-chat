@@ -1,7 +1,7 @@
 === Specflux Marketing Analytics Chat ===
 Contributors: specflux, stephen1204paul
 Donate link: https://www.specflux.com/
-Tags: google analytics, search console, microsoft clarity, ai chat, mcp
+Tags: google analytics, search console, seo, ai chat, microsoft clarity
 Requires at least: 7.0
 Tested up to: 7.0
 Stable tag: 0.5.0
@@ -9,7 +9,7 @@ Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Ask AI about your Google Analytics 4, Search Console and Clarity data, get a weekly email summary, and see views and clicks for every post.
+Ask AI about your Google Analytics, Search Console, Bing, PageSpeed and SEO plugin data. Weekly email summary and stats on every post.
 
 == Description ==
 
@@ -23,6 +23,12 @@ Connecting Google Analytics 4 and Search Console takes one click: sign in with G
 * **Google Search Console** - Search performance, queries, indexing status
 * **Microsoft Clarity** - Session recordings, heatmaps, user behavior insights
 
+= Bing, Page Speed & Your SEO Plugin =
+
+* **Bing Webmaster Tools** - Clicks, impressions, top queries and pages from Bing and Microsoft Copilot search, next to your Google numbers
+* **PageSpeed Insights** - Speed scores, real-visitor Core Web Vitals and the biggest fixes for any page on your site, or a speed check of your most-visited pages
+* **Your content and SEO plugin** - The chat reads your published posts and the titles, meta descriptions, focus keywords and noindex settings from Yoast SEO, Rank Math, All in One SEO or SEOPress, joins them with your traffic and search data, and finds what to fix: pages with many impressions but few clicks, missing or duplicate meta descriptions, traffic pages set to noindex, focus keywords nobody searches for, and posts that haven't been updated in a year
+
 = Weekly Email Summary & Per-Post Stats =
 
 * **Weekly Email Summary** - Every Monday morning, a short email compares last week with the week before: sessions, users, and page views, top pages and traffic sources, Search Console clicks, impressions, CTR, and position with your top queries, plus Clarity engagement. On for new installs (sent to the site admin); sites updating from an earlier version can turn it on under Settings > Email, where you can also change recipients
@@ -31,6 +37,7 @@ Connecting Google Analytics 4 and Search Console takes one click: sign in with G
 = AI Chat & MCP Features =
 
 * **Built-in AI Chat** - Chat with your analytics data through the WordPress AI Client built into core. You pick your AI provider once under Settings > Connectors; this plugin stores no AI keys of its own
+* **Answers grounded in your numbers** - The assistant knows today's date, your site and which sources are connected, pulls from several sources in one answer, states the exact dates its numbers cover, compares with the previous period, and ends with what to do next. It is told never to make up a number
 * **MCP-Native Architecture** - Exposes analytics as MCP abilities for any compatible AI assistant
 * **Interactive Onboarding Wizard** - Step-by-step setup with guided configuration
 * **Analytics at a Glance Dashboard** - Dashboard widget with sparkline trends
@@ -131,12 +138,50 @@ project per day, so responses are cached for one hour.
 Terms of use: https://clarity.microsoft.com/terms
 Privacy statement: https://privacy.microsoft.com/privacystatement
 
+**Bing Webmaster Tools** (provided by Microsoft Corporation)
+
+What it is used for: reading your own site's Bing search performance (clicks,
+impressions, queries, pages) and crawl statistics.
+
+What is sent and when: after you save a Bing Webmaster API key and site URL on
+the Connections screen, the plugin calls the Bing Webmaster API at
+ssl.bing.com. Each request carries your API key and your site URL. Requests are
+made when you save or test the connection and when a Bing ability is run from
+the built-in chat or an external MCP client and the cached result (six hours)
+has expired.
+
+Terms of use: https://www.microsoft.com/servicesagreement
+Privacy statement: https://privacy.microsoft.com/privacystatement
+
+**Google PageSpeed Insights** (provided by Google LLC)
+
+What it is used for: measuring the speed and Core Web Vitals of pages on your
+own site.
+
+What is sent and when: after you save a PageSpeed Insights API key on the
+Connections screen, the plugin calls www.googleapis.com/pagespeedonline. Each
+request carries your API key, the address of one page on your own site (other
+sites are refused) and the device type. Google loads that public page to
+measure it. Requests are made when you save or test the connection and when a
+PageSpeed ability is run from the chat or an MCP client; results are cached for
+a day.
+
+Terms of service: https://developers.google.com/terms
+Privacy policy: https://policies.google.com/privacy
+
+**WordPress Content & SEO**
+
+This source reads your own WordPress database (published posts and pages, and
+the post settings stored by Yoast SEO, Rank Math, All in One SEO or SEOPress).
+It contacts no external service.
+
 **AI chat responses**
 
 This plugin does not contact any AI provider directly and stores no AI provider
 credentials. The built-in chat calls the AI Client included in WordPress 7.0,
-which sends your chat messages and the analytics results described above to
-whichever provider you have configured for your site under Settings >
+which sends your chat messages and the analytics results described above
+(including, when you ask about your content, the titles, addresses and SEO
+settings of the published posts involved) to whichever provider you have configured for your site under Settings >
 Connectors. That provider's own terms of service and privacy policy govern that
 transfer, and WordPress stores its credentials.
 
@@ -195,6 +240,10 @@ No. Click "Connect with Google" on the Connections screen and sign in through Sp
 
 No. The plugin is free, and the Google Analytics, Search Console, and Microsoft Clarity APIs it uses are free. The built-in chat uses whichever AI provider you configure under Settings > Connectors, so any usage costs from that provider apply.
 
+= Does it work with Yoast SEO, Rank Math, All in One SEO or SEOPress? =
+
+Yes. The plugin detects which of the four is active and reads each post's SEO title, meta description, focus keyword and noindex setting, so you can ask "Which pages get impressions but few clicks, and what are their meta descriptions?" or "Find SEO issues on my site". The free plugin only reads these settings; it never changes them.
+
 = Do I need an AI API key? =
 
 Only for the built-in chat. WordPress 7.0 manages AI provider connections under Settings > Connectors, and this plugin uses that connection without storing a key of its own. Connecting platforms and browsing the dashboard do not need an AI provider.
@@ -210,6 +259,10 @@ You can ask questions like:
 * "What are my top performing pages?"
 * "Show me my search console queries"
 * "Compare my GA4 and Clarity data"
+* "How much traffic do I get from Bing compared with Google?"
+* "Why is my pricing page slow on mobile?"
+* "Find SEO issues on my site and tell me what to fix first"
+* "Which posts haven't been updated in a year but still get search traffic?"
 
 = What WordPress versions are supported? =
 
@@ -228,6 +281,11 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 == Changelog ==
 
 = 0.5.0 - 2026-10-06 =
+* Added: Bing Webmaster Tools connection with Bing and Microsoft Copilot search clicks, impressions, top queries, top pages and crawl stats
+* Added: PageSpeed Insights connection with speed scores, real-visitor Core Web Vitals and top fixes for any page on your site, plus a speed check of your most-visited pages
+* Added: WordPress Content & SEO source. The chat reads your published posts and the SEO settings from Yoast SEO, Rank Math, All in One SEO or SEOPress, joins them with GA4 and Search Console numbers, and finds SEO issues such as low click-through pages, missing meta descriptions and traffic pages set to noindex
+* Improved: Chat answers. The assistant now knows today's date, your site and which sources are connected; can look up data in several steps within one answer; accepts exact start and end dates; states the period behind every number; and is told never to invent figures. Tool errors are reported instead of being answered around, and long conversations stay within limits
+* Fixed: Chat tool results reached the AI encoded twice, which wasted tokens and hid errors
 * Added: Weekly email summary. Every Monday at 08:00 site time the site admin gets last week's numbers from each connected platform compared with the week before, with top pages, traffic sources, and search queries. Recipients, on/off, and a "Send a test summary now" button are under Settings > Email. New installs have it on; sites updating from an earlier version can turn it on under Settings > Email
 * Added: An "Analytics (28d)" column in the Posts and Pages lists with each post's views, search clicks, and average position. Numbers are fetched once and cached for 12 hours, and each one links to the AI Assistant with a question about that post
 * Added: An "Analytics (28 days)" panel in the block editor sidebar with the post's views, search clicks, impressions, and average position, and a link to ask the AI how to improve it
@@ -326,7 +384,7 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 == Upgrade Notice ==
 
 = 0.5.0 =
-Adds a weekly email summary, views and clicks for every post in the Posts list and the block editor, and a Dashboard widget that shows this week's numbers. Sites updating from an earlier version can turn the weekly email on under Settings > Email.
+Adds Bing Webmaster Tools, PageSpeed Insights and SEO plugin data, much better chat answers, a weekly email summary and stats on every post. Updating sites can turn the weekly email on under Settings > Email.
 
 = 0.4.0 =
 Connecting Google now picks the right Search Console site and Google Analytics 4 property automatically when there is one clear match, and fixes three analytics abilities that returned errors.
@@ -354,6 +412,7 @@ Initial release. Please backup your site before installing.
 This plugin:
 * Stores encrypted API credentials for the analytics platforms you connect in your WordPress database
 * Connects only to the analytics services you configure, as detailed under External Services above
+* Reads your published posts and SEO plugin settings to answer content questions, without changing them
 * Does not track your site's visitors and sends no data to the plugin author
 * Does not store analytics data permanently; results are fetched on demand and cached temporarily
 * Stores no AI provider credentials; chat is handled by the WordPress AI Client using the provider configured for your site
