@@ -982,7 +982,7 @@ if ( isset( $_POST['save_email_settings'] ) && current_user_can( 'manage_options
 
 					<h2><?php esc_html_e( 'Email summaries', 'specflux-marketing-analytics-chat' ); ?></h2>
 					<p class="description">
-						<?php esc_html_e( 'Every Monday morning (site time) we email a short summary of the last 7 days compared with the 7 days before, from the platforms you have connected.', 'specflux-marketing-analytics-chat' ); ?>
+						<?php esc_html_e( 'Every Monday morning (site time) we email a short summary of the last 7 days compared with the 7 days before, from the platforms you have connected, plus Bing search and the SEO issues worth fixing when those are available.', 'specflux-marketing-analytics-chat' ); ?>
 					</p>
 
 					<table class="form-table">

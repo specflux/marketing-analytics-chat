@@ -40,7 +40,8 @@ Connecting Google Analytics 4 and Search Console takes one click: sign in with G
 * **Answers grounded in your numbers** - The assistant knows today's date, your site and which sources are connected, pulls from several sources in one answer, states the exact dates its numbers cover, compares with the previous period, and ends with what to do next. It is told never to make up a number
 * **MCP-Native Architecture** - Exposes analytics as MCP abilities for any compatible AI assistant
 * **Interactive Onboarding Wizard** - Step-by-step setup with guided configuration
-* **Analytics at a Glance Dashboard** - Dashboard widget with sparkline trends
+* **Analytics at a Glance Dashboard** - Dashboard widget with sparkline trends and an "SEO: N issues to fix" row with a button that asks the AI what to fix first
+* **Weekly Email Summary** - Last week against the week before for each connected platform, including Bing search and the top SEO issues to fix
 * **Admin Bar Pulse Indicator** - Quick analytics status in the WordPress admin bar
 * **Smart Prompt Templates** - Auto-installed prompts for common analytics questions
 * **MCP Abilities Catalog** - Browse all available analytics abilities in one place
@@ -274,8 +275,8 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 2. MCP Abilities Catalog showing available analytics abilities
 3. Google Analytics 4 connection setup
 4. Settings page with API configuration
-5. The weekly email summary: last week against the week before, with top pages, traffic sources, and search queries
-6. The Dashboard widget shows this week's sessions, search clicks, and Clarity sessions at a glance
+5. The weekly email summary: last week against the week before, with top pages, traffic sources, search queries, Bing search and the SEO issues to fix
+6. The Dashboard widget shows this week's sessions, search clicks, and Clarity sessions at a glance, plus how many SEO issues to fix
 7. Views, search clicks, and average position for every post in the Posts list
 
 == Changelog ==
@@ -292,6 +293,7 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 * Added: The Dashboard widget loads on its own and shows this week's GA4 sessions, Search Console clicks, and Clarity sessions with the change from last week
 * Added: The weekly email, the Dashboard widget, and the empty chat screen now offer questions built from your own numbers, and links into the AI Assistant arrive with the question already typed in
 * Added: "Preview this week's email" under Settings > Email
+* Added: SEO and Bing in your weekly view. The Dashboard widget shows "SEO: N issues to fix" with the top issue and an "Ask AI what to fix first" button, and the weekly email gets a "Bing search" section and an "SEO to fix" section with the top three issues
 * Added: A "Get started" link in the plugin's row on the Plugins screen
 * Added: The Live Preview on WordPress.org now opens with demo data
 * Fixed: The Dashboard widget's styles never loaded on the WordPress Dashboard

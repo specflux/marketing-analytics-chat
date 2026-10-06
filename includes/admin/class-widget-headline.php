@@ -10,6 +10,8 @@
 
 namespace Specflux_Marketing_Analytics\Admin;
 
+use Specflux_Marketing_Analytics\Content\Seo_Issue_Summary;
+use Specflux_Marketing_Analytics\Reports\Weekly_Prompt_Builder;
 use Specflux_Marketing_Analytics\Reports\Weekly_Summary;
 
 // Exit if accessed directly.
@@ -91,10 +93,14 @@ class Widget_Headline {
 	/**
 	 * Rebuild the widget payload, store it and return the AJAX response data.
 	 *
-	 * @param Weekly_Summary|null $summary Collector (defaults to live clients).
+	 * The SEO issue summary rides along: it reuses its own 12 hour cache and only
+	 * scans when that cache is cold, and a failed scan never fails the refresh.
+	 *
+	 * @param Weekly_Summary|null    $summary Collector (defaults to live clients).
+	 * @param Seo_Issue_Summary|null $seo     SEO summary service (defaults to the real scan).
 	 * @return array
 	 */
-	public static function refresh( ?Weekly_Summary $summary = null ) {
+	public static function refresh( ?Weekly_Summary $summary = null, ?Seo_Issue_Summary $seo = null ) {
 		$headline = self::build( $summary );
 		$payload  = array(
 			'headline'     => $headline,
@@ -103,10 +109,17 @@ class Widget_Headline {
 
 		set_transient( self::TRANSIENT, $payload, self::ttl() );
 
+		try {
+			$seo_summary = ( $seo ?? new Seo_Issue_Summary() )->get_or_refresh();
+		} catch ( \Throwable $e ) {
+			$seo_summary = null;
+		}
+
 		return array(
 			'message'       => 'Widget data refreshed successfully.',
 			'headline'      => $headline,
 			'headline_html' => self::render( $headline ),
+			'seo_html'      => self::render_seo( $seo_summary ),
 		);
 	}
 
@@ -258,6 +271,65 @@ class Widget_Headline {
 				</div>
 			<?php endforeach; ?>
 		</div>
+		<?php
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * The "SEO: N issues to fix" row.
+	 *
+	 * Reads a summary that was already built; it never scans. Returns an empty
+	 * string when there is nothing to show (cold cache or no pages scanned).
+	 *
+	 * @param array|null $summary Seo_Issue_Summary data, or null when not cached.
+	 * @return string HTML (escaped).
+	 */
+	public static function render_seo( ?array $summary ) {
+		if ( null === $summary || (int) ( $summary['pages_scanned'] ?? 0 ) < 1 ) {
+			return '';
+		}
+
+		$total  = (int) ( $summary['total'] ?? 0 );
+		$top    = is_array( $summary['top'][0] ?? null ) ? $summary['top'][0] : null;
+		$plugin = ! empty( $summary['seo_plugin'] );
+
+		ob_start();
+		?>
+		<p class="smac-widget-seo-line">
+			<?php if ( $total > 0 ) : ?>
+				<strong>
+					<?php
+					printf(
+						/* translators: %s: number of SEO issues */
+						esc_html( _n( 'SEO: %s issue to fix', 'SEO: %s issues to fix', $total, 'specflux-marketing-analytics-chat' ) ),
+						esc_html( number_format_i18n( $total ) )
+					);
+					?>
+				</strong>
+			<?php else : ?>
+				<strong><?php esc_html_e( 'SEO: no issues found', 'specflux-marketing-analytics-chat' ); ?></strong>
+			<?php endif; ?>
+		</p>
+		<?php if ( $total > 0 && null !== $top ) : ?>
+			<p class="smac-widget-seo-top">
+				<?php
+				printf(
+					/* translators: 1: issue such as "Missing meta description", 2: page title */
+					esc_html__( 'Top issue: %1$s on %2$s', 'specflux-marketing-analytics-chat' ),
+					esc_html( (string) ( $top['label'] ?? '' ) ),
+					'<a href="' . esc_url( (string) ( $top['url'] ?? '' ) ) . '">' . esc_html( (string) ( $top['title'] ?? '' ) ) . '</a>'
+				);
+				?>
+			</p>
+			<p class="smac-widget-seo-action">
+				<a class="button button-small" href="<?php echo esc_url( Weekly_Prompt_Builder::assistant_url( Weekly_Prompt_Builder::seo_summary_prompt( $summary ) ) ); ?>">
+					<?php esc_html_e( 'Ask AI what to fix first', 'specflux-marketing-analytics-chat' ); ?>
+				</a>
+			</p>
+		<?php endif; ?>
+		<?php if ( ! $plugin ) : ?>
+			<p class="smac-widget-seo-note"><?php esc_html_e( 'Install Yoast SEO, Rank Math, All in One SEO or SEOPress for title and description checks', 'specflux-marketing-analytics-chat' ); ?></p>
+		<?php endif; ?>
 		<?php
 		return (string) ob_get_clean();
 	}

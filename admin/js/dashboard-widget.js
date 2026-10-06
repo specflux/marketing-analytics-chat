@@ -2,6 +2,7 @@ jQuery(document).ready(function($) {
 	'use strict';
 
 	var $headline = $('.smac-widget-headline');
+	var $seo = $('.smac-widget-seo');
 	var $btn = $('.smac-refresh-widget');
 	var running = false;
 
@@ -25,6 +26,9 @@ jQuery(document).ready(function($) {
 				$headline.removeAttr('data-autoload').html(response.data.headline_html);
 			} else {
 				showUnavailable();
+			}
+			if (response && response.success && response.data && typeof response.data.seo_html === 'string') {
+				$seo.html(response.data.seo_html);
 			}
 		}).fail(showUnavailable).always(function() {
 			running = false;
