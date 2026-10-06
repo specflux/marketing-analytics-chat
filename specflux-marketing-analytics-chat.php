@@ -106,6 +106,30 @@ function deactivate_specflux_mac() {
 register_deactivation_hook( __FILE__, __NAMESPACE__ . '\deactivate_specflux_mac' );
 
 /**
+ * Add a "Get started" link to the plugin's row on the Plugins screen.
+ *
+ * @param array $links Existing action links.
+ * @return array
+ */
+function add_plugin_action_links( $links ) {
+	if ( ! current_user_can( 'access_specflux_mac' ) ) { // phpcs:ignore WordPress.WP.Capabilities.Unknown -- Custom capability registered on activation.
+		return $links;
+	}
+
+	array_unshift(
+		$links,
+		sprintf(
+			'<a href="%s">%s</a>',
+			esc_url( admin_url( 'admin.php?page=specflux-mac' ) ),
+			esc_html__( 'Get started', 'specflux-marketing-analytics-chat' )
+		)
+	);
+
+	return $links;
+}
+add_filter( 'plugin_action_links_' . SPECFLUX_MAC_BASENAME, __NAMESPACE__ . '\add_plugin_action_links' );
+
+/**
  * Initialize plugin
  */
 function run_specflux_mac() {

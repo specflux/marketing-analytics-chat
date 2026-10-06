@@ -144,9 +144,9 @@ transfer, and WordPress stores its credentials.
 
 1. Upload the `specflux-marketing-analytics-chat` folder to `/wp-content/plugins/`
 2. Activate the plugin through the 'Plugins' menu in WordPress
-3. Go to Marketing Analytics > Settings > Google API to configure OAuth credentials
-4. Connect your analytics platforms from the Connections page
-5. Configure your MCP client (e.g., Claude Desktop) to use the plugin endpoint
+3. Open Marketing Analytics > Connections and click "Connect with Google" for Google Analytics 4 and Search Console (no Google Cloud project needed), or paste your Microsoft Clarity API token
+4. Pick your AI provider once under Settings > Connectors to use the built-in chat
+5. Optional: configure an external MCP client (e.g., Claude Desktop) to use the plugin endpoint, as shown below
 
 = Configuring MCP Client =
 
@@ -170,7 +170,7 @@ Add this to your Claude Desktop configuration:
 
 = How does the AI chat work? =
 
-The plugin exposes your analytics data as MCP abilities. Any MCP-compatible AI assistant (Claude Desktop, ChatGPT, Cursor) can query your data by calling these abilities. Just type a question like "What are my top traffic sources?" and get an instant answer.
+Open Marketing Analytics > AI Assistant and type a question like "What are my top traffic sources this month?". The assistant runs through the AI Client built into WordPress, calls the plugin's analytics abilities to fetch your real GA4, Search Console, and Clarity numbers, and answers from that data. The same abilities are available to external assistants such as Claude Desktop, ChatGPT, or Cursor through the optional MCP Adapter plugin.
 
 = Which AI assistants / MCP clients does it work with? =
 
@@ -186,9 +186,11 @@ No. Click "Connect with Google" on the Connections screen and sign in through Sp
 
 = Do I need to pay for API access? =
 
-The plugin itself is free. However, you may need API access for:
-* Google Analytics and Search Console - Free with Google Cloud account
-* Microsoft Clarity - Free
+No. The plugin is free, and the Google Analytics, Search Console, and Microsoft Clarity APIs it uses are free. The built-in chat uses whichever AI provider you configure under Settings > Connectors, so any usage costs from that provider apply.
+
+= Do I need an AI API key? =
+
+Only for the built-in chat. WordPress 7.0 manages AI provider connections under Settings > Connectors, and this plugin uses that connection without storing a key of its own. Connecting platforms and browsing the dashboard do not need an AI provider.
 
 = Is my data secure? =
 
