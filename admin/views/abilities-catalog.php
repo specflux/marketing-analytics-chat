@@ -124,6 +124,32 @@ if ( empty( $mac_abilities ) ) {
 			'icon'        => 'dashicons-search',
 		),
 
+		// PageSpeed abilities.
+		array(
+			'name'        => __( 'Get Page Speed', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-page-speed',
+			'description' => __( 'Lighthouse score, lab metrics, field data and top fixes for a page.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'pagespeed',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-performance',
+		),
+		array(
+			'name'        => __( 'Get Core Web Vitals', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-core-web-vitals',
+			'description' => __( 'Real-user LCP, INP and CLS for a page and its origin with pass/fail.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'pagespeed',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-performance',
+		),
+		array(
+			'name'        => __( 'Audit Top Pages Speed', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/audit-top-pages-speed',
+			'description' => __( 'Rank your most-visited pages by speed, slowest first.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'pagespeed',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-performance',
+		),
+
 		// Clarity abilities.
 		array(
 			'name'        => __( 'Get Clarity Insights', 'specflux-marketing-analytics-chat' ),
@@ -188,6 +214,9 @@ $mac_mcp_endpoint = rest_url( 'mcp/mcp-adapter-default-server' );
 		</button>
 		<button type="button" class="smac-abilities-filter-btn" data-filter="clarity">
 			<?php esc_html_e( 'Clarity', 'specflux-marketing-analytics-chat' ); ?>
+		</button>
+		<button type="button" class="smac-abilities-filter-btn" data-filter="pagespeed">
+			<?php esc_html_e( 'PageSpeed', 'specflux-marketing-analytics-chat' ); ?>
 		</button>
 		<button type="button" class="smac-abilities-filter-btn" data-filter="cross-platform">
 			<?php esc_html_e( 'Cross-Platform', 'specflux-marketing-analytics-chat' ); ?>

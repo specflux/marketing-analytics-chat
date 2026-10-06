@@ -154,6 +154,9 @@ class Abilities_Registrar {
 		// Register Bing Webmaster Tools abilities.
 		$bing_abilities = new Bing_Abilities();
 		$bing_abilities->register();
+		// Register PageSpeed Insights abilities.
+		$pagespeed_abilities = new PageSpeed_Abilities();
+		$pagespeed_abilities->register();
 
 		// Register cross-platform abilities.
 		$cross_platform_abilities = new Cross_Platform_Abilities();
