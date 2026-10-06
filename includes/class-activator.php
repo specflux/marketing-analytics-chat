@@ -87,6 +87,9 @@ class Activator {
 		// Install default smart prompts on first activation.
 		self::install_default_prompts();
 
+		// Seed and schedule the weekly summary email.
+		Reports\Weekly_Summary_Scheduler::activate();
+
 		// Flush rewrite rules.
 		flush_rewrite_rules();
 	}

@@ -420,7 +420,9 @@ if ( ! function_exists( 'get_bloginfo' ) ) {
         $info = array(
             'version' => '7.0',
             'name'    => 'Test Blog',
+            'admin_email' => 'admin@example.com',
             'url'     => 'https://example.com',
+            'charset' => 'UTF-8',
         );
         return isset( $info[ $show ] ) ? $info[ $show ] : '';
     }
@@ -657,7 +659,10 @@ if ( ! function_exists( 'apply_filters' ) ) {
 	 * @return mixed
 	 */
 	function apply_filters( $hook_name, $value, ...$args ) {
-		// In tests, just return the value unfiltered
+		// Unfiltered unless a test registers a callback in $GLOBALS['specflux_mac_test_filters'][ $hook_name ].
+		if ( isset( $GLOBALS['specflux_mac_test_filters'][ $hook_name ] ) ) {
+			return call_user_func( $GLOBALS['specflux_mac_test_filters'][ $hook_name ], $value, ...$args );
+		}
 		return $value;
 	}
 }
@@ -684,8 +689,8 @@ if ( ! function_exists( 'wp_next_scheduled' ) ) {
 	 * @return false|int
 	 */
 	function wp_next_scheduled( $hook, $args = array() ) {
-		// In tests, return false (no scheduled events)
-		return false;
+		// Tests can seed or inspect $GLOBALS['specflux_mac_test_cron'] (hook => timestamp).
+		return $GLOBALS['specflux_mac_test_cron'][ $hook ] ?? false;
 	}
 }
 
@@ -700,7 +705,8 @@ if ( ! function_exists( 'wp_schedule_event' ) ) {
 	 * @return bool
 	 */
 	function wp_schedule_event( $timestamp, $recurrence, $hook, $args = array() ) {
-		// In tests, return true (success)
+		$GLOBALS['specflux_mac_test_cron'][ $hook ] = $timestamp;
+		$GLOBALS['specflux_mac_test_cron_log'][]    = array( $timestamp, $recurrence, $hook );
 		return true;
 	}
 }
@@ -1160,7 +1166,7 @@ if ( ! function_exists( 'sanitize_textarea_field' ) ) {
 
 if ( ! function_exists( 'wp_enqueue_script' ) ) {
 	function wp_enqueue_script( $handle, $src = '', $deps = array(), $ver = false, $args = array() ) {
-		// In tests, do nothing.
+		$GLOBALS['mock_enqueued_scripts'][ $handle ] = $deps;
 	}
 }
 
@@ -1260,7 +1266,152 @@ if ( ! function_exists( 'wp_add_dashboard_widget' ) ) {
 	}
 }
 
+// Post helpers used by the post stats column. Tests populate
+// $mock_posts[ $id ] = array( 'status' => 'publish', 'url' => '...', 'title' => '...' ).
+$mock_posts = array();
+
+if ( ! function_exists( 'get_post_types' ) ) {
+	function get_post_types( $args = array() ) {
+		return array( 'post' => 'post', 'page' => 'page', 'attachment' => 'attachment' );
+	}
+}
+
+if ( ! function_exists( 'get_the_ID' ) ) {
+	function get_the_ID() {
+		return $GLOBALS['mock_current_post_id'] ?? false;
+	}
+}
+
+if ( ! function_exists( 'wp_set_script_translations' ) ) {
+	function wp_set_script_translations( $handle, $domain = 'default', $path = '' ) {
+		$GLOBALS['mock_script_translations'][ $handle ] = $domain;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_add_inline_script' ) ) {
+	function wp_add_inline_script( $handle, $data, $position = 'after' ) {
+		$GLOBALS['mock_inline_scripts'][ $handle ] = $data;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'get_post_status' ) ) {
+	function get_post_status( $post_id ) {
+		global $mock_posts;
+		return $mock_posts[ $post_id ]['status'] ?? false;
+	}
+}
+
+if ( ! function_exists( 'get_permalink' ) ) {
+	function get_permalink( $post_id ) {
+		global $mock_posts;
+		return $mock_posts[ $post_id ]['url'] ?? false;
+	}
+}
+
+if ( ! function_exists( 'get_the_title' ) ) {
+	function get_the_title( $post_id ) {
+		global $mock_posts;
+		return $mock_posts[ $post_id ]['title'] ?? '';
+	}
+}
+
+if ( ! function_exists( 'wp_make_link_relative' ) ) {
+	function wp_make_link_relative( $link ) {
+		return preg_replace( '|^(https?:)?//[^/]+(/?.*)|i', '$2', $link );
+	}
+}
+
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+	function wp_strip_all_tags( $text ) {
+		return trim( strip_tags( (string) $text ) );
+	}
+}
+
+// Mocks used by the weekly summary tests.
+if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
+	/**
+	 * Mock wp_clear_scheduled_hook function.
+	 *
+	 * @param string $hook Hook name.
+	 * @return int
+	 */
+	function wp_clear_scheduled_hook( $hook ) {
+		unset( $GLOBALS['specflux_mac_test_cron'][ $hook ] );
+		return 1;
+	}
+}
+
+if ( ! function_exists( 'wp_timezone' ) ) {
+	/**
+	 * Mock wp_timezone function. Tests set $GLOBALS['specflux_mac_test_timezone'].
+	 *
+	 * @return DateTimeZone
+	 */
+	function wp_timezone() {
+		return new DateTimeZone( $GLOBALS['specflux_mac_test_timezone'] ?? 'UTC' );
+	}
+}
+
+if ( ! function_exists( 'is_email' ) ) {
+	/**
+	 * Mock is_email function.
+	 *
+	 * @param string $email Email address.
+	 * @return string|false
+	 */
+	function is_email( $email ) {
+		return filter_var( $email, FILTER_VALIDATE_EMAIL ) ? $email : false;
+	}
+}
+
+if ( ! function_exists( 'wp_specialchars_decode' ) ) {
+	/**
+	 * Mock wp_specialchars_decode function.
+	 *
+	 * @param string $text          Text.
+	 * @param int    $quote_style   Quote style.
+	 * @return string
+	 */
+	function wp_specialchars_decode( $text, $quote_style = ENT_NOQUOTES ) {
+		return htmlspecialchars_decode( $text, $quote_style );
+	}
+}
+
+if ( ! function_exists( 'wp_mail' ) ) {
+	/**
+	 * Mock wp_mail function: records the message in $GLOBALS['specflux_mac_test_mail'].
+	 *
+	 * @param string|string[] $to      Recipients.
+	 * @param string          $subject Subject.
+	 * @param string          $message Body.
+	 * @param string|string[] $headers Headers.
+	 * @return bool
+	 */
+	function wp_mail( $to, $subject, $message, $headers = '' ) {
+		$GLOBALS['specflux_mac_test_mail'][] = compact( 'to', 'subject', 'message', 'headers' );
+		return $GLOBALS['specflux_mac_test_mail_result'] ?? true;
+	}
+}
+
 // Define the plugin namespace functions that live in the main plugin file.
 // We can't require the main file because it re-defines constants without
 // if-defined guards. Instead, we define the namespaced functions here.
 require_once __DIR__ . '/bootstrap-functions.php';
+if ( ! function_exists( 'add_query_arg' ) ) {
+	/**
+	 * Minimal add_query_arg(): single key/value, URL-encodes the value like core.
+	 */
+	function add_query_arg( $key, $value, $url = '' ) {
+		$sep = ( false === strpos( $url, '?' ) ) ? '?' : '&';
+		// Like core: values are appended as given, without encoding.
+		return $url . $sep . $key . '=' . $value;
+	}
+}
+
+if ( ! function_exists( 'wp_nonce_url' ) ) {
+	function wp_nonce_url( $actionurl, $action = -1, $name = '_wpnonce' ) {
+		return $actionurl . '&' . $name . '=' . wp_create_nonce( $action );
+	}
+}

@@ -103,7 +103,7 @@ class GA4_Client {
 	 * @param array  $metrics Array of metric names (e.g., ['activeUsers', 'sessions']).
 	 * @param array  $dimensions Array of dimension names (e.g., ['date', 'country']).
 	 * @param string $date_range Date range string (e.g., '7daysAgo', 'yesterday').
-	 * @param array  $options Additional options (limit, offset, filters, etc.).
+	 * @param array  $options Additional options (limit, offset, order_by_metric, dimension_filter).
 	 * @return array|null Report data or null on failure.
 	 */
 	public function run_report( $metrics, $dimensions = array(), $date_range = '7daysAgo', $options = array() ) {
@@ -182,6 +182,19 @@ class GA4_Client {
 
 			if ( isset( $options['offset'] ) ) {
 				$request->setOffset( absint( $options['offset'] ) );
+			}
+
+			if ( isset( $options['order_by_metric'] ) ) {
+				$request->setOrderBys(
+					array(
+						new \Google\Service\AnalyticsData\OrderBy(
+							array(
+								'metric' => new \Google\Service\AnalyticsData\MetricOrderBy( array( 'metricName' => (string) $options['order_by_metric'] ) ),
+								'desc'   => true,
+							)
+						),
+					)
+				);
 			}
 
 			if ( isset( $options['dimension_filter'] ) ) {
@@ -476,6 +489,12 @@ class GA4_Client {
 	 * @return string Formatted date string.
 	 */
 	private function parse_date_range( $date_range, $boundary = 'start' ) {
+		// An explicit "start,end" pair (same convention as the GSC client).
+		if ( false !== strpos( $date_range, ',' ) ) {
+			list( $start, $end ) = array_map( 'trim', explode( ',', $date_range, 2 ) );
+			return 'start' === $boundary ? $start : $end;
+		}
+
 		// If it's already a date, return it.
 		if ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_range ) ) {
 			return $date_range;

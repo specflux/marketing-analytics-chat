@@ -1,35 +1,44 @@
 {
-  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
-  "meta": {
-    "title": "Marketing Analytics Chat",
-    "author": "specflux",
-    "description": "Live preview of the Specflux Marketing Analytics Chat plugin dashboard."
-  },
-  "landingPage": "/wp-admin/admin.php?page=specflux-mac",
-  "preferredVersions": {
-    "php": "8.3",
-    "wp": "latest"
-  },
-  "features": {
-    "networking": true
-  },
-  "siteOptions": {
-    "blogname": "Marketing Analytics Chat Demo"
-  },
-  "steps": [
-    {
-      "step": "login",
-      "username": "admin"
-    },
-    {
-      "step": "installPlugin",
-      "pluginData": {
-        "resource": "wordpress.org/plugins",
-        "slug": "specflux-marketing-analytics-chat"
-      },
-      "options": {
-        "activate": true
-      }
-    }
-  ]
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"meta": {
+		"title": "Marketing Analytics Chat",
+		"author": "specflux",
+		"description": "Live preview of the Specflux Marketing Analytics Chat plugin with clearly fake demo data."
+	},
+	"landingPage": "/wp-admin/index.php",
+	"preferredVersions": {
+		"php": "8.3",
+		"wp": "latest"
+	},
+	"features": {
+		"networking": true
+	},
+	"siteOptions": {
+		"blogname": "Demo Store Blog"
+	},
+	"steps": [
+		{
+			"step": "login",
+			"username": "admin"
+		},
+		{
+			"step": "writeFile",
+			"path": "/wordpress/wp-content/mu-plugins/smac-demo.php",
+			"data": "<?php\n/**\n * Plugin Name: Specflux Live Preview demo guard\n * Description: Blocks outbound analytics API calls and labels demo data in Playground.\n */\n\nadd_filter(\n\t'pre_http_request',\n\tfunction ( $pre, $args, $url ) {\n\t\t$host = (string) wp_parse_url( $url, PHP_URL_HOST );\n\t\tforeach ( array( 'googleapis.com', 'google.com', 'clarity.ms', 'specflux.com' ) as $blocked ) {\n\t\t\tif ( false !== strpos( $host, $blocked ) ) {\n\t\t\t\treturn new WP_Error( 'smac_demo', 'Live Preview uses demo data; connect your own accounts after installing.' );\n\t\t\t}\n\t\t}\n\t\treturn $pre;\n\t},\n\t1,\n\t3\n);\n\nadd_action(\n\t'admin_notices',\n\tfunction () {\n\t\t$screen = get_current_screen();\n\t\tif ( ! $screen ) {\n\t\t\treturn;\n\t\t}\n\t\tif ( 'dashboard' !== $screen->id && false === strpos( $screen->id, 'specflux-mac' ) ) {\n\t\t\treturn;\n\t\t}\n\t\techo '<div class=\"notice notice-info is-dismissible\"><p>' . esc_html__( 'Live Preview: the numbers here are demo data.', 'default' ) . '</p></div>';\n\t}\n);\n"
+		},
+		{
+			"step": "installPlugin",
+			"pluginData": {
+				"resource": "wordpress.org/plugins",
+				"slug": "specflux-marketing-analytics-chat"
+			},
+			"options": {
+				"activate": true
+			}
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php\nrequire '/wordpress/wp-load.php';\n\nuse Specflux_Marketing_Analytics\\Admin\\Post_Stats;\nuse Specflux_Marketing_Analytics\\Admin\\Widget_Headline;\nuse Specflux_Marketing_Analytics\\Credentials\\Credential_Manager;\n\nglobal $wp_rewrite;\n$wp_rewrite->set_permalink_structure( '/%postname%/' );\n$wp_rewrite->flush_rules( false );\n\nwp_delete_post( 1, true );\n\n$demo = array(\n\tarray( 'How to Read Your GA4 Reports Without Getting Lost', 'how-to-read-ga4-reports', 1840, 412, 1260, 6.4 ),\n\tarray( '12 Quick SEO Wins You Can Ship This Afternoon', 'quick-seo-wins', 2975, 688, 5410, 8.9 ),\n\tarray( 'Search Console Queries That Reveal Content Gaps', 'search-console-content-gaps', 1320, 301, 3880, 11.2 ),\n\tarray( 'What Heatmaps Actually Tell You About Checkout Friction', 'heatmaps-checkout-friction', 980, 154, 1720, 14.7 ),\n\tarray( 'Email vs Social: Where Your Best Traffic Really Comes From', 'email-vs-social-traffic', 760, 97, 940, 18.3 ),\n\tarray( 'A Simple Weekly Marketing Report Template', 'weekly-marketing-report-template', 2210, 529, 4350, 7.8 ),\n);\n\n$ga4 = array();\n$gsc = array();\nforeach ( $demo as $d ) {\n\t$id = wp_insert_post(\n\t\tarray(\n\t\t\t'post_title'   => $d[0],\n\t\t\t'post_name'    => $d[1],\n\t\t\t'post_status'  => 'publish',\n\t\t\t'post_type'    => 'post',\n\t\t\t'post_content' => '<!-- wp:paragraph --><p>Demo post for the Live Preview.</p><!-- /wp:paragraph -->',\n\t\t)\n\t);\n\t$path = Post_Stats::normalize_path( wp_make_link_relative( get_permalink( $id ) ) );\n\t$ga4[ $path ] = $d[2];\n\t$gsc[ $path ] = array( $d[3], $d[4], $d[5] );\n}\n\n$cm = new Credential_Manager();\n$cm->save_credentials( 'ga4', array( 'access_token' => 'demo-token', 'refresh_token' => 'demo-token', 'auth_mode' => 'hosted' ) );\n$cm->save_credentials( 'gsc', array( 'access_token' => 'demo-token', 'refresh_token' => 'demo-token', 'auth_mode' => 'hosted' ) );\n$cm->save_credentials( 'clarity', array( 'api_token' => 'demo-token', 'project_id' => 'demo-project' ) );\nupdate_option( 'specflux_mac_ga4_property_id', '123456789', false );\nupdate_option( 'specflux_mac_gsc_site_url', home_url( '/' ), false );\n\nset_transient(\n\tWidget_Headline::TRANSIENT,\n\tarray(\n\t\t'headline'     => array(\n\t\t\tarray( 'platform' => 'ga4', 'label' => 'GA4 sessions', 'has_change' => true, 'period' => '', 'value' => 12480.0, 'change' => 8.4 ),\n\t\t\tarray( 'platform' => 'gsc', 'label' => 'Search clicks', 'has_change' => true, 'period' => '', 'value' => 2181.0, 'change' => 12.1 ),\n\t\t\tarray( 'platform' => 'clarity', 'label' => 'Clarity sessions', 'has_change' => false, 'period' => 'Last 3 days', 'value' => 3126.0, 'change' => null ),\n\t\t),\n\t\t'generated_at' => time(),\n\t),\n\tWEEK_IN_SECONDS\n);\n\nset_transient(\n\tPost_Stats::TRANSIENT,\n\tarray(\n\t\t'platforms' => array( 'ga4', 'gsc' ),\n\t\t'ga4'       => $ga4,\n\t\t'gsc'       => $gsc,\n\t\t'errors'    => array(),\n\t\t'capped'    => array(),\n\t),\n\tWEEK_IN_SECONDS\n);\n\nupdate_option( 'specflux_mac_onboarding_complete', true );\nupdate_option( 'specflux_mac_weekly_summary_enabled', 1 );\nupdate_user_meta( 1, 'show_welcome_panel', 0 );\nupdate_user_meta( 1, 'meta-box-order_dashboard', array( 'normal' => 'specflux_mac_dashboard_widget,dashboard_activity,dashboard_right_now,dashboard_site_health', 'side' => 'dashboard_quick_press,dashboard_primary', 'column3' => '', 'column4' => '' ) );\n"
+		}
+	]
 }

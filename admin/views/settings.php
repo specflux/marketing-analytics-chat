@@ -11,6 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 	use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
+	use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Preview;
+	use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Scheduler;
 	use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 	$active_tab      = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
@@ -79,6 +81,27 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 	$success_message = __( 'Settings saved successfully.', 'specflux-marketing-analytics-chat' );
 }
 
+	// Handle email summary settings submission.
+if ( isset( $_POST['save_email_settings'] ) && current_user_can( 'manage_options' ) && check_admin_referer( 'specflux_mac_save_email_settings', 'email_settings_nonce' ) ) {
+	$raw_recipients = isset( $_POST['weekly_summary_recipients'] ) ? sanitize_text_field( wp_unslash( $_POST['weekly_summary_recipients'] ) ) : '';
+	$parsed         = Weekly_Summary_Scheduler::parse_recipients( $raw_recipients );
+
+	if ( ! empty( $parsed['invalid'] ) ) {
+		$error_message = sprintf(
+			/* translators: %s: comma-separated list of invalid email addresses */
+			__( 'These email addresses are not valid, so nothing was saved: %s', 'specflux-marketing-analytics-chat' ),
+			implode( ', ', $parsed['invalid'] )
+		);
+	} else {
+		update_option( Weekly_Summary_Scheduler::OPTION_ENABLED, ! empty( $_POST['weekly_summary_enabled'] ) ? 1 : 0 );
+		update_option( Weekly_Summary_Scheduler::OPTION_RECIPIENTS, implode( ', ', $parsed['valid'] ) );
+		( new Weekly_Summary_Scheduler() )->sync_schedule();
+
+		$success_message = __( 'Email settings saved.', 'specflux-marketing-analytics-chat' );
+	}
+	$active_tab = 'email';
+}
+
 	$settings              = get_option( 'specflux_mac_settings', array() );
 	$has_oauth_credentials = $oauth_handler->has_oauth_credentials();
 ?>
@@ -116,6 +139,9 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 		</a>
 		<a href="?page=specflux-mac-settings&tab=access-control" class="nav-tab		                                                                                    <?php echo esc_attr( 'access-control' === $active_tab ? 'nav-tab-active' : '' ); ?>">
 			<?php esc_html_e( 'Access Control', 'specflux-marketing-analytics-chat' ); ?>
+		</a>
+		<a href="?page=specflux-mac-settings&tab=email" class="nav-tab <?php echo esc_attr( 'email' === $active_tab ? 'nav-tab-active' : '' ); ?>">
+			<?php esc_html_e( 'Email', 'specflux-marketing-analytics-chat' ); ?>
 		</a>
 		<?php
 		/**
@@ -945,6 +971,61 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 					</p>
 				</form>
 						<?php
+				break;
+
+			case 'email':
+				$summary_scheduler  = new Weekly_Summary_Scheduler();
+				$summary_recipients = (string) get_option( Weekly_Summary_Scheduler::OPTION_RECIPIENTS, '' );
+				?>
+				<form method="post" action="">
+				<?php wp_nonce_field( 'specflux_mac_save_email_settings', 'email_settings_nonce' ); ?>
+
+					<h2><?php esc_html_e( 'Email summaries', 'specflux-marketing-analytics-chat' ); ?></h2>
+					<p class="description">
+						<?php esc_html_e( 'Every Monday morning (site time) we email a short summary of the last 7 days compared with the 7 days before, from the platforms you have connected.', 'specflux-marketing-analytics-chat' ); ?>
+					</p>
+
+					<table class="form-table">
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Weekly summary', 'specflux-marketing-analytics-chat' ); ?></th>
+							<td>
+								<label for="weekly_summary_enabled">
+									<input type="checkbox" id="weekly_summary_enabled" name="weekly_summary_enabled" value="1" <?php checked( $summary_scheduler->is_enabled() ); ?> />
+									<?php esc_html_e( 'Email me a weekly summary', 'specflux-marketing-analytics-chat' ); ?>
+								</label>
+								<a href="<?php echo esc_url( Weekly_Summary_Preview::url() ); ?>" target="_blank" rel="noopener" style="margin-left: 10px;"><?php esc_html_e( "See what you'd get", 'specflux-marketing-analytics-chat' ); ?></a>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="weekly_summary_recipients"><?php esc_html_e( 'Recipients', 'specflux-marketing-analytics-chat' ); ?></label>
+							</th>
+							<td>
+								<input type="text" id="weekly_summary_recipients" name="weekly_summary_recipients" class="large-text" value="<?php echo esc_attr( $summary_recipients ); ?>" placeholder="<?php echo esc_attr( (string) get_bloginfo( 'admin_email' ) ); ?>" />
+								<p class="description">
+									<?php esc_html_e( 'Separate several addresses with commas. Leave blank to use the site admin email.', 'specflux-marketing-analytics-chat' ); ?>
+								</p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Test', 'specflux-marketing-analytics-chat' ); ?></th>
+							<td>
+								<button type="button" class="button" id="smac-send-test-summary"><?php esc_html_e( 'Send a test summary now', 'specflux-marketing-analytics-chat' ); ?></button>
+								<span id="smac-send-test-summary-result" role="status" style="margin-left: 10px;"></span>
+								<p class="description">
+									<?php esc_html_e( 'Sends to the saved recipients. Save your changes first.', 'specflux-marketing-analytics-chat' ); ?>
+								</p>
+							</td>
+						</tr>
+					</table>
+
+					<p class="submit">
+						<button type="submit" name="save_email_settings" class="button button-primary">
+							<?php esc_html_e( 'Save Email Settings', 'specflux-marketing-analytics-chat' ); ?>
+						</button>
+					</p>
+				</form>
+				<?php
 				break;
 
 			default:

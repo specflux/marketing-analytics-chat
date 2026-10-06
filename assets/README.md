@@ -11,6 +11,11 @@ Screenshots should be named `screenshot-N.png` where N is the screenshot number.
 - `screenshot-2.png` - AI Assistant chat interface
 - `screenshot-3.png` - Google Analytics 4 connection setup
 - `screenshot-4.png` - Settings page with API configuration
+- `screenshot-5.png` - Weekly email summary (demo data, rendered from the plugin's email template)
+- `screenshot-6.png` - Dashboard widget (Live Preview demo data)
+- `screenshot-7.png` - Posts list Analytics (28d) column (Live Preview demo data)
+
+Screenshots 6-7 come from the Live Preview blueprint in `blueprints/blueprint.json`, which seeds demo numbers and blocks outbound API calls.
 
 Recommended size: 1200x900 pixels (or similar 4:3 ratio)
 

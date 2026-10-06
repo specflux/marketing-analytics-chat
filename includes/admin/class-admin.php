@@ -147,6 +147,13 @@ class Admin {
 	public function enqueue_scripts( $hook ) {
 		// Enqueue dashboard widget script on the WP Dashboard.
 		if ( 'index.php' === $hook && Permission_Manager::can_access_plugin() ) {
+			wp_enqueue_style(
+				'specflux-mac-dashboard-widget',
+				SPECFLUX_MAC_URL . 'admin/css/dashboard-widget.css',
+				array(),
+				SPECFLUX_MAC_VERSION
+			);
+
 			wp_enqueue_script(
 				'specflux-mac-dashboard-widget',
 				SPECFLUX_MAC_URL . 'admin/js/dashboard-widget.js',
@@ -159,7 +166,8 @@ class Admin {
 				'specflux-mac-dashboard-widget',
 				'specfluxMacDashboardWidget',
 				array(
-					'nonce' => wp_create_nonce( 'specflux_mac_admin' ),
+					'nonce'       => wp_create_nonce( 'specflux_mac_admin' ),
+					'unavailable' => __( 'Numbers unavailable right now. Use Refresh to try again.', 'specflux-marketing-analytics-chat' ),
 				)
 			);
 		}
@@ -218,6 +226,23 @@ class Admin {
 				array( 'jquery' ),
 				SPECFLUX_MAC_VERSION,
 				true
+			);
+
+			wp_enqueue_script(
+				'specflux-mac-weekly-summary-settings',
+				SPECFLUX_MAC_URL . 'admin/js/weekly-summary-settings.js',
+				array( 'jquery', 'specflux-mac-admin' ),
+				SPECFLUX_MAC_VERSION,
+				true
+			);
+
+			wp_localize_script(
+				'specflux-mac-weekly-summary-settings',
+				'specfluxMacWeeklySummary',
+				array(
+					'sending' => __( 'Sending…', 'specflux-marketing-analytics-chat' ),
+					'failed'  => __( 'The test summary could not be sent.', 'specflux-marketing-analytics-chat' ),
+				)
 			);
 		}
 
