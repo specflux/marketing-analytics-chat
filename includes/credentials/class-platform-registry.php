@@ -31,6 +31,7 @@ defined( 'ABSPATH' ) || exit;
  * - description     (string)        Short intro shown on the default connection panel.
  * - help_url        (string)        Link to where the user obtains credentials.
  * - cleanup_options  (string[])      Option names deleted when the platform is disconnected.
+ * - prompt_hint     (string)        One sentence telling the chat model what this source answers.
  */
 class Platform_Registry {
 
@@ -152,6 +153,7 @@ class Platform_Registry {
 			'description'     => '',
 			'help_url'        => '',
 			'cleanup_options' => array(),
+			'prompt_hint'     => '',
 		);
 
 		$normalized         = array_merge( $defaults, $definition );
@@ -177,6 +179,7 @@ class Platform_Registry {
 				'auth'      => 'api_key',
 				'fields'    => array( 'api_token', 'project_id' ),
 				'cache_ttl' => HOUR_IN_SECONDS, // Rate limit: 10 req/day.
+				'prompt_hint' => 'Visitor behaviour (sessions, scroll depth, rage and dead clicks, JavaScript errors) for the last 1 to 3 days only.',
 			),
 			'ga4'     => array(
 				'slug'      => 'ga4',
@@ -186,6 +189,7 @@ class Platform_Registry {
 				'cache_ttl' => 30 * MINUTE_IN_SECONDS, // Near real-time but expensive.
 				'scopes'    => OAuth_Handler::SCOPES_GA4,
 				'cleanup_options' => array( 'specflux_mac_ga4_property_id' ),
+				'prompt_hint'     => 'Traffic, users, engagement, traffic sources, events, conversions and revenue.',
 			),
 			'gsc'     => array(
 				'slug'      => 'gsc',
@@ -195,6 +199,7 @@ class Platform_Registry {
 				'cache_ttl' => DAY_IN_SECONDS, // Data has a 2-3 day delay.
 				'scopes'    => OAuth_Handler::SCOPES_GSC,
 				'cleanup_options' => array( 'specflux_mac_gsc_site_url' ),
+				'prompt_hint'     => 'Google organic search clicks, impressions, CTR, average position, queries and pages, plus indexing status.',
 			),
 		);
 	}

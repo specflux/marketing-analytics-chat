@@ -721,6 +721,33 @@ class ChatToolLoopTest extends TestCase {
 	}
 
 	/**
+	 * A turn past its time budget stops offering tools.
+	 */
+	public function test_turn_over_time_budget_is_sent_without_tools(): void {
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_chat_time_budget'] = static function () {
+			return -1;
+		};
+
+		$this->provider = new Fake_LLM_Provider(
+			array(
+				$this->tool_turn( 'call_1' ),
+				array(
+					'content' => '',
+					'usage'   => array(),
+				),
+			)
+		);
+
+		$this->make_handler()->send_message();
+
+		unset( $GLOBALS['specflux_mac_test_filters']['specflux_mac_chat_time_budget'] );
+
+		$this->assertCount( 2, $this->provider->sent );
+		$this->assertSame( array(), $this->provider->sent[1]['tools'] );
+		$this->assertStringContainsString( 'could not finish the answer', $this->last_json_response()['data']['content'] );
+	}
+
+	/**
 	 * Every provider call carries the system prompt.
 	 */
 	public function test_every_provider_call_receives_the_system_prompt(): void {

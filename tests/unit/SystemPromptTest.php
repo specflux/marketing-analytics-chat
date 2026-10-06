@@ -94,6 +94,40 @@ class SystemPromptTest extends TestCase {
 	}
 
 	/**
+	 * Registry platforms appear with their hint; credential-free ones count as connected.
+	 */
+	public function test_lists_registered_platforms_with_hints(): void {
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_platforms'] = static function ( $platforms ) {
+			$platforms['wpcontent'] = array(
+				'label'       => 'WordPress Content',
+				'auth'        => 'none',
+				'prompt_hint' => 'Posts and SEO metadata.',
+			);
+			$platforms['pagespeed'] = array(
+				'label'           => 'PageSpeed Insights',
+				'fields'          => array( 'api_key' ),
+				'optional_fields' => array( 'api_key' ),
+			);
+			$platforms['bing']      = array(
+				'label'  => 'Bing Webmaster Tools',
+				'fields' => array( 'api_key', 'site_url' ),
+			);
+			return $platforms;
+		};
+		\Specflux_Marketing_Analytics\Credentials\Platform_Registry::reset();
+
+		$prompt = ( new System_Prompt( new Fake_Connected_Credentials( array() ) ) )->build();
+
+		unset( $GLOBALS['specflux_mac_test_filters']['specflux_mac_platforms'] );
+		\Specflux_Marketing_Analytics\Credentials\Platform_Registry::reset();
+
+		$this->assertStringContainsString( 'WordPress Content: connected. Posts and SEO metadata.', $prompt );
+		$this->assertStringContainsString( 'PageSpeed Insights: connected', $prompt );
+		$this->assertStringContainsString( 'Bing Webmaster Tools: NOT connected', $prompt );
+		$this->assertStringContainsString( 'Google Analytics 4: NOT connected. Traffic', $prompt );
+	}
+
+	/**
 	 * A broken filter cannot blank the prompt.
 	 */
 	public function test_non_string_filter_result_falls_back(): void {

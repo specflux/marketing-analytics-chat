@@ -12,6 +12,7 @@
 namespace Specflux_Marketing_Analytics\Chat;
 
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Credentials\Platform_Registry;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -20,17 +21,6 @@ defined( 'ABSPATH' ) || exit;
  * Dynamic system prompt builder
  */
 class System_Prompt {
-
-	/**
-	 * Platform slug => display name.
-	 *
-	 * @var array<string,string>
-	 */
-	const PLATFORMS = array(
-		'ga4'     => 'Google Analytics 4',
-		'gsc'     => 'Google Search Console',
-		'clarity' => 'Microsoft Clarity',
-	);
 
 	/**
 	 * Credential manager used to detect connected platforms.
@@ -55,8 +45,8 @@ class System_Prompt {
 	 */
 	public function get_context() {
 		$platforms = array();
-		foreach ( array_keys( self::PLATFORMS ) as $slug ) {
-			$platforms[ $slug ] = (bool) $this->credential_manager->has_credentials( $slug );
+		foreach ( Platform_Registry::all() as $slug => $definition ) {
+			$platforms[ $slug ] = $this->is_connected( $definition );
 		}
 
 		$timezone = wp_timezone();
@@ -73,6 +63,24 @@ class System_Prompt {
 	}
 
 	/**
+	 * Whether a platform has what it needs to answer, without a live API call.
+	 *
+	 * @param array $definition Platform definition from the registry.
+	 * @return bool
+	 */
+	private function is_connected( array $definition ) {
+		if ( 'none' === $definition['auth'] ) {
+			return true;
+		}
+
+		if ( 'api_key' === $definition['auth'] && array() === array_diff( $definition['fields'], $definition['optional_fields'] ) ) {
+			return true;
+		}
+
+		return (bool) $this->credential_manager->has_credentials( $definition['slug'] );
+	}
+
+	/**
 	 * Build the system prompt.
 	 *
 	 * @return string System prompt.
@@ -81,7 +89,7 @@ class System_Prompt {
 		$context = $this->get_context();
 
 		$lines   = array();
-		$lines[] = 'You are the marketing analytics assistant inside the WordPress admin for the site below. You answer questions about website traffic, search performance and visitor behaviour by calling the provided tools, which read live data from Google Analytics 4 (GA4), Google Search Console (GSC) and Microsoft Clarity.';
+		$lines[] = 'You are the marketing analytics assistant inside the WordPress admin for the site below. You answer questions about website traffic, search performance and visitor behaviour by calling the provided tools, which read live data from the data sources listed below.';
 		$lines[] = '';
 		$lines[] = '## Site';
 		$lines[] = '- Name: ' . $context['site_name'];
@@ -92,8 +100,12 @@ class System_Prompt {
 		}
 		$lines[] = '';
 		$lines[] = '## Connected data sources';
-		foreach ( self::PLATFORMS as $slug => $label ) {
-			$lines[] = '- ' . $label . ': ' . ( $context['platforms'][ $slug ] ? 'connected' : 'NOT connected' );
+		foreach ( Platform_Registry::all() as $slug => $definition ) {
+			$line = '- ' . $definition['label'] . ': ' . ( ! empty( $context['platforms'][ $slug ] ) ? 'connected' : 'NOT connected' );
+			if ( '' !== $definition['prompt_hint'] ) {
+				$line .= '. ' . $definition['prompt_hint'];
+			}
+			$lines[] = $line;
 		}
 		$lines[] = 'If the user asks about a platform that is not connected, say so plainly, do not guess, and point them to the Connections page (' . $context['connections_url'] . ') to connect it. Answer what you can from the platforms that are connected.';
 		$lines[] = '';

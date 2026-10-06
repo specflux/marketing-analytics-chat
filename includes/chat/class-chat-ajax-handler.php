@@ -508,6 +508,21 @@ class Chat_Ajax_Handler {
 		 */
 		$max_rounds = max( 1, (int) apply_filters( 'specflux_mac_chat_max_tool_rounds', 5 ) );
 
+		/**
+		 * Filters how many seconds a chat turn may spend before the model must answer.
+		 *
+		 * Each round is a model call plus live API calls; many hosts stop PHP at
+		 * 30 to 60 seconds, which the user would see as a generic AI error.
+		 *
+		 * @param int $budget Seconds. Default 40.
+		 */
+		$time_budget = (float) apply_filters( 'specflux_mac_chat_time_budget', 40 );
+		$started     = isset( $_SERVER['REQUEST_TIME_FLOAT'] ) ? (float) $_SERVER['REQUEST_TIME_FLOAT'] : microtime( true );
+
+		if ( function_exists( 'set_time_limit' ) ) {
+			set_time_limit( (int) $time_budget + 60 );
+		}
+
 		for ( $round = 1; $round <= $max_rounds; $round++ ) {
 			$failed_tools = array_merge( $failed_tools, $this->execute_tool_calls( $conversation_id, $tool_calls ) );
 
@@ -516,8 +531,9 @@ class Chat_Ajax_Handler {
 				$this->chat_manager->get_messages_for_model( $conversation_id )
 			);
 
-			// The last allowed round gets no tools, forcing a written answer.
-			$round_tools = $round < $max_rounds ? $tools : array();
+			// The last allowed round, or a turn out of time, gets no tools, forcing a written answer.
+			$out_of_time = ( microtime( true ) - $started ) > $time_budget;
+			$round_tools = ( $round < $max_rounds && ! $out_of_time ) ? $tools : array();
 
 			$response = $this->llm_provider->send_message( $formatted_messages, $round_tools, $this->get_provider_options() );
 
@@ -549,6 +565,10 @@ class Chat_Ajax_Handler {
 				}
 
 				continue;
+			}
+
+			if ( '' === trim( (string) ( $response['content'] ?? '' ) ) ) {
+				$response['content'] = __( 'I gathered the data but could not finish the answer. Please ask again, or narrow the question to one platform or period.', 'specflux-marketing-analytics-chat' );
 			}
 
 			// Save final response with cumulative usage.
