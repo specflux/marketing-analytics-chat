@@ -436,6 +436,53 @@ class NamingConsistencyTest extends TestCase {
 	}
 
 	/**
+	 * Test that every admin.php?page= link names a slug that is actually registered.
+	 *
+	 * A plausible but unregistered slug renders "Sorry, you are not allowed to
+	 * access this page", which reads as a permission fault rather than a typo.
+	 */
+	public function test_page_links_reference_registered_slugs(): void {
+		$registered = array();
+		$referenced = array();
+
+		// The slug is always the argument immediately before the render callback.
+		$slug_pattern = "/'([a-z0-9-]+)'\s*,\s*array\(\s*\\\$this,\s*'render_[a-z_]+'\s*\)/";
+
+		foreach ( $this->get_plugin_php_files() as $file ) {
+			$content = file_get_contents( $file );
+
+			if ( preg_match_all( $slug_pattern, $content, $matches ) ) {
+				$registered = array_merge( $registered, $matches[1] );
+			}
+		}
+
+		$this->assertNotEmpty( $registered, 'No admin page slugs were discovered; the detection pattern is stale.' );
+
+		$files = array_merge( $this->get_plugin_php_files(), glob( SPECFLUX_MAC_PATH . 'admin/js/*.js' ) );
+
+		foreach ( $files as $file ) {
+			$content = file_get_contents( $file );
+
+			if ( ! preg_match_all( '/page=([a-z0-9-]+)/', $content, $matches ) ) {
+				continue;
+			}
+
+			foreach ( $matches[1] as $slug ) {
+				if ( strpos( $slug, 'specflux' ) !== 0 || in_array( $slug, $registered, true ) ) {
+					continue;
+				}
+
+				$referenced[] = str_replace( SPECFLUX_MAC_PATH, '', $file ) . ": links to unregistered page slug '{$slug}'";
+			}
+		}
+
+		$this->assertEmpty(
+			array_unique( $referenced ),
+			"Links to unregistered admin pages found:\n" . implode( "\n", array_unique( $referenced ) )
+		);
+	}
+
+	/**
 	 * Test that nonce actions use consistent naming.
 	 */
 	public function test_nonce_action_consistency(): void {
