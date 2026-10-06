@@ -225,6 +225,10 @@ Add this to your Claude Desktop configuration:
 
 Open Marketing Analytics > AI Assistant and type a question like "What are my top traffic sources this month?". The assistant runs through the AI Client built into WordPress, calls the plugin's analytics abilities to fetch your real GA4, Search Console, and Clarity numbers, and answers from that data. The same abilities are available to external assistants such as Claude Desktop, ChatGPT, or Cursor through the optional MCP Adapter plugin.
 
+= Can the AI change my site? =
+
+No. The free chat only reads data. It can use read-only tools from other plugins (such as SEO plugins), and you can switch those off under Settings. With Specflux Marketing Analytics Chat Pro, the AI can propose a change, but nothing runs until you click the Run button.
+
 = Which AI assistants / MCP clients does it work with? =
 
 Out of the box, you can chat with the built-in AI Chat, which runs through the WordPress AI Client — pick your provider once under Settings > Connectors and this plugin never stores an AI key of its own. If you'd rather use an external client, installing the optional MCP Adapter plugin exposes the same analytics abilities over MCP to Claude Desktop, ChatGPT, Cursor, or any other MCP-compatible client.
@@ -282,6 +286,7 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 == Changelog ==
 
 = 0.5.0 - 2026-10-06 =
+* Fixed: The chat only runs tools that read data; it can also use read-only tools from other plugins such as SEO plugins, which you can switch off under Settings
 * Added: Bing Webmaster Tools connection with Bing and Microsoft Copilot search clicks, impressions, top queries, top pages and crawl stats
 * Added: PageSpeed Insights connection with speed scores, real-visitor Core Web Vitals and top fixes for any page on your site, plus a speed check of your most-visited pages
 * Added: WordPress Content & SEO source. The chat reads your published posts and the SEO settings from Yoast SEO, Rank Math, All in One SEO or SEOPress, joins them with GA4 and Search Console numbers, and finds SEO issues such as low click-through pages, missing meta descriptions and traffic pages set to noindex

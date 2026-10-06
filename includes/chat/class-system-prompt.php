@@ -31,12 +31,49 @@ class System_Prompt {
 	private $credential_manager;
 
 	/**
+	 * Client used to list the abilities offered to the model.
+	 *
+	 * @var MCP_Client|null
+	 */
+	private $mcp_client;
+
+	/**
 	 * Constructor
 	 *
 	 * @param Credential_Manager|null $credential_manager Credential manager (defaults to the real one).
+	 * @param MCP_Client|null         $mcp_client         Ability lister (defaults to the real one).
 	 */
-	public function __construct( $credential_manager = null ) {
+	public function __construct( $credential_manager = null, $mcp_client = null ) {
 		$this->credential_manager = null !== $credential_manager ? $credential_manager : new Credential_Manager();
+		$this->mcp_client         = $mcp_client;
+	}
+
+	/**
+	 * One line naming the enabled third-party providers and their tool counts.
+	 *
+	 * @return string Line, or empty string when no other plugin offers tools.
+	 */
+	private function other_tools_line() {
+		$client = null !== $this->mcp_client ? $this->mcp_client : new MCP_Client();
+		$tools  = $client->list_tools();
+		if ( is_wp_error( $tools ) || ! is_array( $tools ) ) {
+			return '';
+		}
+
+		$parts = array();
+		foreach ( Tool_Policy::providers( Tool_Policy::select( $tools ) ) as $slug => $counts ) {
+			if ( Tool_Policy::OWN_PROVIDER === $slug || Tool_Policy::CORE_PROVIDER === $slug ) {
+				continue;
+			}
+
+			$detail = $counts['read'] . ' read';
+			if ( $counts['write'] > 0 ) {
+				$detail .= ', ' . $counts['write'] . ' need approval';
+			}
+			$parts[] = $counts['label'] . ' (' . $detail . ')';
+		}
+
+		return $parts ? "Other plugins' tools available: " . implode( ', ', $parts ) . '.' : '';
 	}
 
 	/**
@@ -130,6 +167,11 @@ class System_Prompt {
 		$lines[] = '- Call several tools when one is not enough, and prefer the most specific tool for the question.';
 		$lines[] = '- Keep answers short and decision-oriented. Lead with the answer.';
 		$lines[] = '- End every answer with 1 to 3 concrete next actions the user can take.';
+		$lines[] = '- Tools that change the site never run immediately: they become a Run button the user must click. Never claim a change was made until the user has applied it.';
+		$other   = $this->other_tools_line();
+		if ( '' !== $other ) {
+			$lines[] = '- ' . $other;
+		}
 
 		/**
 		 * Filters whether the chat can show proposed changes as Apply buttons.

@@ -27,6 +27,22 @@ class Proposing_MCP_Client extends Fake_MCP_Client {
 	public $text = '';
 
 	/**
+	 * Offer a read-only tool named like the one the scripted model calls.
+	 */
+	public function __construct() {
+		parent::__construct(
+			array(
+				array(
+					'name'        => 'wpab__marketing-analytics__propose',
+					'description' => 'Propose.',
+					'inputSchema' => array( 'type' => 'object' ),
+					'annotations' => array( 'readonly' => true ),
+				),
+			)
+		);
+	}
+
+	/**
 	 * Return the configured text.
 	 *
 	 * @param string $tool_name Tool name.
