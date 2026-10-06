@@ -76,6 +76,8 @@ class Plugin {
 		$this->loader->add_action( 'admin_init', $post_stats, 'register_columns' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $post_stats, 'enqueue_assets' );
 		$this->loader->add_action( 'wp_ajax_' . Admin\Post_Stats::AJAX_ACTION, $post_stats, 'handle_ajax' );
+		$this->loader->add_action( 'enqueue_block_editor_assets', $post_stats, 'enqueue_editor_assets' );
+		$this->loader->add_action( 'wp_ajax_' . Admin\Post_Stats::PANEL_AJAX_ACTION, $post_stats, 'handle_panel_ajax' );
 	}
 
 	/**

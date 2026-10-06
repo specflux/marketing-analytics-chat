@@ -42,6 +42,11 @@ class Post_Stats {
 	const AJAX_ACTION = 'specflux_mac_post_stats_build';
 
 	/**
+	 * AJAX action name used by the block editor panel.
+	 */
+	const PANEL_AJAX_ACTION = 'specflux_mac_post_stats_panel';
+
+	/**
 	 * Column key.
 	 */
 	const COLUMN = 'specflux_mac_analytics';
@@ -292,6 +297,174 @@ class Post_Stats {
 		}
 
 		wp_send_json_success( array( 'cells' => $cells ) );
+	}
+
+	/**
+	 * Raw metrics for one post; null means "unknown" and is shown as a dash.
+	 *
+	 * Applies the same rules as the list column: a failed platform or a
+	 * capped report that lacks the post yields null rather than zero.
+	 *
+	 * @param int   $post_id Post ID.
+	 * @param array $cache   Warm cache payload.
+	 * @return array{views:?int,clicks:?int,impressions:?int,position:?float}|null Null when the post has no public path.
+	 */
+	public function get_post_metrics( $post_id, $cache ) {
+		$path = $this->get_post_path( $post_id );
+		if ( null === $path ) {
+			return null;
+		}
+
+		$errors    = isset( $cache['errors'] ) ? (array) $cache['errors'] : array();
+		$capped    = isset( $cache['capped'] ) ? (array) $cache['capped'] : array();
+		$platforms = isset( $cache['platforms'] ) ? (array) $cache['platforms'] : array();
+		$metrics   = array(
+			'views'       => null,
+			'clicks'      => null,
+			'impressions' => null,
+			'position'    => null,
+		);
+
+		if ( in_array( 'ga4', $platforms, true ) && empty( $errors['ga4'] ) ) {
+			$unknown = ! empty( $capped['ga4'] ) && ! isset( $cache['ga4'][ $path ] );
+			if ( ! $unknown ) {
+				$metrics['views'] = (int) ( $cache['ga4'][ $path ] ?? 0 );
+			}
+		}
+
+		if ( in_array( 'gsc', $platforms, true ) && empty( $errors['gsc'] ) ) {
+			$unknown = ! empty( $capped['gsc'] ) && ! isset( $cache['gsc'][ $path ] );
+			if ( ! $unknown ) {
+				$row                    = $cache['gsc'][ $path ] ?? array( 0, 0, 0.0 );
+				$metrics['clicks']      = (int) $row[0];
+				$metrics['impressions'] = (int) $row[1];
+				$metrics['position']    = (float) $row[2] > 0 ? (float) $row[2] : null;
+			}
+		}
+
+		return $metrics;
+	}
+
+	/**
+	 * Data for the block editor panel.
+	 *
+	 * Never calls Google: with a cold cache it reports "needs_build" and the
+	 * panel asks the AJAX endpoint to build it once.
+	 *
+	 * @param int        $post_id Post ID.
+	 * @param array|null $cache   Cache payload, or null when cold.
+	 * @return array{state:string,values:array,chatUrl:string,failed:bool}
+	 */
+	public function get_panel_data( $post_id, $cache ) {
+		$data = array(
+			'state'   => 'unpublished',
+			'values'  => array(),
+			'chatUrl' => $this->get_chat_url( $post_id ),
+			'failed'  => false,
+		);
+
+		if ( null === $this->get_post_path( $post_id ) ) {
+			return $data;
+		}
+
+		if ( null === $cache ) {
+			$data['state'] = 'needs_build';
+			return $data;
+		}
+
+		$metrics = $this->get_post_metrics( $post_id, $cache );
+		$dash    = '—';
+		$fmt     = static function ( $value, $decimals = 0 ) use ( $dash ) {
+			return null === $value ? $dash : number_format_i18n( $value, $decimals );
+		};
+
+		$data['state']  = 'ready';
+		$data['values'] = array(
+			'views'       => $fmt( $metrics['views'] ),
+			'clicks'      => $fmt( $metrics['clicks'] ),
+			'impressions' => $fmt( $metrics['impressions'] ),
+			'position'    => $fmt( $metrics['position'], 1 ),
+		);
+		$data['failed'] = ! empty( $cache['errors'] );
+
+		return $data;
+	}
+
+	/**
+	 * Enqueue the block editor panel script.
+	 *
+	 * @return void
+	 */
+	public function enqueue_editor_assets() {
+		if ( ! $this->is_available() ) {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if ( ! $screen || empty( $screen->post_type ) || ! in_array( $screen->post_type, $this->get_post_types(), true ) ) {
+			return;
+		}
+
+		$post_id = (int) get_the_ID();
+		if ( $post_id <= 0 || ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			'specflux-mac-editor-stats-panel',
+			SPECFLUX_MAC_URL . 'admin/js/editor-stats-panel.js',
+			array( 'wp-plugins', 'wp-editor', 'wp-edit-post', 'wp-element', 'wp-data', 'wp-i18n', 'jquery' ),
+			SPECFLUX_MAC_VERSION,
+			true
+		);
+
+		wp_set_script_translations( 'specflux-mac-editor-stats-panel', 'specflux-marketing-analytics-chat' );
+
+		$config = array(
+			'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+			'action'     => self::PANEL_AJAX_ACTION,
+			'nonce'      => wp_create_nonce( self::NONCE_ACTION ),
+			'postId'     => $post_id,
+			'errorTitle' => $this->get_error_title(),
+			'data'       => $this->get_panel_data( $post_id, $this->get_cached() ),
+		);
+
+		wp_add_inline_script(
+			'specflux-mac-editor-stats-panel',
+			'window.specfluxMacEditorStats = ' . wp_json_encode( $config ) . ';',
+			'before'
+		);
+	}
+
+	/**
+	 * AJAX: build the cache if cold and return panel data for one post.
+	 *
+	 * @return void
+	 */
+	public function handle_panel_ajax() {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), self::NONCE_ACTION ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed. Please refresh the page and try again.' ) );
+			return;
+		}
+
+		$post_id = isset( $_POST['post_id'] ) ? absint( wp_unslash( $_POST['post_id'] ) ) : 0;
+
+		if ( $post_id <= 0 || ! current_user_can( 'edit_post', $post_id ) || ! Permission_Manager::can_access_plugin() ) {
+			wp_send_json_error( array( 'message' => 'You do not have permission to perform this action.' ) );
+			return;
+		}
+
+		if ( empty( $this->get_connected_platforms() ) ) {
+			wp_send_json_error( array( 'message' => 'No analytics platform is connected.' ) );
+			return;
+		}
+
+		$cache = $this->get_cached();
+		if ( null === $cache && null !== $this->get_post_path( $post_id ) ) {
+			$cache = $this->build_cache();
+		}
+
+		wp_send_json_success( $this->get_panel_data( $post_id, $cache ) );
 	}
 
 	/**
@@ -620,7 +793,7 @@ class Post_Stats {
 	 * @param int $post_id Post ID.
 	 * @return string
 	 */
-	private function get_chat_url( $post_id ) {
+	public function get_chat_url( $post_id ) {
 		$title = html_entity_decode( wp_strip_all_tags( get_the_title( $post_id ) ), ENT_QUOTES, (string) get_bloginfo( 'charset' ) );
 
 		/* translators: %s: post title. */

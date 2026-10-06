@@ -1166,7 +1166,7 @@ if ( ! function_exists( 'sanitize_textarea_field' ) ) {
 
 if ( ! function_exists( 'wp_enqueue_script' ) ) {
 	function wp_enqueue_script( $handle, $src = '', $deps = array(), $ver = false, $args = array() ) {
-		// In tests, do nothing.
+		$GLOBALS['mock_enqueued_scripts'][ $handle ] = $deps;
 	}
 }
 
@@ -1273,6 +1273,26 @@ $mock_posts = array();
 if ( ! function_exists( 'get_post_types' ) ) {
 	function get_post_types( $args = array() ) {
 		return array( 'post' => 'post', 'page' => 'page', 'attachment' => 'attachment' );
+	}
+}
+
+if ( ! function_exists( 'get_the_ID' ) ) {
+	function get_the_ID() {
+		return $GLOBALS['mock_current_post_id'] ?? false;
+	}
+}
+
+if ( ! function_exists( 'wp_set_script_translations' ) ) {
+	function wp_set_script_translations( $handle, $domain = 'default', $path = '' ) {
+		$GLOBALS['mock_script_translations'][ $handle ] = $domain;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_add_inline_script' ) ) {
+	function wp_add_inline_script( $handle, $data, $position = 'after' ) {
+		$GLOBALS['mock_inline_scripts'][ $handle ] = $data;
+		return true;
 	}
 }
 

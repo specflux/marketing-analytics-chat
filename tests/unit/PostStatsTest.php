@@ -671,4 +671,161 @@ class PostStatsTest extends TestCase {
 		$this->assertStringContainsString( 'Q%26A%20', $html );
 		$this->assertStringNotContainsString( 'amp%3B', $html );
 	}
+
+	/**
+	 * Set the simulated editor screen and post.
+	 *
+	 * @param string $post_type Post type.
+	 * @param int    $post_id   Post ID.
+	 */
+	private function editor_screen( $post_type, $post_id ) {
+		$GLOBALS['mock_current_screen']   = (object) array( 'post_type' => $post_type );
+		$GLOBALS['mock_current_post_id']  = $post_id;
+		$GLOBALS['mock_enqueued_scripts'] = array();
+		$GLOBALS['mock_inline_scripts']   = array();
+	}
+
+	/**
+	 * The editor script loads only for connected users on eligible post types.
+	 */
+	public function test_editor_assets_enqueue_gating() {
+		global $mock_user_can;
+		$handle = 'specflux-mac-editor-stats-panel';
+
+		$this->editor_screen( 'post', 1 );
+		$this->subject()->enqueue_editor_assets();
+		$this->assertArrayHasKey( $handle, $GLOBALS['mock_enqueued_scripts'] );
+		$this->assertContains( 'wp-plugins', $GLOBALS['mock_enqueued_scripts'][ $handle ] );
+		$this->assertSame( 'specflux-marketing-analytics-chat', $GLOBALS['mock_script_translations'][ $handle ] );
+		$this->assertStringStartsWith( 'window.specfluxMacEditorStats = {', $GLOBALS['mock_inline_scripts'][ $handle ] );
+
+		$this->editor_screen( 'attachment', 1 );
+		$this->subject()->enqueue_editor_assets();
+		$this->assertArrayNotHasKey( $handle, $GLOBALS['mock_enqueued_scripts'] );
+
+		$this->editor_screen( 'post', 1 );
+		$this->subject( array() )->enqueue_editor_assets();
+		$this->assertArrayNotHasKey( $handle, $GLOBALS['mock_enqueued_scripts'] );
+
+		$this->editor_screen( 'post', 1 );
+		$mock_user_can = false;
+		$this->subject()->enqueue_editor_assets();
+		$this->assertArrayNotHasKey( $handle, $GLOBALS['mock_enqueued_scripts'] );
+
+		unset( $GLOBALS['mock_current_screen'], $GLOBALS['mock_current_post_id'] );
+	}
+
+	/**
+	 * Panel payload for warm, cold, unpublished and capped caches.
+	 */
+	public function test_panel_data_states() {
+		$subject               = $this->subject();
+		$subject->ga4_response = array(
+			'rows' => array(
+				array(
+					'pagePath'        => '/blog/hello/',
+					'screenPageViews' => '1204',
+				),
+			),
+		);
+		$subject->gsc_response = array(
+			'rows' => array(
+				array(
+					'keys'        => array( 'https://example.com/blog/hello/' ),
+					'clicks'      => 12,
+					'impressions' => 340,
+					'position'    => 8.26,
+				),
+			),
+		);
+
+		$cold = $subject->get_panel_data( 1, null );
+		$this->assertSame( 'needs_build', $cold['state'] );
+		$this->assertSame( 0, $subject->calls['ga4'] + $subject->calls['gsc'] );
+
+		$warm = $subject->get_panel_data( 1, $subject->build_cache() );
+		$this->assertSame( 'ready', $warm['state'] );
+		$this->assertSame( '1,204', $warm['values']['views'] );
+		$this->assertSame( '12', $warm['values']['clicks'] );
+		$this->assertSame( '340', $warm['values']['impressions'] );
+		$this->assertSame( '8.3', $warm['values']['position'] );
+		$this->assertStringContainsString( 'page=specflux-mac-ai-assistant&prompt=', $warm['chatUrl'] );
+
+		$draft = $subject->get_panel_data( 3, $subject->build_cache() );
+		$this->assertSame( 'unpublished', $draft['state'] );
+
+		$rows = array();
+		for ( $i = 0; $i < 2000; $i++ ) {
+			$rows[] = array(
+				'pagePath'        => '/other-' . $i . '/',
+				'screenPageViews' => '1',
+			);
+		}
+		$capped_subject               = $this->subject();
+		$capped_subject->ga4_response = array( 'rows' => $rows );
+		$capped                       = $capped_subject->get_panel_data( 1, $capped_subject->build_cache() );
+		$this->assertSame( '—', $capped['values']['views'] );
+		$this->assertSame( '0', $capped['values']['clicks'] );
+
+		$failed_subject               = $this->subject();
+		$failed_subject->ga4_response = new \RuntimeException( 'boom' );
+		$failed                       = $failed_subject->get_panel_data( 1, $failed_subject->build_cache() );
+		$this->assertSame( '—', $failed['values']['views'] );
+		$this->assertTrue( $failed['failed'] );
+	}
+
+	/**
+	 * Panel endpoint rejects bad nonce and missing capability before any API call.
+	 */
+	public function test_panel_ajax_security() {
+		global $mock_json_responses, $mock_user_can, $mock_nonce_valid;
+
+		$subject             = $this->subject();
+		$_POST['nonce']      = 'n';
+		$_POST['post_id']    = '1';
+
+		unset( $_POST['nonce'] );
+		$subject->handle_panel_ajax();
+		$this->assertFalse( $mock_json_responses[0]['success'] );
+
+		$_POST['nonce']   = 'n';
+		$mock_nonce_valid = false;
+		$subject->handle_panel_ajax();
+		$this->assertFalse( $mock_json_responses[1]['success'] );
+
+		$mock_nonce_valid = true;
+		$mock_user_can    = false;
+		$subject->handle_panel_ajax();
+		$this->assertFalse( $mock_json_responses[2]['success'] );
+
+		$mock_user_can    = true;
+		$_POST['post_id'] = '0';
+		$subject->handle_panel_ajax();
+		$this->assertFalse( $mock_json_responses[3]['success'] );
+
+		$this->assertSame( 0, $subject->calls['ga4'] + $subject->calls['gsc'] );
+		unset( $_POST['post_id'] );
+	}
+
+	/**
+	 * Panel endpoint builds a cold cache once for a published post only.
+	 */
+	public function test_panel_ajax_builds_once() {
+		global $mock_json_responses;
+
+		$subject          = $this->subject();
+		$_POST['nonce']   = 'n';
+		$_POST['post_id'] = '3';
+		$subject->handle_panel_ajax();
+		$this->assertSame( 'unpublished', $mock_json_responses[0]['data']['state'] );
+		$this->assertSame( 0, $subject->calls['ga4'] );
+
+		$_POST['post_id'] = '1';
+		$subject->handle_panel_ajax();
+		$subject->handle_panel_ajax();
+		$this->assertSame( 'ready', $mock_json_responses[2]['data']['state'] );
+		$this->assertSame( 1, $subject->calls['ga4'] );
+		$this->assertSame( 1, $subject->calls['gsc'] );
+		unset( $_POST['post_id'] );
+	}
 }
