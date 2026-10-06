@@ -72,10 +72,14 @@ class Seo_Issue_Detector {
 				);
 			};
 
+			// Without an SEO plugin the fields are simply unknown, not missing; WordPress
+			// or the theme still outputs a title, so flagging them would be a false positive.
+			$has_plugin = '' !== $seo['plugin'];
+
 			// Description.
-			if ( '' === $seo['description'] ) {
+			if ( $has_plugin && '' === $seo['description'] ) {
 				$add( 'missing_meta_description', $popular ? 'high' : 'medium', array( 'description_source' => 'default_template (plugin falls back to its default)' ) );
-			} elseif ( ! Seo_Plugin_Reader::has_template( $seo['description'] ) ) {
+			} elseif ( $has_plugin && ! Seo_Plugin_Reader::has_template( $seo['description'] ) ) {
 				// Template variables make the final length unknowable, so only literal text is measured.
 				$length = self::length( $seo['description'] );
 				if ( $length > self::DESCRIPTION_MAX ) {
@@ -102,9 +106,9 @@ class Seo_Issue_Detector {
 			}
 
 			// Title.
-			if ( '' === $seo['title'] ) {
+			if ( $has_plugin && '' === $seo['title'] ) {
 				$add( 'missing_seo_title', 'low', array( 'title_source' => 'default_template (plugin falls back to its default)' ) );
-			} else {
+			} elseif ( $has_plugin ) {
 				if ( ! Seo_Plugin_Reader::has_template( $seo['title'] ) ) {
 					$length = self::length( $seo['title'] );
 					if ( $length > self::TITLE_MAX ) {
@@ -148,7 +152,7 @@ class Seo_Issue_Detector {
 			}
 
 			// Focus keyword.
-			if ( '' !== $seo['plugin'] ) {
+			if ( $has_plugin ) {
 				if ( '' === $seo['focus_keyword'] ) {
 					$add( 'missing_focus_keyword', 'low', array( 'plugin' => $seo['plugin'] ) );
 				} elseif ( is_array( $queries ) && ! empty( $queries ) && ! self::keyword_in_queries( $seo['focus_keyword'], $queries ) ) {

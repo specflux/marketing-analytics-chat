@@ -276,9 +276,17 @@
 					$input.prop('disabled', false).focus();
 					$sendButton.prop('disabled', false).html('<span class="dashicons dashicons-arrow-up-alt2"></span> Send');
 				}.bind(this),
-				error: function() {
+				error: function(xhr) {
 					this.hideTypingIndicator();
-					this.addMessageToUI('system', 'Sorry, I couldn\'t send your message. Please check your connection and try again.');
+					// A gateway timeout means the web server stopped waiting, but PHP keeps
+					// running and saves the answer, so reload the transcript instead of
+					// telling the user to resend (which would ask the question twice).
+					if (xhr && (xhr.status === 502 || xhr.status === 503 || xhr.status === 504)) {
+						this.addMessageToUI('system', 'This answer is taking longer than usual. It will appear here in about half a minute.');
+						setTimeout(function() { window.location.reload(); }, 30000);
+					} else {
+						this.addMessageToUI('system', 'Sorry, I couldn\'t send your message. Please check your connection and try again.');
+					}
 
 					// Re-enable form
 					$input.prop('disabled', false).focus();

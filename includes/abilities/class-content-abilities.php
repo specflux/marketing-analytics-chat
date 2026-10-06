@@ -491,7 +491,7 @@ class Content_Abilities {
 				return array(
 					'period'            => $this->describe_analytics_period() . ' Content filtered by ' . $this->describe_publish_period( $args ) . '.',
 					'seo_plugin'        => '' === $plugin ? null : $this->reader->get_label( $plugin ),
-					'note'              => '' === $plugin ? 'No supported SEO plugin is active; only analytics-based checks (CTR) could run, SEO field checks are reported as missing.' : '',
+					'note'              => '' === $plugin ? 'No supported SEO plugin is active; only analytics-based checks (CTR) ran. SEO titles and descriptions were not checked; installing one of Yoast SEO, Rank Math, All in One SEO or SEOPress enables those checks.' : '',
 					'pages_scanned'     => count( $scanned ),
 					'pages_available'   => count( $pool ),
 					'data_status'       => $analytics['status'],

@@ -531,9 +531,12 @@ class Chat_Ajax_Handler {
 		 * Each round is a model call plus live API calls; many hosts stop PHP at
 		 * 30 to 60 seconds, which the user would see as a generic AI error.
 		 *
-		 * @param int $budget Seconds. Default 40.
+		 * The final answer call still runs after the budget, so the default leaves
+		 * room for it inside a 60-second gateway timeout.
+		 *
+		 * @param int $budget Seconds. Default 25.
 		 */
-		$time_budget = (float) apply_filters( 'specflux_mac_chat_time_budget', 40 );
+		$time_budget = (float) apply_filters( 'specflux_mac_chat_time_budget', 25 );
 		$started     = isset( $_SERVER['REQUEST_TIME_FLOAT'] ) ? (float) $_SERVER['REQUEST_TIME_FLOAT'] : microtime( true );
 
 		if ( function_exists( 'set_time_limit' ) ) {

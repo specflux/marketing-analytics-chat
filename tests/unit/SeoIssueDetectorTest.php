@@ -102,6 +102,26 @@ class SeoIssueDetectorTest extends TestCase {
 	}
 
 	/**
+	 * Without an SEO plugin, empty fields are unknown rather than missing.
+	 */
+	public function test_no_seo_plugin_skips_field_rules(): void {
+		$none = array(
+			'plugin'        => '',
+			'title'         => '',
+			'description'   => '',
+			'focus_keyword' => '',
+		);
+		$rows = array(
+			$this->row( 1, $none ),
+			$this->row( 2, $none ),
+		);
+
+		$result = ( new Seo_Issue_Detector() )->detect( $rows );
+
+		$this->assertSame( 0, $result['total'] );
+	}
+
+	/**
 	 * Templated values are not length-checked.
 	 */
 	public function test_templates_skip_length_checks(): void {
