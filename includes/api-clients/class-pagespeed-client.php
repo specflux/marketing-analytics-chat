@@ -194,6 +194,148 @@ class PageSpeed_Client {
 	}
 
 	/**
+	 * Cron hook that runs one uncached PageSpeed measurement in the background.
+	 */
+	const CRON_HOOK = 'specflux_mac_pagespeed_run';
+
+	/**
+	 * Seconds a queued or running measurement holds its dedupe lock.
+	 */
+	const LOCK_TTL = 180;
+
+	/**
+	 * Seconds of remaining PHP time needed to run a Lighthouse audit inline.
+	 */
+	const SYNC_MIN_SECONDS = 50;
+
+	/**
+	 * Get a summary, or queue a background run when an inline run is risky.
+	 *
+	 * Cached results are returned as-is. Never returns a fabricated score.
+	 *
+	 * @param string $url      URL or path ('' for the home page).
+	 * @param string $strategy mobile|desktop.
+	 * @return array Summary, or a `status => queued` result.
+	 * @throws \Exception On invalid URL, quota or API failure (synchronous runs only).
+	 */
+	public function get_summary_or_queue( $url = '', $strategy = 'mobile' ) {
+		$url      = $this->resolve_url( $url );
+		$strategy = self::normalize_strategy( $strategy );
+
+		if ( $this->is_cached( $url, $strategy ) || self::can_run_sync() ) {
+			return $this->get_summary( $url, $strategy );
+		}
+
+		$this->queue( $url, $strategy );
+
+		return self::queued_result( $url, $strategy );
+	}
+
+	/**
+	 * Whether an uncached run may happen inside the current request.
+	 *
+	 * True only with at least 50s of PHP time left (0 = unlimited) and the
+	 * `specflux_mac_pagespeed_sync` filter allowing it.
+	 *
+	 * @return bool
+	 */
+	public static function can_run_sync() {
+		$max_exec = (int) ini_get( 'max_execution_time' );
+		if ( $max_exec > 0 ) {
+			$started   = isset( $_SERVER['REQUEST_TIME_FLOAT'] ) ? (float) $_SERVER['REQUEST_TIME_FLOAT'] : microtime( true );
+			$remaining = $max_exec - ( microtime( true ) - $started );
+			if ( $remaining < self::SYNC_MIN_SECONDS ) {
+				return false;
+			}
+		}
+
+		/**
+		 * Filter whether PageSpeed may run synchronously when time allows.
+		 *
+		 * @param bool $allow Default true.
+		 */
+		return (bool) apply_filters( 'specflux_mac_pagespeed_sync', true );
+	}
+
+	/**
+	 * Structured "queued" tool result.
+	 *
+	 * @param string $url      Absolute URL.
+	 * @param string $strategy Strategy.
+	 * @return array
+	 */
+	public static function queued_result( $url, $strategy ) {
+		return array(
+			'status'              => 'queued',
+			'url'                 => $url,
+			'strategy'            => $strategy,
+			'message'             => 'Measuring this page now; ask again in about a minute.',
+			'retry_after_seconds' => 60,
+		);
+	}
+
+	/**
+	 * Queue one background run for a URL + strategy.
+	 *
+	 * One event per URL + strategy: skipped when already scheduled or a run holds the lock.
+	 *
+	 * @param string $url      URL or path.
+	 * @param string $strategy mobile|desktop.
+	 * @return bool True when a new event was scheduled.
+	 */
+	public function queue( $url, $strategy ) {
+		$url      = $this->resolve_url( $url );
+		$strategy = self::normalize_strategy( $strategy );
+		$args     = array( $url, $strategy );
+		$lock     = self::lock_key( $url, $strategy );
+
+		if ( false !== get_transient( $lock ) || false !== wp_next_scheduled( self::CRON_HOOK, $args ) ) {
+			return false;
+		}
+
+		set_transient( $lock, 1, self::LOCK_TTL );
+		if ( false === wp_schedule_single_event( time(), self::CRON_HOOK, $args ) ) {
+			delete_transient( $lock );
+			return false;
+		}
+		spawn_cron();
+
+		return true;
+	}
+
+	/**
+	 * Cron callback: measure one URL + strategy and store it in the cache.
+	 *
+	 * @param string $url      Absolute URL.
+	 * @param string $strategy mobile|desktop.
+	 * @param self   $client   Client override (tests); cron passes only two arguments.
+	 */
+	public static function run_background( $url, $strategy = 'mobile', $client = null ) {
+		$url      = (string) $url;
+		$strategy = self::normalize_strategy( $strategy );
+
+		set_transient( self::lock_key( $url, $strategy ), 1, self::LOCK_TTL );
+		try {
+			( $client instanceof self ? $client : new self() )->get_summary( $url, $strategy );
+		} catch ( \Exception $e ) {
+			// Failures are not cached; the next chat request queues a fresh run.
+			unset( $e );
+		}
+		delete_transient( self::lock_key( $url, $strategy ) );
+	}
+
+	/**
+	 * Lock transient name for a URL + strategy.
+	 *
+	 * @param string $url      Absolute URL.
+	 * @param string $strategy Strategy.
+	 * @return string
+	 */
+	private static function lock_key( $url, $strategy ) {
+		return 'specflux_mac_psi_lock_' . md5( $url . '|' . $strategy );
+	}
+
+	/**
 	 * Build the request URL (key appended only when saved).
 	 *
 	 * @param string $url      Absolute page URL.

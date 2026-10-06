@@ -135,6 +135,9 @@ class Plugin {
 
 		// Register abilities when the Abilities API is ready.
 		$this->loader->add_action( 'wp_abilities_api_init', $abilities_registrar, 'register_all_abilities' );
+
+		// Background PageSpeed runs (WP-Cron), so uncached audits never block a chat request.
+		$this->loader->add_action( API_Clients\PageSpeed_Client::CRON_HOOK, API_Clients\PageSpeed_Client::class, 'run_background', 10, 2 );
 	}
 
 	/**
