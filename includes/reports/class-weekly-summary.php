@@ -7,9 +7,12 @@
 
 namespace Specflux_Marketing_Analytics\Reports;
 
+use Specflux_Marketing_Analytics\API_Clients\Bing_Webmaster_Client;
 use Specflux_Marketing_Analytics\API_Clients\Clarity_Client;
 use Specflux_Marketing_Analytics\API_Clients\GA4_Client;
 use Specflux_Marketing_Analytics\API_Clients\GSC_Client;
+use Specflux_Marketing_Analytics\Content\Seo_Issue_Summary;
+use Specflux_Marketing_Analytics\Credentials\Connection_Tester;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 
 // Exit if accessed directly.
@@ -62,14 +65,23 @@ class Weekly_Summary {
 	private $connected;
 
 	/**
+	 * Injected SEO summary service (tests pass doubles).
+	 *
+	 * @var Seo_Issue_Summary|null
+	 */
+	private $seo;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param array         $clients   Optional platform => client object overrides.
-	 * @param string[]|null $connected Optional connected-platform override.
+	 * @param array                  $clients   Optional platform => client object overrides (ga4, gsc, clarity, bing).
+	 * @param string[]|null          $connected Optional connected-platform override (may include bing).
+	 * @param Seo_Issue_Summary|null $seo       Optional SEO summary service.
 	 */
-	public function __construct( array $clients = array(), ?array $connected = null ) {
+	public function __construct( array $clients = array(), ?array $connected = null, ?Seo_Issue_Summary $seo = null ) {
 		$this->clients   = $clients;
 		$this->connected = $connected;
+		$this->seo       = $seo;
 	}
 
 	/**
@@ -198,6 +210,131 @@ class Weekly_Summary {
 			'ranges'       => $ranges,
 			'platforms'    => $platforms,
 		);
+	}
+
+	/**
+	 * Collect everything the weekly email shows: the platform numbers plus the
+	 * Bing search and SEO extras.
+	 *
+	 * The extras are added under their own keys (`bing`, `seo`) so the platform
+	 * list that the dashboard widget reads stays unchanged. Each extra fails
+	 * soft: an error leaves it out and never stops the email.
+	 *
+	 * @param int|null $now Unix timestamp to treat as "now".
+	 * @return array Context from collect() plus optional `bing` and `seo` keys.
+	 */
+	public function collect_report( $now = null ) {
+		$context = $this->collect( $now );
+
+		try {
+			if ( $this->bing_ready() ) {
+				$ranges = $context['ranges']['gsc'] ?? $this->get_ranges( $now )['gsc'];
+				try {
+					$context['bing'] = array(
+						'status' => 'ok',
+						'data'   => $this->collect_bing( $ranges ),
+					);
+				} catch ( \Throwable $e ) {
+					$context['bing'] = array(
+						'status' => 'error',
+						'data'   => array(),
+					);
+				}
+			}
+		} catch ( \Throwable $e ) {
+			unset( $context['bing'] );
+		}
+
+		try {
+			$context['seo'] = ( $this->seo ?? new Seo_Issue_Summary() )->get_or_refresh();
+		} catch ( \Throwable $e ) {
+			unset( $context['seo'] );
+		}
+
+		return $context;
+	}
+
+	/**
+	 * Whether Bing is connected and its last connection test passed.
+	 *
+	 * @return bool
+	 */
+	private function bing_ready() {
+		if ( null !== $this->connected ) {
+			$connected = in_array( 'bing', $this->connected, true );
+		} else {
+			$connected = ( new Credential_Manager() )->has_credentials( 'bing' );
+		}
+
+		if ( ! $connected ) {
+			return false;
+		}
+
+		$last = Connection_Tester::get_last_result( 'bing' );
+
+		return is_array( $last ) && ! empty( $last['success'] );
+	}
+
+	/**
+	 * Collect Bing Webmaster Tools numbers (same windows as Search Console).
+	 *
+	 * @param array $range Current and previous windows.
+	 * @return array
+	 * @throws \Exception When the traffic report cannot be fetched.
+	 */
+	private function collect_bing( array $range ) {
+		$client  = $this->clients['bing'] ?? new Bing_Webmaster_Client();
+		$current = $this->sum_bing( $client->get_rank_and_traffic_stats( $range['current'][0], $range['current'][1] ) );
+		$prior   = $this->sum_bing( $client->get_rank_and_traffic_stats( $range['previous'][0], $range['previous'][1] ) );
+
+		$rows = array(
+			$this->metric( 'clicks', __( 'Clicks', 'specflux-marketing-analytics-chat' ), $current['clicks'], $prior['clicks'] ),
+			$this->metric( 'impressions', __( 'Impressions', 'specflux-marketing-analytics-chat' ), $current['impressions'], $prior['impressions'] ),
+		);
+
+		// Top queries are best-effort: the headline numbers still send without them.
+		$queries = array();
+		try {
+			foreach ( array_slice( (array) $client->get_query_stats( $range['current'][0], $range['current'][1], 3 ), 0, 3 ) as $row ) {
+				$queries[] = array(
+					'label' => (string) ( $row['query'] ?? '' ),
+					'value' => (float) ( $row['clicks'] ?? 0 ),
+				);
+			}
+		} catch ( \Throwable $e ) {
+			$queries = array();
+		}
+
+		return array(
+			'metrics'  => $rows,
+			'queries'  => $queries,
+			'range'    => $range['current'],
+			'previous' => $range['previous'],
+		);
+	}
+
+	/**
+	 * Total clicks and impressions of Bing daily rows.
+	 *
+	 * @param mixed $rows Rows from get_rank_and_traffic_stats().
+	 * @return array{clicks:float,impressions:float}
+	 * @throws \Exception When the response is not a list of rows.
+	 */
+	private function sum_bing( $rows ) {
+		if ( ! is_array( $rows ) ) {
+			throw new \Exception( 'Bing unavailable' );
+		}
+
+		$total = array(
+			'clicks'      => 0.0,
+			'impressions' => 0.0,
+		);
+		foreach ( $rows as $row ) {
+			$total['clicks']      += (float) ( $row['clicks'] ?? 0 );
+			$total['impressions'] += (float) ( $row['impressions'] ?? 0 );
+		}
+
+		return $total;
 	}
 
 	/**

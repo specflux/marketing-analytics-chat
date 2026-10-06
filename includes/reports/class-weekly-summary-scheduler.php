@@ -215,7 +215,7 @@ class Weekly_Summary_Scheduler {
 			);
 		}
 
-		$context  = $this->summary->collect();
+		$context  = $this->summary->collect_report();
 		$sections = $this->email->build_sections( $context );
 
 		$has_data = false;

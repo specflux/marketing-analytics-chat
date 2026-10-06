@@ -7,6 +7,8 @@
 
 namespace Specflux_Marketing_Analytics\Reports;
 
+use Specflux_Marketing_Analytics\Content\Seo_Issue_Summary;
+
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
 /**
@@ -66,6 +68,18 @@ class Weekly_Summary_Email {
 
 		foreach ( $context['platforms'] ?? array() as $platform => $result ) {
 			$section = $this->build_platform_section( $platform, $result, $context );
+			if ( null !== $section ) {
+				$sections[] = $section;
+			}
+		}
+
+		foreach ( array( 'build_bing_section', 'build_seo_section' ) as $builder ) {
+			try {
+				$section = $this->$builder( $context );
+			} catch ( \Throwable $e ) {
+				// A broken extra section must never break the email.
+				$section = null;
+			}
 			if ( null !== $section ) {
 				$sections[] = $section;
 			}
@@ -173,6 +187,88 @@ class Weekly_Summary_Email {
 		return array(
 			'id'    => $platform,
 			'title' => $titles[ $platform ],
+			'html'  => $html,
+		);
+	}
+
+	/**
+	 * Build the Bing search section.
+	 *
+	 * Present only when the collector found Bing connected with a passing
+	 * connection test and loaded its numbers.
+	 *
+	 * @param array $context Weekly_Summary context.
+	 * @return array|null Section, or null when it should be skipped.
+	 */
+	private function build_bing_section( array $context ) {
+		$result = $context['bing'] ?? null;
+
+		if ( ! is_array( $result ) || 'ok' !== ( $result['status'] ?? '' ) || ! is_array( $result['data'] ?? null ) ) {
+			return null;
+		}
+
+		$data = $result['data'];
+		$html = $this->note(
+			sprintf(
+				/* translators: %s: date range such as "Sep 25 - Oct 1" */
+				__( '%s compared with the 7 days before. Bing data runs a few days behind, so this week ends a few days earlier.', 'specflux-marketing-analytics-chat' ),
+				$this->format_range( $data['range'] )
+			)
+		);
+		$html .= $this->metrics_table( $data['metrics'] );
+		$html .= $this->list_table( __( 'Top queries by clicks', 'specflux-marketing-analytics-chat' ), $data['queries'] );
+
+		return array(
+			'id'    => 'bing',
+			'title' => __( 'Bing search', 'specflux-marketing-analytics-chat' ),
+			'html'  => $html,
+		);
+	}
+
+	/**
+	 * Build the "SEO to fix" section.
+	 *
+	 * @param array $context Weekly_Summary context.
+	 * @return array|null Section, or null when there is nothing to fix.
+	 */
+	private function build_seo_section( array $context ) {
+		$seo = $context['seo'] ?? null;
+
+		if ( ! is_array( $seo ) || (int) ( $seo['total'] ?? 0 ) < 1 || empty( $seo['top'] ) ) {
+			return null;
+		}
+
+		$total = (int) $seo['total'];
+		$html  = $this->note(
+			sprintf(
+				/* translators: %s: number of SEO issues */
+				_n( '%s issue found on your most-seen pages. The most important ones:', '%s issues found on your most-seen pages. The most important ones:', $total, 'specflux-marketing-analytics-chat' ),
+				number_format_i18n( $total )
+			)
+		);
+
+		$html .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px;">';
+		foreach ( array_slice( (array) $seo['top'], 0, Seo_Issue_Summary::TOP_COUNT ) as $issue ) {
+			if ( ! is_array( $issue ) ) {
+				continue;
+			}
+			$link  = Weekly_Prompt_Builder::assistant_url( Weekly_Prompt_Builder::seo_issue_prompt( $issue ) );
+			$html .= '<tr><td style="padding:8px 8px 8px 0;border-top:1px solid ' . esc_attr( self::COLOR_BORDER ) . ';font-size:14px;line-height:20px;color:' . esc_attr( self::COLOR_TEXT ) . ';">';
+			$html .= '<strong>' . esc_html( (string) ( $issue['label'] ?? '' ) ) . '</strong><br />';
+			$html .= '<span style="color:' . esc_attr( self::COLOR_MUTED ) . ';word-break:break-all;">' . esc_html( (string) ( $issue['title'] ?? '' ) ) . '</span>';
+			$html .= '</td><td align="right" valign="middle" style="padding:8px 0;border-top:1px solid ' . esc_attr( self::COLOR_BORDER ) . ';font-size:13px;white-space:nowrap;">';
+			$html .= '<a href="' . esc_url( $link ) . '" style="color:' . esc_attr( self::COLOR_ACCENT ) . ';text-decoration:none;font-weight:600;">' . esc_html__( 'Ask AI how to fix', 'specflux-marketing-analytics-chat' ) . ' &rarr;</a>';
+			$html .= '</td></tr>';
+		}
+		$html .= '</table>';
+
+		if ( empty( $seo['seo_plugin'] ) ) {
+			$html .= $this->note( __( 'Install Yoast SEO, Rank Math, All in One SEO or SEOPress for title and description checks', 'specflux-marketing-analytics-chat' ) );
+		}
+
+		return array(
+			'id'    => 'seo',
+			'title' => __( 'SEO to fix', 'specflux-marketing-analytics-chat' ),
 			'html'  => $html,
 		);
 	}

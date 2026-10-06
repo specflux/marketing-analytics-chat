@@ -107,7 +107,7 @@ class Weekly_Summary_Preview {
 			return $this->message_page( __( 'No analytics platform is connected yet, so there is nothing to preview. Connect one on the Connections screen.', 'specflux-marketing-analytics-chat' ) );
 		}
 
-		$context  = $this->summary->collect();
+		$context  = $this->summary->collect_report();
 		$sections = $this->email->build_sections( $context );
 
 		if ( empty( $sections ) ) {
