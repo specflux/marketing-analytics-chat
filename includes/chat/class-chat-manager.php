@@ -272,6 +272,112 @@ class Chat_Manager {
 	}
 
 	/**
+	 * Get recent messages shaped for sending to the model.
+	 *
+	 * Unlike get_messages() (which the transcript view uses unchanged), this
+	 * trims the history on turn boundaries so a tool result is never sent
+	 * without the assistant tool call that produced it (or the reverse), and
+	 * replaces tool results from earlier turns with a short placeholder so
+	 * old data does not grow every request. Stored rows are not modified.
+	 *
+	 * @param int $conversation_id Conversation ID.
+	 * @param int $limit           Number of newest messages to consider.
+	 * @return array Message objects, oldest first.
+	 */
+	public function get_messages_for_model( $conversation_id, $limit = 50 ) {
+		return $this->prepare_history_for_model( $this->get_messages( $conversation_id, $limit ) );
+	}
+
+	/**
+	 * Make a message window safe and compact for the model.
+	 *
+	 * @param array $messages Message objects, oldest first.
+	 * @return array Prepared message objects (copies where changed).
+	 */
+	public function prepare_history_for_model( $messages ) {
+		$messages = array_values( $messages );
+
+		// A newest-N window can start mid-turn; begin at the first user message.
+		$first_user = null;
+		foreach ( $messages as $index => $message ) {
+			if ( 'user' === $message->role ) {
+				$first_user = $index;
+				break;
+			}
+		}
+		if ( null !== $first_user ) {
+			$messages = array_slice( $messages, $first_user );
+		}
+
+		// Drop tool calls whose results are missing and results whose call is missing.
+		$clean   = array();
+		$total   = count( $messages );
+		$skipped = array();
+		for ( $i = 0; $i < $total; $i++ ) {
+			if ( isset( $skipped[ $i ] ) ) {
+				continue;
+			}
+
+			$message = $messages[ $i ];
+
+			if ( 'tool' === $message->role ) {
+				// A tool row reaching here has no preceding call in its group.
+				continue;
+			}
+
+			if ( 'assistant' === $message->role && ! empty( $message->tool_calls ) && is_array( $message->tool_calls ) ) {
+				$expected = array();
+				foreach ( $message->tool_calls as $tool_call ) {
+					$expected[] = (string) ( $tool_call['id'] ?? '' );
+				}
+
+				$group = array();
+				$found = array();
+				for ( $j = $i + 1; $j < $total && 'tool' === $messages[ $j ]->role; $j++ ) {
+					$group[ $j ] = $messages[ $j ];
+					$found[]     = (string) $messages[ $j ]->tool_call_id;
+					$skipped[ $j ] = true;
+				}
+
+				if ( array_diff( $expected, $found ) ) {
+					// Incomplete call: omit the whole group rather than send a broken pair.
+					continue;
+				}
+
+				$clean[] = $message;
+				foreach ( $group as $tool_row ) {
+					if ( in_array( (string) $tool_row->tool_call_id, $expected, true ) ) {
+						$clean[] = $tool_row;
+					}
+				}
+				continue;
+			}
+
+			$clean[] = $message;
+		}
+
+		// Tool results before the latest user message are stale: keep the call, drop the data.
+		$last_user = null;
+		foreach ( $clean as $index => $message ) {
+			if ( 'user' === $message->role ) {
+				$last_user = $index;
+			}
+		}
+
+		if ( null !== $last_user ) {
+			foreach ( $clean as $index => $message ) {
+				if ( $index < $last_user && 'tool' === $message->role ) {
+					$copy          = clone $message;
+					$copy->content = '[earlier tool result omitted]';
+					$clean[ $index ] = $copy;
+				}
+			}
+		}
+
+		return $clean;
+	}
+
+	/**
 	 * Add a message to a conversation
 	 *
 	 * @param int    $conversation_id Conversation ID.

@@ -1415,3 +1415,32 @@ if ( ! function_exists( 'wp_nonce_url' ) ) {
 		return $actionurl . '&' . $name . '=' . wp_create_nonce( $action );
 	}
 }
+
+// Minimal Abilities API stand-ins so MCP_Client::call_tool() can be exercised.
+// Tests register fakes in $GLOBALS['specflux_mac_test_abilities'] (name => callable).
+if ( ! class_exists( 'WP_Ability' ) ) {
+	class WP_Ability {
+		private $callback;
+
+		public function __construct( $callback ) {
+			$this->callback = $callback;
+		}
+
+		public function execute( $input = null ) {
+			return call_user_func( $this->callback, $input );
+		}
+	}
+}
+
+if ( ! function_exists( 'wp_get_ability' ) ) {
+	function wp_get_ability( $name ) {
+		$callback = $GLOBALS['specflux_mac_test_abilities'][ $name ] ?? null;
+		return $callback ? new WP_Ability( $callback ) : null;
+	}
+}
+
+if ( ! function_exists( 'home_url' ) ) {
+	function home_url( $path = '' ) {
+		return 'https://example.com' . $path;
+	}
+}

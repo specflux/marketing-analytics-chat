@@ -212,4 +212,80 @@ class ChatManagerTest extends TestCase {
 	public function test_delete_conversation_callable(): void {
 		$this->assertTrue( is_callable( array( $this->manager, 'delete_conversation' ) ) );
 	}
+
+	/**
+	 * Build a message row.
+	 *
+	 * @param string      $role    Role.
+	 * @param string      $content Content.
+	 * @param array|null  $calls   Tool calls.
+	 * @param string|null $call_id Tool call id (tool rows).
+	 * @return \stdClass
+	 */
+	private function row( $role, $content, $calls = null, $call_id = null ) {
+		$row               = new \stdClass();
+		$row->role         = $role;
+		$row->content      = $content;
+		$row->tool_calls   = $calls;
+		$row->tool_call_id = $call_id;
+		$row->tool_name    = null;
+
+		return $row;
+	}
+
+	/**
+	 * A window that starts with an orphaned tool result starts at the first user message.
+	 */
+	public function test_history_never_starts_with_an_orphan_tool_result(): void {
+		$window = array(
+			$this->row( 'tool', 'orphan result', null, 'c0' ),
+			$this->row( 'assistant', 'old answer' ),
+			$this->row( 'user', 'question' ),
+		);
+
+		$prepared = $this->manager->prepare_history_for_model( $window );
+
+		$this->assertCount( 1, $prepared );
+		$this->assertSame( 'user', $prepared[0]->role );
+	}
+
+	/**
+	 * Calls without a full set of results are dropped with their results.
+	 */
+	public function test_incomplete_tool_pairs_are_dropped(): void {
+		$window = array(
+			$this->row( 'user', 'q' ),
+			$this->row( 'assistant', '', array( array( 'id' => 'a' ), array( 'id' => 'b' ) ) ),
+			$this->row( 'tool', 'only a', null, 'a' ),
+			$this->row( 'user', 'next' ),
+		);
+
+		$prepared = $this->manager->prepare_history_for_model( $window );
+
+		$this->assertSame( array( 'user', 'user' ), array_map( static fn( $m ) => $m->role, $prepared ) );
+	}
+
+	/**
+	 * Old tool results become placeholders; the latest turn keeps its data; storage is untouched.
+	 */
+	public function test_old_tool_results_are_replaced_but_latest_turn_kept(): void {
+		$old_result = $this->row( 'tool', 'BIG OLD DATA', null, 'a' );
+		$new_result = $this->row( 'tool', 'FRESH DATA', null, 'b' );
+		$window     = array(
+			$this->row( 'user', 'q1' ),
+			$this->row( 'assistant', '', array( array( 'id' => 'a' ) ) ),
+			$old_result,
+			$this->row( 'assistant', 'a1' ),
+			$this->row( 'user', 'q2' ),
+			$this->row( 'assistant', '', array( array( 'id' => 'b' ) ) ),
+			$new_result,
+		);
+
+		$prepared = $this->manager->prepare_history_for_model( $window );
+
+		$this->assertCount( 7, $prepared );
+		$this->assertSame( '[earlier tool result omitted]', $prepared[2]->content );
+		$this->assertSame( 'FRESH DATA', $prepared[6]->content );
+		$this->assertSame( 'BIG OLD DATA', $old_result->content, 'The stored row must not be mutated' );
+	}
 }
