@@ -142,12 +142,19 @@ class MCP_Client {
 					return $result;
 				}
 
-				// Format result to match MCP response structure.
+				// Abilities built with Ability_Response::tool() already return the
+				// MCP structure; pass it through untouched so the text is not
+				// JSON-encoded a second time and isError survives.
+				if ( is_array( $result ) && isset( $result['content'] ) && is_array( $result['content'] ) ) {
+					return $result;
+				}
+
+				// Format plain results to match the MCP response structure.
 				return array(
 					'content' => array(
 						array(
 							'type' => 'text',
-							'text' => is_string( $result ) ? $result : wp_json_encode( $result, JSON_PRETTY_PRINT ),
+							'text' => is_string( $result ) ? $result : wp_json_encode( $result ),
 						),
 					),
 				);
@@ -185,7 +192,7 @@ class MCP_Client {
 		} elseif ( is_string( $result ) ) {
 			$formatted .= $result . "\n";
 		} else {
-			$formatted .= wp_json_encode( $result, JSON_PRETTY_PRINT ) . "\n";
+			$formatted .= wp_json_encode( $result ) . "\n";
 		}
 
 		return $formatted;

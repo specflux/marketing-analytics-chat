@@ -220,6 +220,13 @@ class Fake_MCP_Client extends MCP_Client {
 	public $error = null;
 
 	/**
+	 * When set, call_tool() returns an in-band isError result with this text.
+	 *
+	 * @var string|null
+	 */
+	public $is_error_text = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array|null $tools Tool definitions.
@@ -265,6 +272,18 @@ class Fake_MCP_Client extends MCP_Client {
 
 		if ( null !== $this->error ) {
 			return new \WP_Error( 'mcp_tool_failed', $this->error );
+		}
+
+		if ( null !== $this->is_error_text ) {
+			return array(
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Error: ' . $this->is_error_text,
+					),
+				),
+				'isError' => true,
+			);
 		}
 
 		return array(
@@ -594,6 +613,19 @@ class ChatToolLoopTest extends TestCase {
 			'Error: Clarity API rate limit reached',
 			$this->chat_manager->tool_results[0]['result']
 		);
+	}
+
+	/**
+	 * An in-band isError result is recorded as a failed tool.
+	 */
+	public function test_is_error_result_is_reported_as_failed_tool(): void {
+		$this->mcp_client->is_error_text = 'GA4 quota exceeded';
+
+		$this->make_handler()->send_message();
+
+		$response = $this->last_json_response();
+		$this->assertCount( 1, $response['data']['failed_tools'] );
+		$this->assertSame( 'GA4 quota exceeded', $response['data']['failed_tools'][0]['error'] );
 	}
 
 	/**

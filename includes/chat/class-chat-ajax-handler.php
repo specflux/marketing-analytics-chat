@@ -504,6 +504,16 @@ class Chat_Ajax_Handler {
 				);
 			} else {
 				$result_content = $this->mcp_client->format_tool_result( $tool_name, $result );
+
+				// An ability can report failure in-band with isError instead of a WP_Error.
+				if ( ! empty( $result['isError'] ) ) {
+					$failed_tools[] = array(
+						'name'      => $tool_name,
+						'id'        => $tool_call['id'],
+						'error'     => $this->extract_tool_error( $result ),
+						'arguments' => $arguments,
+					);
+				}
 			}
 
 			// Save tool result to database.
@@ -562,6 +572,26 @@ class Chat_Ajax_Handler {
 	}
 
 	/**
+	 * Pull a readable error message out of an isError tool result.
+	 *
+	 * @param array $result Tool result carrying isError.
+	 * @return string Error message with any "Error: " prefix removed.
+	 */
+	private function extract_tool_error( $result ) {
+		$message = '';
+
+		foreach ( (array) ( $result['content'] ?? array() ) as $item ) {
+			if ( isset( $item['text'] ) && is_string( $item['text'] ) ) {
+				$message .= $item['text'];
+			}
+		}
+
+		$message = trim( preg_replace( '/^Error:\s*/', '', $message ) );
+
+		return '' !== $message ? $message : __( 'The tool reported an error.', 'specflux-marketing-analytics-chat' );
+	}
+
+	/**
 	 * Retry failed tool calls
 	 */
 	public function retry_tool_call() {
@@ -603,6 +633,15 @@ class Chat_Ajax_Handler {
 			wp_send_json_error(
 				array(
 					'message' => $result->get_error_message(),
+					'tool'    => $tool_name,
+				)
+			);
+		}
+
+		if ( ! empty( $result['isError'] ) ) {
+			wp_send_json_error(
+				array(
+					'message' => $this->extract_tool_error( $result ),
 					'tool'    => $tool_name,
 				)
 			);
