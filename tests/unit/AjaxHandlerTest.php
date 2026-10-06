@@ -343,6 +343,128 @@ class AjaxHandlerTest extends TestCase {
 	}
 
 	/**
+	 * Register a registry-only api_key platform for generic save tests.
+	 */
+	private function register_bing(): void {
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_platforms'] = static function ( $platforms ) {
+			$platforms['bing'] = array(
+				'slug'            => 'bing',
+				'label'           => 'Bing',
+				'fields'          => array( 'api_key', 'site_url', 'note' ),
+				'optional_fields' => array( 'note' ),
+				'connection_test' => static function () {
+					return array(
+						'success' => true,
+						'message' => 'Bing OK',
+					);
+				},
+			);
+			return $platforms;
+		};
+		\Specflux_Marketing_Analytics\Credentials\Platform_Registry::reset();
+	}
+
+	/**
+	 * Remove the registered test platform.
+	 */
+	private function unregister_bing(): void {
+		unset( $GLOBALS['specflux_mac_test_filters']['specflux_mac_platforms'] );
+		\Specflux_Marketing_Analytics\Credentials\Platform_Registry::reset();
+	}
+
+	/**
+	 * Generic save stores fields, allows blank optional fields and returns the test result.
+	 */
+	public function test_generic_save_registered_platform(): void {
+		$this->register_bing();
+		$_POST['nonce']    = 'valid';
+		$_POST['platform'] = 'bing';
+		$_POST['fields']   = array(
+			'api_key'  => 'abc123',
+			'site_url' => 'https://example.com',
+			'note'     => '',
+			'extra'    => 'ignored',
+		);
+
+		$this->handler->save_credentials();
+		$response = $this->single_response();
+
+		$this->assertTrue( $response['success'] );
+		$this->assertSame( 'Bing OK', $response['data']['message'] );
+
+		$saved = ( new \Specflux_Marketing_Analytics\Credentials\Credential_Manager() )->get_credentials( 'bing' );
+		$this->assertSame( 'abc123', $saved['api_key'] );
+		$this->assertArrayNotHasKey( 'extra', $saved );
+		$this->unregister_bing();
+	}
+
+	/**
+	 * Generic save rejects blank required fields.
+	 */
+	public function test_generic_save_requires_required_fields(): void {
+		$this->register_bing();
+		$_POST['nonce']    = 'valid';
+		$_POST['platform'] = 'bing';
+		$_POST['fields']   = array(
+			'api_key'  => 'abc123',
+			'site_url' => '',
+		);
+
+		$this->handler->save_credentials();
+		$response = $this->single_response();
+		$this->unregister_bing();
+
+		$this->assertFalse( $response['success'] );
+		$this->assertStringContainsString( 'site_url', $response['data']['message'] );
+	}
+
+	/**
+	 * A blank secret keeps the stored value.
+	 */
+	public function test_generic_save_keeps_stored_secret_when_blank(): void {
+		$this->register_bing();
+		( new \Specflux_Marketing_Analytics\Credentials\Credential_Manager() )->save_credentials(
+			'bing',
+			array(
+				'api_key'  => 'stored-key',
+				'site_url' => 'https://old.example.com',
+				'note'     => '',
+			)
+		);
+		$_POST['nonce']    = 'valid';
+		$_POST['platform'] = 'bing';
+		$_POST['fields']   = array(
+			'api_key'  => \Specflux_Marketing_Analytics\Credentials\Platform_Registry::SECRET_MASK,
+			'site_url' => 'https://new.example.com',
+		);
+
+		$this->handler->save_credentials();
+		$response = $this->single_response();
+
+		$this->assertTrue( $response['success'] );
+		$saved = ( new \Specflux_Marketing_Analytics\Credentials\Credential_Manager() )->get_credentials( 'bing' );
+		$this->assertSame( 'stored-key', $saved['api_key'] );
+		$this->assertSame( 'https://new.example.com', $saved['site_url'] );
+		$this->unregister_bing();
+	}
+
+	/**
+	 * Generic save rejects unregistered and Google OAuth platforms.
+	 */
+	public function test_generic_save_rejects_unregistered_and_oauth_platforms(): void {
+		foreach ( array( 'nope', 'ga4' ) as $platform ) {
+			$GLOBALS['mock_json_responses'] = array();
+			$_POST['nonce']                 = 'valid';
+			$_POST['platform']              = $platform;
+			$_POST['fields']                = array( 'api_key' => 'x' );
+			$this->handler->save_credentials();
+			$response = $this->single_response();
+			$this->assertFalse( $response['success'] );
+			$this->assertSame( 'Unsupported platform.', $response['data']['message'] );
+		}
+	}
+
+	/**
 	 * save_ga4_property requires a property ID.
 	 */
 	public function test_save_ga4_property_requires_property_id(): void {
