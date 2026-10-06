@@ -9,6 +9,8 @@ namespace Specflux_Marketing_Analytics\API_Clients;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use Specflux_Marketing_Analytics\Cache\Cache_Manager;
+use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 use Specflux_Marketing_Analytics\Utils\Logger;
 
 // Exit if accessed directly.
@@ -48,20 +50,47 @@ class Clarity_Client {
 	private $project_id;
 
 	/**
+	 * Cache manager
+	 *
+	 * @var Cache_Manager
+	 */
+	private $cache_manager;
+
+	/**
 	 * Constructor
 	 *
-	 * @param string $api_token  The API token.
-	 * @param string $project_id The project ID.
+	 * Resolves stored credentials when none are supplied, matching the
+	 * parameterless shape of GA4_Client and GSC_Client. Explicit credentials
+	 * exist for the connection test, which runs before anything is saved.
+	 *
+	 * @param string|null $api_token   The API token, or null to use stored credentials.
+	 * @param string|null $project_id  The project ID, or null to use stored credentials.
+	 * @param Client|null $http_client Transport to use; defaults to a live Guzzle client.
+	 *                                 Tests pass a Guzzle client backed by a MockHandler.
+	 * @throws \Exception If no credentials are supplied and none are stored.
 	 */
-	public function __construct( $api_token, $project_id ) {
+	public function __construct( $api_token = null, $project_id = null, $http_client = null ) {
+		if ( null === $api_token || null === $project_id ) {
+			$credential_manager = new Credential_Manager();
+			$credentials        = $credential_manager->get_credentials( 'clarity' );
+
+			if ( empty( $credentials['api_token'] ) || empty( $credentials['project_id'] ) ) {
+				throw new \Exception( 'Clarity credentials not configured. Please configure your Microsoft Clarity API token and project ID in the plugin settings.' );
+			}
+
+			$api_token  = $credentials['api_token'];
+			$project_id = $credentials['project_id'];
+		}
+
 		Logger::debug( 'Clarity: Initializing Clarity client' );
 		Logger::debug( sprintf( 'Clarity: Project ID: %s', $project_id ) );
 		Logger::debug( sprintf( 'Clarity: API Token provided: %s', $api_token ? 'yes (length: ' . strlen( $api_token ) . ')' : 'NO' ) );
 
-		$this->api_token  = $api_token;
-		$this->project_id = $project_id;
+		$this->api_token     = $api_token;
+		$this->project_id    = $project_id;
+		$this->cache_manager = new Cache_Manager();
 
-		$this->http_client = new Client(
+		$this->http_client = $http_client instanceof Client ? $http_client : new Client(
 			array(
 				'base_uri' => self::API_BASE_URL . '/',
 				'timeout'  => 30,
@@ -73,6 +102,15 @@ class Clarity_Client {
 		);
 
 		Logger::debug( 'Clarity: HTTP client configured with base URL: ' . self::API_BASE_URL );
+	}
+
+	/**
+	 * Get the configured project ID
+	 *
+	 * @return string The project ID.
+	 */
+	public function get_project_id() {
+		return $this->project_id;
 	}
 
 	/**
@@ -230,6 +268,29 @@ class Clarity_Client {
 			return false;
 		}
 
+		// Clarity allows 10 requests per project per day, so every read is cached.
+		return $this->cache_manager->remember(
+			'clarity',
+			'project_live_insights',
+			array(
+				'project_id'  => $this->project_id,
+				'num_of_days' => $num_of_days,
+				'dimensions'  => $dimensions,
+			),
+			function () use ( $num_of_days, $dimensions ) {
+				return $this->fetch_insights( $num_of_days, $dimensions );
+			}
+		);
+	}
+
+	/**
+	 * Fetch live insights from the Clarity API
+	 *
+	 * @param int   $num_of_days Number of days (1, 2 or 3).
+	 * @param array $dimensions  Up to three dimension names.
+	 * @return array|false Response data or false on failure.
+	 */
+	private function fetch_insights( $num_of_days, $dimensions ) {
 		try {
 			$endpoint = 'project-live-insights';
 			$params   = array( 'numOfDays' => $num_of_days );

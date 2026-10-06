@@ -25,9 +25,10 @@ class Cache_Manager {
 	 * Default TTL values for each platform (in seconds)
 	 */
 	const DEFAULT_TTL = array(
-		'clarity' => HOUR_IN_SECONDS,        // 1 hour (rate limit: 10 req/day).
-		'ga4'     => 30 * MINUTE_IN_SECONDS, // 30 minutes (near real-time but expensive).
-		'gsc'     => DAY_IN_SECONDS,         // 24 hours (data has 2-3 day delay).
+		'clarity'        => HOUR_IN_SECONDS,        // 1 hour (rate limit: 10 req/day).
+		'ga4'            => 30 * MINUTE_IN_SECONDS, // 30 minutes (near real-time but expensive).
+		'gsc'            => DAY_IN_SECONDS,         // 24 hours (data has 2-3 day delay).
+		'cross_platform' => 30 * MINUTE_IN_SECONDS, // 30 minutes (bounded by the freshest source).
 	);
 
 	/**
@@ -237,26 +238,30 @@ class Cache_Manager {
 	}
 
 	/**
-	 * Get or set cache (fetch from callback if not cached)
+	 * Return cached data for a platform call, computing and storing it on a miss
 	 *
-	 * @param string   $key Cache key.
-	 * @param callable $callback Function to generate data if not cached.
-	 * @param int      $ttl Time to live in seconds (optional).
+	 * Derives the cache key and resolves the platform's TTL policy, so callers
+	 * describe the call rather than the caching.
+	 *
+	 * @param string   $platform Platform identifier.
+	 * @param string   $endpoint API endpoint/method name.
+	 * @param array    $params   Request parameters.
+	 * @param callable $callback Function to generate data on a cache miss.
+	 * @param int|null $ttl      Override TTL in seconds; defaults to the platform policy.
 	 * @return mixed Cached data or fresh data from callback.
 	 */
-	public function remember( $key, $callback, $ttl = null ) {
+	public function remember( $platform, $endpoint, $params, $callback, $ttl = null ) {
+		$key  = $this->generate_key( $platform, $endpoint, $params );
 		$data = $this->get( $key );
 
 		if ( false !== $data ) {
 			return $data;
 		}
 
-		// Generate fresh data.
 		$data = call_user_func( $callback );
 
-		// Cache it.
 		if ( false !== $data && null !== $data ) {
-			$this->set( $key, $data, $ttl );
+			$this->set( $key, $data, null === $ttl ? $this->get_default_ttl( $platform ) : $ttl );
 		}
 
 		return $data;
