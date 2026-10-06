@@ -386,10 +386,19 @@ class Post_Stats {
 			return null;
 		}
 
+		// GA4 truncates long paths mid-character; invalid UTF-8 corrupts the serialized transient.
+		if ( false === preg_match( '//u', $path ) ) {
+			return null;
+		}
+
 		$path = strtolower( $path );
 		$path = rtrim( $path, '/' );
+		if ( '' === $path ) {
+			return '/';
+		}
 
-		return '' === $path ? '/' : $path;
+		// Percent-encode so cache keys stay ASCII whatever the database charset.
+		return implode( '/', array_map( 'rawurlencode', explode( '/', $path ) ) );
 	}
 
 	/**

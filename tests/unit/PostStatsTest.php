@@ -218,7 +218,9 @@ class PostStatsTest extends TestCase {
 			'home without path' => array( 'https://example.com', '/' ),
 			'bare slash'        => array( '/', '/' ),
 			'relative path'     => array( '/About-Us/', '/about-us' ),
-			'encoded'           => array( '/caf%C3%A9/', '/café' ),
+			'encoded'           => array( '/caf%C3%A9/', '/caf%C3%A9' ),
+			'raw utf-8'         => array( '/café/', '/caf%C3%A9' ),
+			'truncated utf-8'   => array( "/xhs-\xE7\xB3", null ),
 			'not set'           => array( '(not set)', null ),
 			'empty'             => array( '', null ),
 		);
