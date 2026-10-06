@@ -49,7 +49,7 @@ class Clarity_Abilities {
 					'properties' => array(
 						'num_of_days' => array(
 							'type'        => 'integer',
-							'description' => 'Number of days: 1 (last 24h), 2 (last 48h), or 3 (last 72h)',
+							'description' => 'Trailing window in days: 1 (last 24h), 2 (last 48h) or 3 (last 72h). This is a hard Clarity API limit: longer periods and custom start/end dates are not available from Clarity, so use GA4 for those.',
 							'enum'        => array( 1, 2, 3 ),
 						),
 						'dimension1'  => array(

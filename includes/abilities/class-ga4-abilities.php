@@ -53,11 +53,7 @@ class GA4_Abilities {
 							'description' => 'Array of metric names (e.g., activeUsers, sessions, screenPageViews)',
 							'items'       => array( 'type' => 'string' ),
 						),
-						'date_range' => array(
-							'type'        => 'string',
-							'description' => 'Date range (e.g., "7daysAgo", "yesterday", "2024-01-01")',
-							'default'     => '7daysAgo',
-						),
+						...Ability_Dates::properties( 'ga4' ),
 						'dimensions' => array(
 							'type'        => 'array',
 							'description' => 'Array of dimension names (e.g., date, country, deviceCategory)',
@@ -123,11 +119,7 @@ class GA4_Abilities {
 							'type'        => 'string',
 							'description' => 'Specific event name to filter (optional)',
 						),
-						'date_range' => array(
-							'type'        => 'string',
-							'description' => 'Date range (e.g., "7daysAgo", "yesterday")',
-							'default'     => '7daysAgo',
-						),
+						...Ability_Dates::properties( 'ga4' ),
 						'limit'      => array(
 							'type'        => 'integer',
 							'description' => 'Maximum number of events to return',
@@ -217,11 +209,7 @@ class GA4_Abilities {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'date_range' => array(
-							'type'        => 'string',
-							'description' => 'Date range (e.g., "7daysAgo", "30daysAgo")',
-							'default'     => '7daysAgo',
-						),
+						...Ability_Dates::properties( 'ga4' ),
 						'limit'      => array(
 							'type'        => 'integer',
 							'description' => 'Maximum number of sources to return',
@@ -300,7 +288,7 @@ class GA4_Abilities {
 				return $client->run_report(
 					$args['metrics'],
 					$args['dimensions'] ?? array(),
-					$args['date_range'] ?? '7daysAgo',
+					Ability_Dates::resolve( $args, 'ga4' ),
 					array( 'limit' => $args['limit'] ?? 100 )
 				);
 			}
@@ -320,7 +308,7 @@ class GA4_Abilities {
 
 				return $client->get_event_data(
 					$args['event_name'] ?? null,
-					$args['date_range'] ?? '7daysAgo',
+					Ability_Dates::resolve( $args, 'ga4' ),
 					$args['limit'] ?? 100
 				);
 			}
@@ -357,7 +345,7 @@ class GA4_Abilities {
 				$client = new GA4_Client();
 
 				return $client->get_traffic_sources(
-					$args['date_range'] ?? '7daysAgo',
+					Ability_Dates::resolve( $args, 'ga4' ),
 					$args['limit'] ?? 100
 				);
 			}

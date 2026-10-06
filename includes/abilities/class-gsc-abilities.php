@@ -47,11 +47,7 @@ class GSC_Abilities {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'date_range' => array(
-							'type'        => 'string',
-							'description' => 'Date range (e.g., "7daysAgo", "30daysAgo")',
-							'default'     => '7daysAgo',
-						),
+						...Ability_Dates::properties( 'gsc' ),
 						'dimensions' => array(
 							'type'        => 'array',
 							'description' => 'Dimensions to group by (query, page, country, device, searchAppearance)',
@@ -115,11 +111,7 @@ class GSC_Abilities {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'date_range'      => array(
-							'type'        => 'string',
-							'description' => 'Date range (e.g., "7daysAgo", "30daysAgo")',
-							'default'     => '7daysAgo',
-						),
+						...Ability_Dates::properties( 'gsc' ),
 						'limit'           => array(
 							'type'        => 'integer',
 							'description' => 'Maximum number of queries to return',
@@ -260,7 +252,7 @@ class GSC_Abilities {
 				$client = new GSC_Client();
 
 				return $client->query_search_analytics(
-					$args['date_range'] ?? '7daysAgo',
+					Ability_Dates::resolve( $args, 'gsc' ),
 					$args['dimensions'] ?? array(),
 					$args['filters'] ?? array(),
 					array( 'row_limit' => $args['limit'] ?? 100 )
@@ -281,7 +273,7 @@ class GSC_Abilities {
 				$client = new GSC_Client();
 
 				return $client->get_top_queries(
-					$args['date_range'] ?? '7daysAgo',
+					Ability_Dates::resolve( $args, 'gsc' ),
 					$args['limit'] ?? 100,
 					$args['min_impressions'] ?? 10
 				);
