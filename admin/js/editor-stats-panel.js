@@ -102,7 +102,8 @@
 			{
 				name: 'specflux-mac-editor-stats',
 				title: __( 'Analytics (28 days)', 'specflux-marketing-analytics-chat' ),
-				className: 'smac-editor-stats-panel'
+				className: 'smac-editor-stats-panel',
+				initialOpen: true
 			},
 			body
 		);
