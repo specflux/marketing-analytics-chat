@@ -151,6 +151,10 @@ class Abilities_Registrar {
 		$gsc_abilities = new GSC_Abilities();
 		$gsc_abilities->register();
 
+		// Register Bing Webmaster Tools abilities.
+		$bing_abilities = new Bing_Abilities();
+		$bing_abilities->register();
+
 		// Register cross-platform abilities.
 		$cross_platform_abilities = new Cross_Platform_Abilities();
 		$cross_platform_abilities->register();
