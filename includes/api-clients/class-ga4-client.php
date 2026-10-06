@@ -103,7 +103,7 @@ class GA4_Client {
 	 * @param array  $metrics Array of metric names (e.g., ['activeUsers', 'sessions']).
 	 * @param array  $dimensions Array of dimension names (e.g., ['date', 'country']).
 	 * @param string $date_range Date range string (e.g., '7daysAgo', 'yesterday').
-	 * @param array  $options Additional options (limit, offset, filters, etc.).
+	 * @param array  $options Additional options (limit, offset, order_by_metric, dimension_filter).
 	 * @return array|null Report data or null on failure.
 	 */
 	public function run_report( $metrics, $dimensions = array(), $date_range = '7daysAgo', $options = array() ) {
@@ -182,6 +182,19 @@ class GA4_Client {
 
 			if ( isset( $options['offset'] ) ) {
 				$request->setOffset( absint( $options['offset'] ) );
+			}
+
+			if ( isset( $options['order_by_metric'] ) ) {
+				$request->setOrderBys(
+					array(
+						new \Google\Service\AnalyticsData\OrderBy(
+							array(
+								'metric' => new \Google\Service\AnalyticsData\MetricOrderBy( array( 'metricName' => (string) $options['order_by_metric'] ) ),
+								'desc'   => true,
+							)
+						),
+					)
+				);
 			}
 
 			if ( isset( $options['dimension_filter'] ) ) {

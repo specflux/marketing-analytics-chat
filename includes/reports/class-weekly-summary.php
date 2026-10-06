@@ -279,7 +279,15 @@ class Weekly_Summary {
 		$sources = array();
 
 		try {
-			$report = $client->run_report( array( 'screenPageViews' ), array( 'pagePath' ), implode( ',', $range['current'] ), array( 'limit' => 5 ) );
+			$report = $client->run_report(
+				array( 'screenPageViews' ),
+				array( 'pagePath' ),
+				implode( ',', $range['current'] ),
+				array(
+					'limit'           => 5,
+					'order_by_metric' => 'screenPageViews',
+				)
+			);
 			foreach ( array_slice( (array) ( $report['rows'] ?? array() ), 0, 5 ) as $row ) {
 				$pages[] = array(
 					'label' => (string) ( $row['pagePath'] ?? '' ),
@@ -291,7 +299,15 @@ class Weekly_Summary {
 		}
 
 		try {
-			$report = $client->run_report( array( 'sessions' ), array( 'sessionDefaultChannelGroup' ), implode( ',', $range['current'] ), array( 'limit' => 3 ) );
+			$report = $client->run_report(
+				array( 'sessions' ),
+				array( 'sessionDefaultChannelGroup' ),
+				implode( ',', $range['current'] ),
+				array(
+					'limit'           => 3,
+					'order_by_metric' => 'sessions',
+				)
+			);
 			foreach ( array_slice( (array) ( $report['rows'] ?? array() ), 0, 3 ) as $row ) {
 				$sources[] = array(
 					'label' => (string) ( $row['sessionDefaultChannelGroup'] ?? '' ),

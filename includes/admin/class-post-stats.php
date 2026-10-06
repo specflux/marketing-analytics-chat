@@ -311,7 +311,10 @@ class Post_Stats {
 					array( 'screenPageViews' ),
 					array( 'pagePath' ),
 					'28daysAgo',
-					array( 'limit' => 2000 )
+					array(
+						'limit'           => 2000,
+						'order_by_metric' => 'screenPageViews',
+					)
 				);
 				$cache['ga4'] = self::build_ga4_map( $report );
 			} catch ( \Throwable $e ) {
