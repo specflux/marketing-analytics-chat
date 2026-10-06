@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use Specflux_Marketing_Analytics\Admin\Widget_Headline;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Reports\Weekly_Prompt_Builder;
 use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Scheduler;
 
 $credential_manager = new Credential_Manager();
@@ -92,7 +93,7 @@ $headline_items = $has_connection ? Widget_Headline::cached() : null;
 	<?php if ( $has_connection ) : ?>
 	<!-- Quick Action -->
 	<div class="smac-widget-section" style="margin-top: 15px; text-align: center;">
-		<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-ai-assistant' ) ); ?>" class="button button-primary" style="width: 100%; text-align: center;">
+		<a href="<?php echo esc_url( Weekly_Prompt_Builder::assistant_url( Weekly_Prompt_Builder::from_headline( $headline_items ) ) ); ?>" class="button button-primary" style="width: 100%; text-align: center;">
 			<?php esc_html_e( 'Open AI Assistant', 'specflux-marketing-analytics-chat' ); ?>
 		</a>
 	</div>

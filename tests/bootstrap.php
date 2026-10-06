@@ -1399,3 +1399,18 @@ if ( ! function_exists( 'wp_mail' ) ) {
 // We can't require the main file because it re-defines constants without
 // if-defined guards. Instead, we define the namespaced functions here.
 require_once __DIR__ . '/bootstrap-functions.php';
+if ( ! function_exists( 'add_query_arg' ) ) {
+	/**
+	 * Minimal add_query_arg(): single key/value, URL-encodes the value like core.
+	 */
+	function add_query_arg( $key, $value, $url = '' ) {
+		$sep = ( false === strpos( $url, '?' ) ) ? '?' : '&';
+		return $url . $sep . urlencode( $key ) . '=' . urlencode( $value );
+	}
+}
+
+if ( ! function_exists( 'wp_nonce_url' ) ) {
+	function wp_nonce_url( $actionurl, $action = -1, $name = '_wpnonce' ) {
+		return $actionurl . '&' . $name . '=' . wp_create_nonce( $action );
+	}
+}

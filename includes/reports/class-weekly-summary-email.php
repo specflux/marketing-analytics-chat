@@ -323,7 +323,7 @@ class Weekly_Summary_Email {
 			'site_name'    => wp_specialchars_decode( (string) get_bloginfo( 'name' ), ENT_QUOTES ),
 			'range_label'  => $this->format_range( $context['ranges']['ga4']['current'] ?? array( gmdate( 'Y-m-d' ), gmdate( 'Y-m-d' ) ) ),
 			'sections'     => $sections,
-			'ai_url'       => admin_url( 'admin.php?page=specflux-mac-ai-assistant' ),
+			'ai_url'       => Weekly_Prompt_Builder::assistant_url( Weekly_Prompt_Builder::from_context( $context ) ),
 			'settings_url' => admin_url( 'admin.php?page=specflux-mac-settings&tab=email' ),
 			'colors'       => array(
 				'text'   => self::COLOR_TEXT,

@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 	use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
+	use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Preview;
 	use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Scheduler;
 	use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
@@ -992,6 +993,7 @@ if ( isset( $_POST['save_email_settings'] ) && current_user_can( 'manage_options
 									<input type="checkbox" id="weekly_summary_enabled" name="weekly_summary_enabled" value="1" <?php checked( $summary_scheduler->is_enabled() ); ?> />
 									<?php esc_html_e( 'Email me a weekly summary', 'specflux-marketing-analytics-chat' ); ?>
 								</label>
+								<a href="<?php echo esc_url( Weekly_Summary_Preview::url() ); ?>" target="_blank" rel="noopener" style="margin-left: 10px;"><?php esc_html_e( "See what you'd get", 'specflux-marketing-analytics-chat' ); ?></a>
 							</td>
 						</tr>
 						<tr>
