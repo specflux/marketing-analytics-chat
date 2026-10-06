@@ -10,6 +10,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+	use Specflux_Marketing_Analytics\Chat\MCP_Client;
+	use Specflux_Marketing_Analytics\Chat\Tool_Policy;
 	use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
 	use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Preview;
 	use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Scheduler;
@@ -60,6 +62,18 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 		? array_map( 'sanitize_text_field', wp_unslash( $_POST['enabled_tool_categories'] ) )
 		: array( 'all' );
 	$new_settings['enabled_tool_categories'] = $enabled_categories;
+
+	// Other plugins' tools in the chat. Only saved when that section was on the
+	// submitted form, so the other tabs never reset it.
+	if ( isset( $_POST['chat_providers_submitted'] ) ) {
+		$ability_list = ( new MCP_Client() )->list_tools();
+		$detected     = is_array( $ability_list ) ? array_keys( Tool_Policy::providers( $ability_list ) ) : array();
+		$checked      = isset( $_POST['chat_providers_enabled'] ) && is_array( $_POST['chat_providers_enabled'] )
+			? array_map( 'sanitize_key', wp_unslash( $_POST['chat_providers_enabled'] ) )
+			: array();
+
+		$new_settings['chat_providers'] = Tool_Policy::sanitize_provider_choices( $checked, $detected, $existing_settings['chat_providers'] ?? array() );
+	}
 
 	// Cache Settings.
 	$new_settings['cache_ttl_clarity'] = absint( $_POST['cache_ttl_clarity'] ?? 60 ) * 60;
@@ -252,6 +266,45 @@ if ( isset( $_POST['save_email_settings'] ) && current_user_can( 'manage_options
 							</td>
 						</tr>
 					</table>
+
+					<h2><?php esc_html_e( 'Tools from other plugins', 'specflux-marketing-analytics-chat' ); ?></h2>
+					<input type="hidden" name="chat_providers_submitted" value="1" />
+					<?php
+					$chat_ability_list = ( new MCP_Client() )->list_tools();
+					$chat_providers    = is_array( $chat_ability_list ) ? Tool_Policy::providers( $chat_ability_list ) : array();
+					unset( $chat_providers[ Tool_Policy::OWN_PROVIDER ], $chat_providers[ Tool_Policy::CORE_PROVIDER ] );
+					?>
+					<p class="description">
+						<?php esc_html_e( 'Other plugins, such as SEO plugins, can offer tools to the chat. Switch a plugin off to stop the chat from using its tools.', 'specflux-marketing-analytics-chat' ); ?>
+						<?php esc_html_e( 'Tools that change your site need Specflux Marketing Analytics Chat Pro and always ask before running.', 'specflux-marketing-analytics-chat' ); ?>
+					</p>
+					<?php if ( empty( $chat_providers ) ) : ?>
+						<p><?php esc_html_e( 'No other plugin offers tools to the chat on this site.', 'specflux-marketing-analytics-chat' ); ?></p>
+					<?php else : ?>
+						<fieldset>
+							<legend class="screen-reader-text"><span><?php esc_html_e( 'Tools from other plugins', 'specflux-marketing-analytics-chat' ); ?></span></legend>
+							<?php foreach ( $chat_providers as $provider_slug => $provider ) : ?>
+								<label>
+									<input type="checkbox" name="chat_providers_enabled[]" value="<?php echo esc_attr( $provider_slug ); ?>"
+										<?php checked( Tool_Policy::provider_enabled( $provider_slug ) ); ?> />
+									<strong><?php echo esc_html( $provider['label'] ); ?></strong>
+									<span class="description">
+										<?php
+										echo esc_html(
+											sprintf(
+												/* translators: 1: number of read-only tools, 2: number of tools that change the site */
+												__( '%1$d read, %2$d write', 'specflux-marketing-analytics-chat' ),
+												$provider['read'],
+												$provider['write']
+											)
+										);
+										?>
+									</span>
+								</label>
+								<br/>
+							<?php endforeach; ?>
+						</fieldset>
+					<?php endif; ?>
 
 					<p class="submit">
 						<input type="submit" name="save_settings" class="button button-primary" value="<?php esc_attr_e( 'Save Settings', 'specflux-marketing-analytics-chat' ); ?>" />

@@ -251,6 +251,33 @@ class Tool_Policy {
 	}
 
 	/**
+	 * Build the stored provider choices from a submitted form.
+	 *
+	 * Only providers actually detected can be set, so posted junk is ignored;
+	 * detected providers left unchecked are stored as false; earlier choices for
+	 * providers that are not currently registered are kept.
+	 *
+	 * @param mixed $checked  Posted slugs of providers left enabled.
+	 * @param array $detected Slugs of providers detected on this site.
+	 * @param array $existing Previously stored choices.
+	 * @return array Map of slug => bool.
+	 */
+	public static function sanitize_provider_choices( $checked, array $detected, $existing = array() ) {
+		$checked = is_array( $checked ) ? array_map( 'sanitize_key', array_map( 'strval', $checked ) ) : array();
+		$choices = is_array( $existing ) ? array_map( 'boolval', $existing ) : array();
+
+		foreach ( $detected as $slug ) {
+			$slug = sanitize_key( $slug );
+			if ( '' === $slug || self::OWN_PROVIDER === $slug || self::CORE_PROVIDER === $slug ) {
+				continue;
+			}
+			$choices[ $slug ] = in_array( $slug, $checked, true );
+		}
+
+		return $choices;
+	}
+
+	/**
 	 * Short human summary of a proposed ability call, at most 140 characters.
 	 *
 	 * @param array $tool  Tool definition (name, label).

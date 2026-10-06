@@ -229,4 +229,24 @@ class ChatToolPolicyTest extends TestCase {
 
 		$this->assertLessThanOrEqual( 140, mb_strlen( $summary ) );
 	}
+
+	/**
+	 * Saved provider choices only cover detected providers and keep older ones.
+	 */
+	public function test_sanitize_provider_choices(): void {
+		$choices = Tool_Policy::sanitize_provider_choices(
+			array( 'yoast', 'Evil Slug', 'core' ),
+			array( 'yoast', 'rank-math', 'core', 'marketing-analytics' ),
+			array( 'old-plugin' => false )
+		);
+
+		$this->assertSame(
+			array(
+				'old-plugin' => false,
+				'yoast'      => true,
+				'rank-math'  => false,
+			),
+			$choices
+		);
+	}
 }
