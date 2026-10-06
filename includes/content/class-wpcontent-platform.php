@@ -58,6 +58,7 @@ class Content_Platform {
 			'auth'            => 'none',
 			'description'     => $this->get_description(),
 			'connection_test' => array( $this, 'test_connection' ),
+			'prompt_hint'     => 'This site\'s published posts and pages joined with their GA4 and Search Console numbers, plus SEO titles, meta descriptions, focus keywords and noindex flags from the active SEO plugin. Use find-seo-issues for "what should I fix" questions.',
 		);
 
 		return $platforms;
