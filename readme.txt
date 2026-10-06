@@ -221,6 +221,9 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 2. MCP Abilities Catalog showing available analytics abilities
 3. Google Analytics 4 connection setup
 4. Settings page with API configuration
+5. The weekly email summary: last week against the week before, with top pages, traffic sources, and search queries
+6. The Dashboard widget shows this week's sessions, search clicks, and Clarity sessions at a glance
+7. Views, search clicks, and average position for every post in the Posts list
 
 == Changelog ==
 
