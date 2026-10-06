@@ -82,10 +82,10 @@ class PageSpeedTest extends TestCase {
 	public function test_summary_extraction() {
 		$summary = $this->client( array( new Response( 200, array(), $this->fixture() ) ) )->get_summary( '', 'mobile' );
 
-		$this->assertSame( 62, $summary['score'] );
-		$this->assertSame( '3.2 s', $summary['lab']['lcp']['display_value'] );
-		$this->assertSame( 450, $summary['lab']['tbt']['value'] );
-		$this->assertArrayNotHasKey( 'tti', $summary['lab'] );
+		$this->assertSame( 32, $summary['score'] );
+		$this->assertSame( "10.9\u{a0}s", $summary['lab']['lcp']['display_value'] );
+		$this->assertEqualsWithDelta( 1055.2, $summary['lab']['tbt']['value'], 0.1 );
+		$this->assertArrayHasKey( 'tti', $summary['lab'] );
 
 		$this->assertSame( 2900, $summary['field']['metrics']['lcp_ms']['percentile'] );
 		$this->assertSame( 0.04, $summary['field']['metrics']['cls']['percentile'] );
@@ -94,9 +94,13 @@ class PageSpeedTest extends TestCase {
 		$this->assertSame( 'failed', PageSpeed_Client::assess( $summary['field'] ) );
 		$this->assertSame( 'passed', PageSpeed_Client::assess( $summary['origin'] ) );
 
-		$this->assertSame( array( 'render-blocking-resources', 'unused-javascript', 'dom-size' ), array_column( $summary['issues'], 'id' ) );
-		$this->assertSame( 900, $summary['issues'][0]['savings_ms'] );
-		$this->assertSame( 307200, $summary['issues'][1]['savings_bytes'] );
+		$this->assertSame(
+			array( 'unused-javascript', 'unminified-javascript', 'mainthread-work-breakdown', 'bf-cache', 'unsized-images' ),
+			array_column( $summary['issues'], 'id' )
+		);
+		$this->assertSame( 580, $summary['issues'][0]['savings_ms'] );
+		$this->assertSame( 94194, $summary['issues'][0]['savings_bytes'] );
+		$this->assertNull( $summary['issues'][2]['savings_ms'] );
 		$this->assertArrayNotHasKey( 'lighthouseResult', $summary );
 	}
 
@@ -112,7 +116,7 @@ class PageSpeedTest extends TestCase {
 		$this->assertNull( $summary['field'] );
 		$this->assertNull( $summary['origin'] );
 		$this->assertSame( 'no_data', PageSpeed_Client::assess( $summary['field'] ) );
-		$this->assertSame( 62, $summary['score'] );
+		$this->assertSame( 32, $summary['score'] );
 	}
 
 	/**
@@ -130,11 +134,33 @@ class PageSpeedTest extends TestCase {
 			$client->get_summary( '', 'mobile' );
 			$this->fail( 'Expected exception' );
 		} catch ( \Exception $e ) {
-			$this->assertStringContainsString( 'quota exceeded', $e->getMessage() );
-			$this->assertStringContainsString( 'API key', $e->getMessage() );
+			$this->assertStringContainsString( 'quota used up', $e->getMessage() );
+			$this->assertStringContainsString( 'try again tomorrow', $e->getMessage() );
 		}
 
-		$this->assertSame( 62, $client->get_summary( '', 'mobile' )['score'] );
+		$this->assertSame( 32, $client->get_summary( '', 'mobile' )['score'] );
+	}
+
+	/**
+	 * A rejected key gets an actionable message.
+	 */
+	public function test_invalid_key_error() {
+		$client = $this->client( array( new Response( 400, array(), '{"error":{"code":400,"message":"API key not valid. Please pass a valid API key.","errors":[{"reason":"badRequest"}],"details":[{"reason":"API_KEY_INVALID"}]}}' ) ), 'bad' );
+
+		$this->expectException( \Exception::class );
+		$this->expectExceptionMessage( 'PageSpeed Insights API is enabled' );
+		$client->get_summary( '', 'mobile' );
+	}
+
+	/**
+	 * A 403 (API disabled / key restricted) gets the same guidance.
+	 */
+	public function test_forbidden_error() {
+		$client = $this->client( array( new Response( 403, array(), '{"error":{"code":403,"message":"PageSpeed Insights API has not been used in project"}}' ) ), 'k' );
+
+		$this->expectException( \Exception::class );
+		$this->expectExceptionMessage( 'Check the key' );
+		$client->get_summary( '', 'mobile' );
 	}
 
 	/**
@@ -214,9 +240,9 @@ class PageSpeedTest extends TestCase {
 	}
 
 	/**
-	 * The platform registers keyless and counts as connected with nothing saved.
+	 * The key is required: pagespeed is not connected until one is saved.
 	 */
-	public function test_platform_connected_without_key() {
+	public function test_platform_requires_key() {
 		( new PageSpeed_Platform() )->register_hooks();
 		$this->assertContains( 'specflux_mac_platforms', array_column( $GLOBALS['mock_filters'], 'hook' ) );
 
@@ -225,10 +251,31 @@ class PageSpeedTest extends TestCase {
 
 		$definition = Platform_Registry::get( 'pagespeed' );
 		$this->assertNotNull( $definition );
-		$this->assertSame( array( 'api_key' ), $definition['optional_fields'] );
+		$this->assertSame( array( 'api_key' ), $definition['fields'] );
+		$this->assertSame( array(), $definition['optional_fields'] );
+		$this->assertNotEmpty( $definition['prompt_hint'] );
+		$this->assertSame( 'https://developers.google.com/speed/docs/insights/v5/get-started', $definition['help_url'] );
 		$this->assertSame( DAY_IN_SECONDS, $definition['cache_ttl'] );
-		$this->assertTrue( ( new Credential_Manager() )->has_credentials( 'pagespeed' ) );
+		$this->assertFalse( ( new Credential_Manager() )->has_credentials( 'pagespeed' ) );
 		$this->assertFalse( ( new Credential_Manager() )->has_credentials( 'clarity' ) );
+	}
+
+	/**
+	 * A platform whose fields are all optional counts as connected without saved values.
+	 */
+	public function test_all_optional_platform_is_connected() {
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_platforms'] = static function ( $platforms ) {
+			$platforms['optional_only'] = array(
+				'slug'            => 'optional_only',
+				'auth'            => 'api_key',
+				'fields'          => array( 'api_key' ),
+				'optional_fields' => array( 'api_key' ),
+			);
+			return $platforms;
+		};
+		Platform_Registry::reset();
+
+		$this->assertTrue( ( new Credential_Manager() )->has_credentials( 'optional_only' ) );
 	}
 
 	/**
@@ -290,7 +337,7 @@ class PageSpeedTest extends TestCase {
 		$this->assertSame( 'passed', $cwv['origin_assessment'] );
 
 		$audit = json_decode( $abilities->execute_audit_top_pages_speed( array( 'limit' => 2 ) )['content'][0]['text'], true );
-		$this->assertSame( 62, $audit['rows'][0]['score'] );
+		$this->assertSame( 32, $audit['rows'][0]['score'] );
 		$this->assertArrayHasKey( 'error', $audit['rows'][1] );
 		$this->assertFalse( $audit['partial'] );
 

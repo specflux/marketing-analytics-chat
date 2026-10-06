@@ -9,6 +9,7 @@ namespace Specflux_Marketing_Analytics\Abilities;
 
 use Specflux_Marketing_Analytics\Admin\Post_Stats;
 use Specflux_Marketing_Analytics\API_Clients\PageSpeed_Client;
+use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -24,9 +25,13 @@ class PageSpeed_Abilities {
 	const RUN_HEADROOM = 45;
 
 	/**
-	 * Register abilities (PageSpeed works without credentials).
+	 * Register abilities (only when an API key is saved).
 	 */
 	public function register() {
+		if ( ! ( new Credential_Manager() )->has_credentials( 'pagespeed' ) ) {
+			return;
+		}
+
 		$this->register_tool(
 			'marketing-analytics/get-page-speed',
 			__( 'Get Page Speed', 'specflux-marketing-analytics-chat' ),
@@ -73,7 +78,7 @@ class PageSpeed_Abilities {
 				'limit' => array(
 					'type'        => 'integer',
 					'description' => 'Number of pages to audit',
-					'default'     => 5,
+					'default'     => 3,
 					'minimum'     => 1,
 					'maximum'     => 10,
 				),
@@ -177,7 +182,7 @@ class PageSpeed_Abilities {
 		return Ability_Response::tool(
 			function () use ( $args ) {
 				$args  = is_array( $args ) ? $args : array();
-				$limit = max( 1, min( 10, (int) ( $args['limit'] ?? 5 ) ) );
+				$limit = max( 1, min( 10, (int) ( $args['limit'] ?? 3 ) ) );
 
 				$client = $this->make_client();
 				$pages  = $this->pick_pages( $limit );

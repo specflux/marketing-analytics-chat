@@ -15,8 +15,8 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Registers PageSpeed Insights with the platform registry.
  *
- * The API works without a key, so the single field is optional and the
- * platform counts as connected as soon as it is registered.
+ * A Google API key is required: keyless requests share Google's own project
+ * quota, which is routinely exhausted.
  */
 class PageSpeed_Platform {
 
@@ -42,9 +42,9 @@ class PageSpeed_Platform {
 			'label'           => __( 'PageSpeed Insights', 'specflux-marketing-analytics-chat' ),
 			'auth'            => 'api_key',
 			'fields'          => array( 'api_key' ),
-			'optional_fields' => array( 'api_key' ),
-			'description'     => __( 'Core Web Vitals and Lighthouse performance data for your pages. PageSpeed Insights works without a key; adding a free Google API key raises the daily quota.', 'specflux-marketing-analytics-chat' ),
-			'help_url'        => 'https://developers.google.com/speed/docs/insights/v5/get-started#APIKey',
+			'description'     => __( 'Core Web Vitals and Lighthouse performance data for your pages. A free Google API key is required (no billing needed; the default quota is generous for a single site). Get one in the Google Cloud console: enable the PageSpeed Insights API, then Credentials > Create credentials > API key, ideally restricted to the PageSpeed Insights API.', 'specflux-marketing-analytics-chat' ),
+			'help_url'        => 'https://developers.google.com/speed/docs/insights/v5/get-started',
+			'prompt_hint'     => __( 'Ask about page speed scores, Core Web Vitals field data and the biggest fixes, for this site\'s own URLs.', 'specflux-marketing-analytics-chat' ),
 			'cache_ttl'       => DAY_IN_SECONDS,
 			'connection_test' => array( $this, 'test_connection' ),
 		);
@@ -53,7 +53,7 @@ class PageSpeed_Platform {
 	}
 
 	/**
-	 * Run a real check against the site's home page.
+	 * Run a real check against the site's home page (needs a saved key).
 	 *
 	 * The result is cached by the client, so repeat checks are free.
 	 *

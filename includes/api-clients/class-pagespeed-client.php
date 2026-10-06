@@ -85,7 +85,7 @@ class PageSpeed_Client {
 	private $cache_manager;
 
 	/**
-	 * Constructor. Never throws: the API works without a key.
+	 * Constructor. Never throws; without a saved key requests are sent keyless and will likely hit Google's shared quota.
 	 *
 	 * @param string|null $api_key     Key override; null reads the stored key.
 	 * @param Client|null $http_client Transport; tests pass a Guzzle MockHandler client.
@@ -253,7 +253,10 @@ class PageSpeed_Client {
 			$api_message = is_array( $body ) && isset( $body['error']['message'] ) ? (string) $body['error']['message'] : '';
 
 			if ( 429 === $status ) {
-				throw new \Exception( 'PageSpeed Insights quota exceeded. Add a free Google API key under Connections > PageSpeed Insights to raise the daily limit, or try again later.' );
+				throw new \Exception( 'PageSpeed Insights quota used up. Check your API key under Connections > PageSpeed Insights (a key of your own has its own daily quota), or try again tomorrow.' );
+			}
+			if ( 403 === $status || false !== stripos( $api_message, 'API key not valid' ) || false !== stripos( (string) wp_json_encode( $body ), 'API_KEY_INVALID' ) ) {
+				throw new \Exception( 'PageSpeed Insights rejected the API key. Check the key and that the PageSpeed Insights API is enabled for its Google Cloud project.' );
 			}
 			if ( 400 === $status ) {
 				throw new \Exception( 'PageSpeed Insights could not analyze this URL (is it public and reachable?): ' . $api_message );
