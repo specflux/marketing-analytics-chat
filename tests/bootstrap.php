@@ -1393,6 +1393,16 @@ if ( ! function_exists( 'get_post_meta' ) ) {
 	}
 }
 
+if ( ! function_exists( 'is_serialized' ) ) {
+	function is_serialized( $data, $strict = true ) {
+		if ( ! is_string( $data ) ) {
+			return false;
+		}
+		$data = trim( $data );
+		return 'N;' === $data || (bool) preg_match( '/^[aOsbidCE]:[0-9]*[:;{"]/', $data );
+	}
+}
+
 if ( ! function_exists( 'get_post_type' ) ) {
 	function get_post_type( $post_id ) {
 		global $mock_posts;
