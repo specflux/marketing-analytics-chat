@@ -220,6 +220,32 @@ if ( empty( $mac_abilities ) ) {
 			'icon'        => 'dashicons-admin-page',
 		),
 
+		// Site analytics plugin abilities (registered only when Burst, Independent Analytics, or Koko Analytics has data).
+		array(
+			'name'        => __( 'Get Site Traffic', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-site-traffic',
+			'description' => __( 'Visitors, pageviews, change vs the previous period and a daily series from Burst Statistics, Independent Analytics, or Koko Analytics, for sites without GA4.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'localstats',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-chart-area',
+		),
+		array(
+			'name'        => __( 'Get Site Top Pages', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-site-top-pages',
+			'description' => __( 'Most viewed pages with pageviews and visitors from the analytics plugin installed on this site.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'localstats',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-chart-area',
+		),
+		array(
+			'name'        => __( 'Get Site Referrers', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-site-referrers',
+			'description' => __( 'Top traffic sources from the analytics plugin installed on this site.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'localstats',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-chart-area',
+		),
+
 	);
 }
 
@@ -257,6 +283,9 @@ $mac_mcp_endpoint = rest_url( 'mcp/mcp-adapter-default-server' );
 		</button>
 		<button type="button" class="smac-abilities-filter-btn" data-filter="wpcontent">
 			<?php esc_html_e( 'Content & SEO', 'specflux-marketing-analytics-chat' ); ?>
+		</button>
+		<button type="button" class="smac-abilities-filter-btn" data-filter="localstats">
+			<?php esc_html_e( 'Site analytics plugin', 'specflux-marketing-analytics-chat' ); ?>
 		</button>
 	</div>
 

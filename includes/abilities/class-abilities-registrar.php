@@ -166,6 +166,10 @@ class Abilities_Registrar {
 		$content_abilities = new Content_Abilities();
 		$content_abilities->register();
 
+		// Register site analytics plugin abilities (only when Burst, Independent Analytics or Koko has data).
+		$local_analytics_abilities = new Local_Analytics_Abilities();
+		$local_analytics_abilities->register();
+
 		// Register prompts.
 		$prompts = new Prompts();
 		$prompts->register();

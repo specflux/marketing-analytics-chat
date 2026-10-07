@@ -33,6 +33,7 @@ class Plugin {
 		$this->define_post_stats_hooks();
 		$this->define_abilities_hooks();
 		( new Content\Content_Platform() )->register_hooks();
+		( new Content\Local_Analytics_Platform() )->register_hooks();
 		$this->define_review_prompt_hooks();
 		$this->define_weekly_summary_hooks();
 		( new Integrations\Bing_Integration() )->register_hooks();
