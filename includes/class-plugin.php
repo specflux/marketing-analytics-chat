@@ -36,6 +36,7 @@ class Plugin {
 		$this->define_review_prompt_hooks();
 		$this->define_weekly_summary_hooks();
 		( new Integrations\Bing_Integration() )->register_hooks();
+		( new Integrations\Matomo_Integration() )->register_hooks();
 		( new Integrations\PageSpeed_Platform() )->register_hooks();
 	}
 
