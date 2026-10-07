@@ -22,6 +22,7 @@ Connecting Google Analytics 4 and Search Console takes one click: sign in with G
 * **Google Analytics 4** - Traffic metrics, user behavior, conversions, real-time data
 * **Google Search Console** - Search performance, queries, indexing status
 * **Microsoft Clarity** - Session recordings, heatmaps, user behavior insights
+* **Matomo** - Visits, top pages, traffic sources and goals from your self-hosted Matomo or Matomo Cloud, as an alternative to Google Analytics
 
 = Bing, Page Speed & Your SEO Plugin =
 
@@ -153,6 +154,22 @@ has expired.
 
 Terms of use: https://www.microsoft.com/servicesagreement
 Privacy statement: https://privacy.microsoft.com/privacystatement
+
+**Matomo** (your own Matomo server, or Matomo Cloud provided by InnoCraft Ltd)
+
+What it is used for: reading your own site's Matomo analytics (visits, top
+pages, traffic sources, goals).
+
+What is sent and when: after you save a Matomo URL, Site ID and Auth token on
+the Connections screen, the plugin calls the Matomo Reporting API at the Matomo
+URL you entered, and nowhere else. Each request is an HTTPS POST that carries
+your Auth token (in the request body, not the address), the Site ID and the
+date range, plus the report being read. Requests are made when you save or test
+the connection and when a Matomo ability is run from the built-in chat or an
+external MCP client and the cached result (one hour) has expired.
+
+Matomo Cloud terms of use: https://matomo.org/terms/
+Matomo privacy policy: https://matomo.org/privacy-policy/
 
 **Google PageSpeed Insights** (provided by Google LLC)
 
@@ -286,6 +303,7 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 == Changelog ==
 
 = 0.5.0 - 2026-10-06 =
+* Added: Matomo connection (self-hosted or Matomo Cloud) with visits and change against the previous period, top pages, traffic sources and goal conversions
 * Fixed: The chat only runs tools that read data; it can also use read-only tools from other plugins such as SEO plugins, which you can switch off under Settings
 * Added: Bing Webmaster Tools connection with Bing and Microsoft Copilot search clicks, impressions, top queries, top pages and crawl stats
 * Added: PageSpeed Insights connection with speed scores, real-visitor Core Web Vitals and top fixes for any page on your site, plus a speed check of your most-visited pages

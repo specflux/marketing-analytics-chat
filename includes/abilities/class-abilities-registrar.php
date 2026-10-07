@@ -154,6 +154,11 @@ class Abilities_Registrar {
 		// Register Bing Webmaster Tools abilities.
 		$bing_abilities = new Bing_Abilities();
 		$bing_abilities->register();
+
+		// Register Matomo abilities.
+		$matomo_abilities = new Matomo_Abilities();
+		$matomo_abilities->register();
+
 		// Register PageSpeed Insights abilities.
 		$pagespeed_abilities = new PageSpeed_Abilities();
 		$pagespeed_abilities->register();

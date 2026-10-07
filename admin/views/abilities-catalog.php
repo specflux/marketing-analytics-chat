@@ -124,6 +124,40 @@ if ( empty( $mac_abilities ) ) {
 			'icon'        => 'dashicons-search',
 		),
 
+		// Matomo abilities.
+		array(
+			'name'        => __( 'Get Matomo Traffic', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-matomo-traffic',
+			'description' => __( 'Matomo visits, actions, bounce rate and time on site with change vs the previous period.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'matomo',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-chart-area',
+		),
+		array(
+			'name'        => __( 'Get Matomo Top Pages', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-matomo-top-pages',
+			'description' => __( 'Most viewed pages in Matomo with time on page, bounce and exit rates.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'matomo',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-chart-area',
+		),
+		array(
+			'name'        => __( 'Get Matomo Traffic Sources', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-matomo-sources',
+			'description' => __( 'Matomo referrer types, websites, search engines and campaigns.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'matomo',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-chart-area',
+		),
+		array(
+			'name'        => __( 'Get Matomo Goals', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-matomo-goals',
+			'description' => __( 'Matomo goal conversions, revenue and conversion rates.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'matomo',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-chart-area',
+		),
+
 		// PageSpeed abilities.
 		array(
 			'name'        => __( 'Get Page Speed', 'specflux-marketing-analytics-chat' ),
@@ -245,6 +279,9 @@ $mac_mcp_endpoint = rest_url( 'mcp/mcp-adapter-default-server' );
 		</button>
 		<button type="button" class="smac-abilities-filter-btn" data-filter="bing">
 			<?php esc_html_e( 'Bing', 'specflux-marketing-analytics-chat' ); ?>
+		</button>
+		<button type="button" class="smac-abilities-filter-btn" data-filter="matomo">
+			<?php esc_html_e( 'Matomo', 'specflux-marketing-analytics-chat' ); ?>
 		</button>
 		<button type="button" class="smac-abilities-filter-btn" data-filter="clarity">
 			<?php esc_html_e( 'Clarity', 'specflux-marketing-analytics-chat' ); ?>
