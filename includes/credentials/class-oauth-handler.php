@@ -110,6 +110,22 @@ class OAuth_Handler {
 	}
 
 	/**
+	 * Message from the hosted sign-in service when it refused the last start request
+	 *
+	 * @var string
+	 */
+	private $last_error = '';
+
+	/**
+	 * Why the last hosted sign-in start was refused, if the service said
+	 *
+	 * @return string Message, or '' when there is none.
+	 */
+	public function get_last_error() {
+		return $this->last_error;
+	}
+
+	/**
 	 * Get OAuth authorization URL
 	 *
 	 * @param string $service Service identifier ('ga4' or 'gsc').
@@ -284,17 +300,29 @@ class OAuth_Handler {
 			false
 		);
 
-		$response = $this->proxy_request(
-			'/oauth/google/start',
-			array(
-				'service'    => $service,
-				'return_url' => $this->get_redirect_uri(),
-				'nonce'      => $nonce,
-			)
+		$body = array(
+			'service'    => $service,
+			'return_url' => $this->get_redirect_uri(),
+			'nonce'      => $nonce,
 		);
+
+		/**
+		 * Filters the body sent to the hosted sign-in service when a connection starts.
+		 *
+		 * Lets an add-on attach what the service needs for a gated service, such as
+		 * a licence key and domain for Google Ads.
+		 *
+		 * @param array  $body    Request body: service, return_url, nonce.
+		 * @param string $service Service being connected.
+		 */
+		$body = apply_filters( 'specflux_mac_oauth_start_body', $body, $service );
+
+		$response = $this->proxy_request( '/oauth/google/start', is_array( $body ) ? $body : array() );
 
 		if ( is_wp_error( $response ) || empty( $response['auth_url'] ) ) {
 			Logger::debug( 'Hosted OAuth start failed: ' . ( is_wp_error( $response ) ? $response->get_error_message() : wp_json_encode( $response ) ) );
+			// The service's own refusal (e.g. "licence required") is worth showing; transport failures are not.
+			$this->last_error = ( is_wp_error( $response ) && 'proxy_error' === $response->get_error_code() ) ? $response->get_error_message() : '';
 			return null;
 		}
 

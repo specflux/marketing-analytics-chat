@@ -81,6 +81,26 @@ class OAuthHandlerHostedTest extends TestCase {
 	public function test_get_auth_url_hosted_returns_null_when_proxy_unreachable(): void {
 		// Default mock handler returns WP_Error.
 		$this->assertNull( $this->handler->get_auth_url( 'gsc' ) );
+		$this->assertSame( '', $this->handler->get_last_error(), 'Transport failures are not shown as a service refusal.' );
+	}
+
+	public function test_start_body_is_filterable_and_service_refusal_is_kept(): void {
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_oauth_start_body'] = static function ( $body, $service ) {
+			$body['license_key'] = 'gsc' === $service ? 'MAC-KEY' : '';
+			return $body;
+		};
+		$sent                         = null;
+		$GLOBALS['mock_http_handler'] = function ( $url, $args ) use ( &$sent ) {
+			$sent = json_decode( $args['body'], true );
+			return $this->response( 403, array( 'error' => 'A valid licence is required.' ) );
+		};
+
+		$url = $this->handler->get_auth_url( 'gsc' );
+		unset( $GLOBALS['specflux_mac_test_filters']['specflux_mac_oauth_start_body'] );
+
+		$this->assertNull( $url );
+		$this->assertSame( 'MAC-KEY', $sent['license_key'] );
+		$this->assertSame( 'A valid licence is required.', $this->handler->get_last_error() );
 	}
 
 	public function test_hosted_callback_rejects_mismatched_nonce(): void {
