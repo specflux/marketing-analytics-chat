@@ -175,6 +175,11 @@ class Ajax_Handler {
 		$oauth_handler = new OAuth_Handler();
 		$url           = $oauth_handler->get_auth_url( $service );
 
+		if ( empty( $url ) && '' !== $oauth_handler->get_last_error() ) {
+			wp_send_json_error( array( 'message' => $oauth_handler->get_last_error() ) );
+			return;
+		}
+
 		if ( empty( $url ) ) {
 			wp_send_json_error(
 				array(
