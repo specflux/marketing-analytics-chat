@@ -274,8 +274,8 @@ class NamingConsistencyTest extends TestCase {
 							continue;
 						}
 
-						// Skip options owned by SEO plugins that the content integration reads.
-						if ( in_array( $option_name, array( 'wpseo_titles' ), true ) ) {
+						// Skip options owned by SEO and form plugins that the content integrations read.
+						if ( in_array( $option_name, array( 'wpseo_titles', 'wpforms_entries_count_daily' ), true ) ) {
 							continue;
 						}
 
@@ -610,8 +610,8 @@ class NamingConsistencyTest extends TestCase {
 			foreach ( $lines as $line_num => $line ) {
 				if ( preg_match_all( $pattern, $line, $matches ) ) {
 					foreach ( $matches[1] as $table_suffix ) {
-						// Skip tables owned by SEO plugins that the content integration reads.
-						if ( in_array( $table_suffix, array( 'aioseo_posts', 'rank_math_404_logs' ), true ) ) {
+						// Skip tables owned by SEO and form plugins that the content integrations read.
+						if ( in_array( $table_suffix, array( 'aioseo_posts', 'rank_math_404_logs', 'frm_items', 'wpforms_entries' ), true ) ) {
 							continue;
 						}
 

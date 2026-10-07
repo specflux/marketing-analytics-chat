@@ -171,6 +171,10 @@ class Abilities_Registrar {
 		$content_abilities = new Content_Abilities();
 		$content_abilities->register();
 
+		// Register form entry abilities (only when a supported form plugin is active).
+		$form_abilities = new Form_Abilities();
+		$form_abilities->register();
+
 		// Register prompts.
 		$prompts = new Prompts();
 		$prompts->register();

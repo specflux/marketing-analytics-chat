@@ -253,6 +253,30 @@ if ( empty( $mac_abilities ) ) {
 			'tier'        => 'free',
 			'icon'        => 'dashicons-admin-page',
 		),
+		array(
+			'name'        => __( 'Get Form Entries', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-form-entries',
+			'description' => __( 'Count form submissions per form and day or week with the change versus the previous period. Counts only, never names, emails or messages.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'forms',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-feedback',
+		),
+		array(
+			'name'        => __( 'Get Leads by Page', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-leads-by-page',
+			'description' => __( 'Which pages produce leads: form entries per submission page joined with GA4 views to give a lead conversion rate.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'forms',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-feedback',
+		),
+		array(
+			'name'        => __( 'Get Lead Sources', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-lead-sources',
+			'description' => __( 'Form entries by UTM source, medium and campaign found on the submission page URL.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'forms',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-feedback',
+		),
 
 	);
 }
@@ -294,6 +318,9 @@ $mac_mcp_endpoint = rest_url( 'mcp/mcp-adapter-default-server' );
 		</button>
 		<button type="button" class="smac-abilities-filter-btn" data-filter="wpcontent">
 			<?php esc_html_e( 'Content & SEO', 'specflux-marketing-analytics-chat' ); ?>
+		</button>
+		<button type="button" class="smac-abilities-filter-btn" data-filter="forms">
+			<?php esc_html_e( 'Form entries', 'specflux-marketing-analytics-chat' ); ?>
 		</button>
 	</div>
 
