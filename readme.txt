@@ -28,6 +28,7 @@ Connecting Google Analytics 4 and Search Console takes one click: sign in with G
 * **Bing Webmaster Tools** - Clicks, impressions, top queries and pages from Bing and Microsoft Copilot search, next to your Google numbers
 * **PageSpeed Insights** - Speed scores, real-visitor Core Web Vitals and the biggest fixes for any page on your site, or a speed check of your most-visited pages
 * **Your content and SEO plugin** - The chat reads your published posts and the titles, meta descriptions, focus keywords and noindex settings from Yoast SEO, Rank Math, All in One SEO or SEOPress, joins them with your traffic and search data, and finds what to fix: pages with many impressions but few clicks, missing or duplicate meta descriptions, traffic pages set to noindex, focus keywords nobody searches for, and posts that haven't been updated in a year
+* **Form entries** - Which pages and traffic sources bring you leads? The chat counts submissions from Contact Form 7 (with Flamingo), Fluent Forms, Gravity Forms, Formidable Forms and WPForms straight from your own database, then joins them with your Google Analytics views to show lead conversion rate per page and UTM source. Names, emails and messages are never read
 
 = Weekly Email Summary & Per-Post Stats =
 
@@ -290,6 +291,7 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 * Added: Bing Webmaster Tools connection with Bing and Microsoft Copilot search clicks, impressions, top queries, top pages and crawl stats
 * Added: PageSpeed Insights connection with speed scores, real-visitor Core Web Vitals and top fixes for any page on your site, plus a speed check of your most-visited pages
 * Added: WordPress Content & SEO source. The chat reads your published posts and the SEO settings from Yoast SEO, Rank Math, All in One SEO or SEOPress, joins them with GA4 and Search Console numbers, and finds SEO issues such as low click-through pages, missing meta descriptions and traffic pages set to noindex
+* Added: Form entries source. The chat counts form submissions per form, day, page and UTM source from Contact Form 7 (with Flamingo), Fluent Forms, Gravity Forms, Formidable Forms and WPForms, and joins them with GA4 page views to show which pages bring leads and their conversion rate. Only counts, form titles and page paths are read, never names, emails or messages
 * Improved: Chat answers. The assistant now knows today's date, your site and which sources are connected; can look up data in several steps within one answer; accepts exact start and end dates; states the period behind every number; and is told never to invent figures. Tool errors are reported instead of being answered around, and long conversations stay within limits
 * Fixed: Chat tool results reached the AI encoded twice, which wasted tokens and hid errors
 * Added: Weekly email summary. Every Monday at 08:00 site time the site admin gets last week's numbers from each connected platform compared with the week before, with top pages, traffic sources, and search queries. Recipients, on/off, and a "Send a test summary now" button are under Settings > Email. New installs have it on; sites updating from an earlier version can turn it on under Settings > Email
@@ -420,6 +422,7 @@ This plugin:
 * Stores encrypted API credentials for the analytics platforms you connect in your WordPress database
 * Connects only to the analytics services you configure, as detailed under External Services above
 * Reads your published posts and SEO plugin settings to answer content questions, without changing them
+* Counts form submissions from your form plugin's database tables to show which pages and sources bring leads. Submissions are counted, never read or sent: names, emails, phone numbers, messages and IP addresses are not accessed, and only counts, form titles and page paths reach the chat
 * Does not track your site's visitors and sends no data to the plugin author
 * Does not store analytics data permanently; results are fetched on demand and cached temporarily
 * Stores no AI provider credentials; chat is handled by the WordPress AI Client using the provider configured for your site
