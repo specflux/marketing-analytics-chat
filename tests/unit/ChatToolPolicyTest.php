@@ -9,6 +9,7 @@ namespace Specflux_Marketing_Analytics\Tests\unit;
 
 use Specflux_Marketing_Analytics\Abilities\Abilities_Registrar;
 use Specflux_Marketing_Analytics\Abilities\Bing_Abilities;
+use Specflux_Marketing_Analytics\Abilities\Matomo_Abilities;
 use Specflux_Marketing_Analytics\Abilities\Clarity_Abilities;
 use Specflux_Marketing_Analytics\Abilities\Content_Abilities;
 use Specflux_Marketing_Analytics\Abilities\Cross_Platform_Abilities;
@@ -101,6 +102,11 @@ class ChatToolPolicyTest extends TestCase {
 		$m    = $bing->getMethod( 'register_ability' );
 		$m->setAccessible( true );
 		$m->invoke( $bing->newInstanceWithoutConstructor(), 'get-bing-test', 'Label', 'Desc', 'execute_get_top_pages', true );
+
+		$matomo = new ReflectionClass( Matomo_Abilities::class );
+		$m      = $matomo->getMethod( 'register_ability' );
+		$m->setAccessible( true );
+		$m->invoke( $matomo->newInstanceWithoutConstructor(), 'get-matomo-test', 'Label', 'Desc', 'execute_get_top_pages', true );
 
 		$speed = new ReflectionClass( PageSpeed_Abilities::class );
 		$m     = $speed->getMethod( 'register_tool' );
