@@ -28,6 +28,7 @@ Connecting Google Analytics 4 and Search Console takes one click: sign in with G
 * **Bing Webmaster Tools** - Clicks, impressions, top queries and pages from Bing and Microsoft Copilot search, next to your Google numbers
 * **PageSpeed Insights** - Speed scores, real-visitor Core Web Vitals and the biggest fixes for any page on your site, or a speed check of your most-visited pages
 * **Your content and SEO plugin** - The chat reads your published posts and the titles, meta descriptions, focus keywords and noindex settings from Yoast SEO, Rank Math, All in One SEO or SEOPress, joins them with your traffic and search data, and finds what to fix: pages with many impressions but few clicks, missing or duplicate meta descriptions, traffic pages set to noindex, focus keywords nobody searches for, and posts that haven't been updated in a year
+* **Privacy-first analytics plugins** - No GA4? If Burst Statistics, Independent Analytics or Koko Analytics is already recording visits on your site, the chat reads its visitors, pageviews, top pages and referrers straight from your own database and tells you which plugin the numbers come from. No personal data is read and nothing leaves your site
 
 = Weekly Email Summary & Per-Post Stats =
 
@@ -286,6 +287,7 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 == Changelog ==
 
 = 0.5.0 - 2026-10-06 =
+* Added: Site analytics plugin source. Sites without GA4 can ask about traffic, top pages and referrers answered from Burst Statistics, Independent Analytics or Koko Analytics (whichever is active and has data), with the plugin named in every answer. Jetpack Stats is detected but not supported yet
 * Fixed: The chat only runs tools that read data; it can also use read-only tools from other plugins such as SEO plugins, which you can switch off under Settings
 * Added: Bing Webmaster Tools connection with Bing and Microsoft Copilot search clicks, impressions, top queries, top pages and crawl stats
 * Added: PageSpeed Insights connection with speed scores, real-visitor Core Web Vitals and top fixes for any page on your site, plus a speed check of your most-visited pages
