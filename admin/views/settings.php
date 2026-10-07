@@ -10,7 +10,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+	use Specflux_Marketing_Analytics\Chat\MCP_Client;
+	use Specflux_Marketing_Analytics\Chat\Tool_Policy;
 	use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
+	use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Preview;
+	use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Scheduler;
 	use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 	$active_tab      = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
@@ -59,6 +63,18 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 		: array( 'all' );
 	$new_settings['enabled_tool_categories'] = $enabled_categories;
 
+	// Other plugins' tools in the chat. Only saved when that section was on the
+	// submitted form, so the other tabs never reset it.
+	if ( isset( $_POST['chat_providers_submitted'] ) ) {
+		$ability_list = ( new MCP_Client() )->list_tools();
+		$detected     = is_array( $ability_list ) ? array_keys( Tool_Policy::providers( $ability_list ) ) : array();
+		$checked      = isset( $_POST['chat_providers_enabled'] ) && is_array( $_POST['chat_providers_enabled'] )
+			? array_map( 'sanitize_key', wp_unslash( $_POST['chat_providers_enabled'] ) )
+			: array();
+
+		$new_settings['chat_providers'] = Tool_Policy::sanitize_provider_choices( $checked, $detected, $existing_settings['chat_providers'] ?? array() );
+	}
+
 	// Cache Settings.
 	$new_settings['cache_ttl_clarity'] = absint( $_POST['cache_ttl_clarity'] ?? 60 ) * 60;
 	$new_settings['cache_ttl_ga4']     = absint( $_POST['cache_ttl_ga4'] ?? 30 ) * 60;
@@ -77,6 +93,27 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 	update_option( 'specflux_mac_debug_mode', $new_settings['debug_mode'] ? 1 : 0 );
 
 	$success_message = __( 'Settings saved successfully.', 'specflux-marketing-analytics-chat' );
+}
+
+	// Handle email summary settings submission.
+if ( isset( $_POST['save_email_settings'] ) && current_user_can( 'manage_options' ) && check_admin_referer( 'specflux_mac_save_email_settings', 'email_settings_nonce' ) ) {
+	$raw_recipients = isset( $_POST['weekly_summary_recipients'] ) ? sanitize_text_field( wp_unslash( $_POST['weekly_summary_recipients'] ) ) : '';
+	$parsed         = Weekly_Summary_Scheduler::parse_recipients( $raw_recipients );
+
+	if ( ! empty( $parsed['invalid'] ) ) {
+		$error_message = sprintf(
+			/* translators: %s: comma-separated list of invalid email addresses */
+			__( 'These email addresses are not valid, so nothing was saved: %s', 'specflux-marketing-analytics-chat' ),
+			implode( ', ', $parsed['invalid'] )
+		);
+	} else {
+		update_option( Weekly_Summary_Scheduler::OPTION_ENABLED, ! empty( $_POST['weekly_summary_enabled'] ) ? 1 : 0 );
+		update_option( Weekly_Summary_Scheduler::OPTION_RECIPIENTS, implode( ', ', $parsed['valid'] ) );
+		( new Weekly_Summary_Scheduler() )->sync_schedule();
+
+		$success_message = __( 'Email settings saved.', 'specflux-marketing-analytics-chat' );
+	}
+	$active_tab = 'email';
 }
 
 	$settings              = get_option( 'specflux_mac_settings', array() );
@@ -116,6 +153,9 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 		</a>
 		<a href="?page=specflux-mac-settings&tab=access-control" class="nav-tab		                                                                                    <?php echo esc_attr( 'access-control' === $active_tab ? 'nav-tab-active' : '' ); ?>">
 			<?php esc_html_e( 'Access Control', 'specflux-marketing-analytics-chat' ); ?>
+		</a>
+		<a href="?page=specflux-mac-settings&tab=email" class="nav-tab <?php echo esc_attr( 'email' === $active_tab ? 'nav-tab-active' : '' ); ?>">
+			<?php esc_html_e( 'Email', 'specflux-marketing-analytics-chat' ); ?>
 		</a>
 		<?php
 		/**
@@ -226,6 +266,45 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 							</td>
 						</tr>
 					</table>
+
+					<h2><?php esc_html_e( 'Tools from other plugins', 'specflux-marketing-analytics-chat' ); ?></h2>
+					<input type="hidden" name="chat_providers_submitted" value="1" />
+					<?php
+					$chat_ability_list = ( new MCP_Client() )->list_tools();
+					$chat_providers    = is_array( $chat_ability_list ) ? Tool_Policy::providers( $chat_ability_list ) : array();
+					unset( $chat_providers[ Tool_Policy::OWN_PROVIDER ], $chat_providers[ Tool_Policy::CORE_PROVIDER ] );
+					?>
+					<p class="description">
+						<?php esc_html_e( 'Other plugins, such as SEO plugins, can offer tools to the chat. Switch a plugin off to stop the chat from using its tools.', 'specflux-marketing-analytics-chat' ); ?>
+						<?php esc_html_e( 'Tools that change your site need Specflux Marketing Analytics Chat Pro and always ask before running.', 'specflux-marketing-analytics-chat' ); ?>
+					</p>
+					<?php if ( empty( $chat_providers ) ) : ?>
+						<p><?php esc_html_e( 'No other plugin offers tools to the chat on this site.', 'specflux-marketing-analytics-chat' ); ?></p>
+					<?php else : ?>
+						<fieldset>
+							<legend class="screen-reader-text"><span><?php esc_html_e( 'Tools from other plugins', 'specflux-marketing-analytics-chat' ); ?></span></legend>
+							<?php foreach ( $chat_providers as $provider_slug => $provider ) : ?>
+								<label>
+									<input type="checkbox" name="chat_providers_enabled[]" value="<?php echo esc_attr( $provider_slug ); ?>"
+										<?php checked( Tool_Policy::provider_enabled( $provider_slug ) ); ?> />
+									<strong><?php echo esc_html( $provider['label'] ); ?></strong>
+									<span class="description">
+										<?php
+										echo esc_html(
+											sprintf(
+												/* translators: 1: number of read-only tools, 2: number of tools that change the site */
+												__( '%1$d read, %2$d write', 'specflux-marketing-analytics-chat' ),
+												$provider['read'],
+												$provider['write']
+											)
+										);
+										?>
+									</span>
+								</label>
+								<br/>
+							<?php endforeach; ?>
+						</fieldset>
+					<?php endif; ?>
 
 					<p class="submit">
 						<input type="submit" name="save_settings" class="button button-primary" value="<?php esc_attr_e( 'Save Settings', 'specflux-marketing-analytics-chat' ); ?>" />
@@ -945,6 +1024,61 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 					</p>
 				</form>
 						<?php
+				break;
+
+			case 'email':
+				$summary_scheduler  = new Weekly_Summary_Scheduler();
+				$summary_recipients = (string) get_option( Weekly_Summary_Scheduler::OPTION_RECIPIENTS, '' );
+				?>
+				<form method="post" action="">
+				<?php wp_nonce_field( 'specflux_mac_save_email_settings', 'email_settings_nonce' ); ?>
+
+					<h2><?php esc_html_e( 'Email summaries', 'specflux-marketing-analytics-chat' ); ?></h2>
+					<p class="description">
+						<?php esc_html_e( 'Every Monday morning (site time) we email a short summary of the last 7 days compared with the 7 days before, from the platforms you have connected, plus Bing search and the SEO issues worth fixing when those are available.', 'specflux-marketing-analytics-chat' ); ?>
+					</p>
+
+					<table class="form-table">
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Weekly summary', 'specflux-marketing-analytics-chat' ); ?></th>
+							<td>
+								<label for="weekly_summary_enabled">
+									<input type="checkbox" id="weekly_summary_enabled" name="weekly_summary_enabled" value="1" <?php checked( $summary_scheduler->is_enabled() ); ?> />
+									<?php esc_html_e( 'Email me a weekly summary', 'specflux-marketing-analytics-chat' ); ?>
+								</label>
+								<a href="<?php echo esc_url( Weekly_Summary_Preview::url() ); ?>" target="_blank" rel="noopener" style="margin-left: 10px;"><?php esc_html_e( "See what you'd get", 'specflux-marketing-analytics-chat' ); ?></a>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="weekly_summary_recipients"><?php esc_html_e( 'Recipients', 'specflux-marketing-analytics-chat' ); ?></label>
+							</th>
+							<td>
+								<input type="text" id="weekly_summary_recipients" name="weekly_summary_recipients" class="large-text" value="<?php echo esc_attr( $summary_recipients ); ?>" placeholder="<?php echo esc_attr( (string) get_bloginfo( 'admin_email' ) ); ?>" />
+								<p class="description">
+									<?php esc_html_e( 'Separate several addresses with commas. Leave blank to use the site admin email.', 'specflux-marketing-analytics-chat' ); ?>
+								</p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Test', 'specflux-marketing-analytics-chat' ); ?></th>
+							<td>
+								<button type="button" class="button" id="smac-send-test-summary"><?php esc_html_e( 'Send a test summary now', 'specflux-marketing-analytics-chat' ); ?></button>
+								<span id="smac-send-test-summary-result" role="status" style="margin-left: 10px;"></span>
+								<p class="description">
+									<?php esc_html_e( 'Sends to the saved recipients. Save your changes first.', 'specflux-marketing-analytics-chat' ); ?>
+								</p>
+							</td>
+						</tr>
+					</table>
+
+					<p class="submit">
+						<button type="submit" name="save_email_settings" class="button button-primary">
+							<?php esc_html_e( 'Save Email Settings', 'specflux-marketing-analytics-chat' ); ?>
+						</button>
+					</p>
+				</form>
+				<?php
 				break;
 
 			default:

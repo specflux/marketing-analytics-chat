@@ -71,6 +71,10 @@ function specflux_mac_uninstall() {
 	delete_option( 'specflux_mac_review_dismissed' );
 	delete_option( 'specflux_mac_review_snooze_until' );
 
+	// Delete weekly summary email settings.
+	delete_option( 'specflux_mac_weekly_summary_enabled' );
+	delete_option( 'specflux_mac_weekly_summary_recipients' );
+
 	// Delete all transients (properly escape LIKE patterns).
 	$transient_pattern = $wpdb->esc_like( '_transient_specflux_mac_' ) . '%';
 	$timeout_pattern   = $wpdb->esc_like( '_transient_timeout_specflux_mac_' ) . '%';
@@ -110,6 +114,9 @@ function specflux_mac_uninstall() {
 			wp_unschedule_event( $timestamp, $hook );
 		}
 	}
+
+	// Weekly summary email.
+	wp_clear_scheduled_hook( 'specflux_mac_weekly_summary' );
 
 	// Drop chat tables.
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Uninstall cleanup.

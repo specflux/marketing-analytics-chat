@@ -70,5 +70,8 @@ class Deactivator {
 				wp_unschedule_event( $timestamp, $hook );
 			}
 		}
+
+		// Weekly summary email.
+		wp_clear_scheduled_hook( Reports\Weekly_Summary_Scheduler::HOOK );
 	}
 }

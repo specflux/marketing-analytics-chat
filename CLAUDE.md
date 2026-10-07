@@ -73,6 +73,13 @@ do_action( 'specflux_mac_settings_tab_content', $tab );   // settings.php
 do_action( 'specflux_mac_register_ajax_handlers' );       // class-ajax-handler.php
 ```
 
+Weekly summary email hooks (`includes/reports/`, free feature, cron hook `specflux_mac_weekly_summary`, Mondays 08:00 site time):
+
+```php
+apply_filters( 'specflux_mac_weekly_summary_sections', $sections, $context ); // class-weekly-summary-email.php; $sections = ordered [ 'id', 'title', 'html' ] (html pre-escaped), $context = [ generated_at, ranges, platforms ]
+apply_filters( 'specflux_mac_weekly_summary_recipients', $recipients );       // class-weekly-summary-scheduler.php; array of email addresses (re-validated with is_email)
+```
+
 ## Key Rules
 
 - **WordPress.org compliance**: All output escaped, all input sanitized with `wp_unslash()`, nonces on all forms

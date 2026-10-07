@@ -903,3 +903,68 @@
 	font-family: monospace;
 	font-weight: 600;
 }
+
+/* Proposed actions (Apply / Dismiss cards under an assistant message) */
+.smac-action {
+	margin-top: var(--smac-space-md);
+	padding: var(--smac-space-md);
+	background: var(--smac-surface-alt);
+	border: 1px solid var(--smac-border);
+	border-left: 3px solid var(--smac-primary);
+	border-radius: 6px;
+}
+
+.smac-action-summary {
+	color: var(--smac-text-primary);
+	font-weight: 500;
+}
+
+.smac-action-buttons {
+	display: flex;
+	align-items: center;
+	gap: var(--smac-space-md);
+	margin-top: var(--smac-space-sm);
+}
+
+.smac-action-dismiss {
+	color: var(--smac-text-secondary);
+	text-decoration: underline;
+}
+
+.smac-action-dismiss[disabled],
+.smac-action-dismiss[aria-disabled="true"] {
+	pointer-events: none;
+	opacity: 0.6;
+}
+
+.smac-action-status {
+	color: var(--smac-text-secondary);
+}
+
+.smac-action-status:not(:empty) {
+	margin-top: var(--smac-space-sm);
+}
+
+.smac-action-status--error {
+	color: var(--smac-error);
+}
+
+.smac-action--applied,
+.smac-action--dismissed,
+.smac-action--expired {
+	padding: var(--smac-space-sm) var(--smac-space-md);
+	background: transparent;
+	border-left-color: var(--smac-border);
+}
+
+.smac-action--applied {
+	border-left-color: var(--smac-success);
+}
+
+.smac-action--applied .smac-action-status,
+.smac-action--dismissed .smac-action-status,
+.smac-action--expired .smac-action-status {
+	margin-top: 0;
+	color: var(--smac-text-muted);
+	font-size: 12px;
+}

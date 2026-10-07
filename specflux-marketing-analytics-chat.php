@@ -3,7 +3,7 @@
  * Plugin Name: Specflux Marketing Analytics Chat
  * Plugin URI: https://github.com/specflux/marketing-analytics-chat
  * Description: Chat with your marketing analytics data using AI. Connects Google Analytics 4, Search Console, Microsoft Clarity, and more.
- * Version: 0.4.0
+ * Version: 0.5.0
  * Requires at least: 7.0
  * Requires PHP: 8.1
  * Author: Stephen Paul Samynathan
@@ -24,7 +24,7 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 // Plugin version.
-define( 'SPECFLUX_MAC_VERSION', '0.4.0' );
+define( 'SPECFLUX_MAC_VERSION', '0.5.0' );
 define( 'SPECFLUX_MAC_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SPECFLUX_MAC_URL', plugin_dir_url( __FILE__ ) );
 define( 'SPECFLUX_MAC_BASENAME', plugin_basename( __FILE__ ) );
@@ -104,6 +104,30 @@ function deactivate_specflux_mac() {
 	Deactivator::deactivate();
 }
 register_deactivation_hook( __FILE__, __NAMESPACE__ . '\deactivate_specflux_mac' );
+
+/**
+ * Add a "Get started" link to the plugin's row on the Plugins screen.
+ *
+ * @param array $links Existing action links.
+ * @return array
+ */
+function add_plugin_action_links( $links ) {
+	if ( ! current_user_can( 'access_specflux_mac' ) ) { // phpcs:ignore WordPress.WP.Capabilities.Unknown -- Custom capability registered on activation.
+		return $links;
+	}
+
+	array_unshift(
+		$links,
+		sprintf(
+			'<a href="%s">%s</a>',
+			esc_url( admin_url( 'admin.php?page=specflux-mac' ) ),
+			esc_html__( 'Get started', 'specflux-marketing-analytics-chat' )
+		)
+	);
+
+	return $links;
+}
+add_filter( 'plugin_action_links_' . SPECFLUX_MAC_BASENAME, __NAMESPACE__ . '\add_plugin_action_links' );
 
 /**
  * Initialize plugin

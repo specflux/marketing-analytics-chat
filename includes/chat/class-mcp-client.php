@@ -53,12 +53,16 @@ class MCP_Client {
 				$name         = '';
 				$description  = '';
 				$input_schema = null;
+				$label        = '';
+				$annotations  = null;
 
 				if ( is_object( $ability ) && $ability instanceof \WP_Ability ) {
 					// Use getter methods for WP_Ability objects.
 					$name         = $ability->get_name();
 					$description  = $ability->get_description();
 					$input_schema = $ability->get_input_schema();
+					$label        = method_exists( $ability, 'get_label' ) ? $ability->get_label() : '';
+					$annotations  = method_exists( $ability, 'get_meta_item' ) ? $ability->get_meta_item( 'annotations' ) : null;
 				} elseif ( is_object( $ability ) ) {
 					// Fallback for other object types - try getter methods first, then properties.
 					if ( method_exists( $ability, 'get_name' ) ) {
@@ -107,6 +111,9 @@ class MCP_Client {
 					'name'        => $name,
 					'description' => $description,
 					'inputSchema' => $input_schema,
+					'label'       => $label,
+					// Core ability annotations; Tool_Policy treats anything but readonly=true as a write.
+					'annotations' => is_array( $annotations ) ? $annotations : array(),
 				);
 			}
 
@@ -142,14 +149,23 @@ class MCP_Client {
 					return $result;
 				}
 
-				// Format result to match MCP response structure.
-				return array(
-					'content' => array(
-						array(
-							'type' => 'text',
-							'text' => is_string( $result ) ? $result : wp_json_encode( $result, JSON_PRETTY_PRINT ),
+				// Abilities built with Ability_Response::tool() already return the
+				// MCP structure; pass it through untouched so the text is not
+				// JSON-encoded a second time and isError survives.
+				if ( is_array( $result ) && isset( $result['content'] ) && is_array( $result['content'] ) ) {
+					return $this->limit_result_rows( $result );
+				}
+
+				// Format plain results to match the MCP response structure.
+				return $this->limit_result_rows(
+					array(
+						'content' => array(
+							array(
+								'type' => 'text',
+								'text' => is_string( $result ) ? $result : wp_json_encode( $result ),
+							),
 						),
-					),
+					)
 				);
 			}
 
@@ -164,6 +180,107 @@ class MCP_Client {
 				$tool_name
 			)
 		);
+	}
+
+	/**
+	 * Cap long row lists in a tool result before it reaches the model.
+	 *
+	 * Only the text the chat sends to the model is changed; abilities and the
+	 * external MCP server still return full data. Any JSON list longer than the
+	 * cap is cut and its parent object gains
+	 * truncated.{field} = { shown, total } so the model knows it is partial.
+	 *
+	 * @param array $result MCP-shaped tool result.
+	 * @return array Result with oversized lists truncated.
+	 */
+	private function limit_result_rows( $result ) {
+		/**
+		 * Filters the maximum rows per list of a tool result sent to the model.
+		 *
+		 * @param int $max_rows Maximum rows. Default 25. Zero or less disables truncation.
+		 */
+		$max_rows = (int) apply_filters( 'specflux_mac_chat_max_result_rows', 25 );
+
+		if ( $max_rows < 1 || empty( $result['content'] ) || ! is_array( $result['content'] ) ) {
+			return $result;
+		}
+
+		foreach ( $result['content'] as $index => $item ) {
+			if ( ! isset( $item['type'], $item['text'] ) || 'text' !== $item['type'] || ! is_string( $item['text'] ) ) {
+				continue;
+			}
+
+			$decoded = json_decode( $item['text'], true );
+			if ( ! is_array( $decoded ) ) {
+				continue;
+			}
+
+			$truncated = false;
+			$decoded   = $this->truncate_lists( $decoded, $max_rows, $truncated );
+
+			if ( $truncated ) {
+				$result['content'][ $index ]['text'] = wp_json_encode( $decoded );
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Recursively truncate lists longer than the cap.
+	 *
+	 * @param array $data      Decoded JSON value.
+	 * @param int   $max_rows  Row cap.
+	 * @param bool  $truncated Set to true when anything was cut.
+	 * @return array Truncated value.
+	 */
+	private function truncate_lists( $data, $max_rows, &$truncated ) {
+		if ( array_is_list( $data ) ) {
+			if ( count( $data ) > $max_rows ) {
+				$truncated = true;
+				$data      = array(
+					'rows'      => array_slice( $data, 0, $max_rows ),
+					'truncated' => array(
+						'rows' => array(
+							'shown' => $max_rows,
+							'total' => count( $data ),
+						),
+					),
+				);
+			}
+
+			return $data;
+		}
+
+		$notes = array();
+		foreach ( $data as $key => $value ) {
+			if ( ! is_array( $value ) ) {
+				continue;
+			}
+
+			if ( array_is_list( $value ) && count( $value ) > $max_rows ) {
+				$truncated      = true;
+				$notes[ $key ]  = array(
+					'shown' => $max_rows,
+					'total' => count( $value ),
+				);
+				$data[ $key ]   = array_slice( $value, 0, $max_rows );
+				$value          = $data[ $key ];
+			}
+
+			// Recurse into the rows/objects themselves (but not into a list we just cut as a list).
+			foreach ( $value as $child_key => $child ) {
+				if ( is_array( $child ) ) {
+					$data[ $key ][ $child_key ] = $this->truncate_lists( $child, $max_rows, $truncated );
+				}
+			}
+		}
+
+		if ( $notes ) {
+			$data['truncated'] = array_merge( is_array( $data['truncated'] ?? null ) ? $data['truncated'] : array(), $notes );
+		}
+
+		return $data;
 	}
 
 	/**
@@ -185,7 +302,7 @@ class MCP_Client {
 		} elseif ( is_string( $result ) ) {
 			$formatted .= $result . "\n";
 		} else {
-			$formatted .= wp_json_encode( $result, JSON_PRETTY_PRINT ) . "\n";
+			$formatted .= wp_json_encode( $result ) . "\n";
 		}
 
 		return $formatted;

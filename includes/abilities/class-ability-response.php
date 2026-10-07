@@ -17,8 +17,10 @@ class Ability_Response {
 	/**
 	 * Build a tool response from a producer callback
 	 *
-	 * Runs the callback and JSON-encodes whatever it returns. Any exception is
-	 * converted into the standard tool error response.
+	 * Runs the callback and JSON-encodes whatever it returns as compact JSON
+	 * (the text is read mostly by AI models, where whitespace is wasted tokens).
+	 * Any throwable, including PHP errors, is converted into the standard tool
+	 * error response with isError set.
 	 *
 	 * @param callable $produce Callback returning the data to encode.
 	 * @return array Tool result.
@@ -31,11 +33,11 @@ class Ability_Response {
 				'content' => array(
 					array(
 						'type' => 'text',
-						'text' => wp_json_encode( $data, JSON_PRETTY_PRINT ),
+						'text' => wp_json_encode( $data ),
 					),
 				),
 			);
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
 				'content' => array(
 					array(

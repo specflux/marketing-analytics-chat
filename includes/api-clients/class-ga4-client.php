@@ -103,7 +103,7 @@ class GA4_Client {
 	 * @param array  $metrics Array of metric names (e.g., ['activeUsers', 'sessions']).
 	 * @param array  $dimensions Array of dimension names (e.g., ['date', 'country']).
 	 * @param string $date_range Date range string (e.g., '7daysAgo', 'yesterday').
-	 * @param array  $options Additional options (limit, offset, filters, etc.).
+	 * @param array  $options Additional options (limit, offset, order_by_metric, dimension_filter).
 	 * @return array|null Report data or null on failure.
 	 */
 	public function run_report( $metrics, $dimensions = array(), $date_range = '7daysAgo', $options = array() ) {
@@ -184,6 +184,19 @@ class GA4_Client {
 				$request->setOffset( absint( $options['offset'] ) );
 			}
 
+			if ( isset( $options['order_by_metric'] ) ) {
+				$request->setOrderBys(
+					array(
+						new \Google\Service\AnalyticsData\OrderBy(
+							array(
+								'metric' => new \Google\Service\AnalyticsData\MetricOrderBy( array( 'metricName' => (string) $options['order_by_metric'] ) ),
+								'desc'   => true,
+							)
+						),
+					)
+				);
+			}
+
 			if ( isset( $options['dimension_filter'] ) ) {
 				$filter = new \Google\Service\AnalyticsData\FilterExpression( $options['dimension_filter'] );
 				$request->setDimensionFilter( $filter );
@@ -192,7 +205,11 @@ class GA4_Client {
 			// Run report.
 			$response = $analytics->properties->runReport( 'properties/' . $this->property_id, $request );
 
-			$data = $this->parse_report_response( $response );
+			$data           = $this->parse_report_response( $response );
+			$data['period'] = array(
+				'start_date' => $this->resolve_date( $this->parse_date_range( $date_range, 'start' ) ),
+				'end_date'   => $this->resolve_date( $this->parse_date_range( $date_range, 'end' ) ),
+			);
 
 			/**
 			 * Fires after analytics data has been fetched successfully.
@@ -476,6 +493,12 @@ class GA4_Client {
 	 * @return string Formatted date string.
 	 */
 	private function parse_date_range( $date_range, $boundary = 'start' ) {
+		// An explicit "start,end" pair (same convention as the GSC client).
+		if ( false !== strpos( $date_range, ',' ) ) {
+			list( $start, $end ) = array_map( 'trim', explode( ',', $date_range, 2 ) );
+			return 'start' === $boundary ? $start : $end;
+		}
+
 		// If it's already a date, return it.
 		if ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_range ) ) {
 			return $date_range;
@@ -488,6 +511,33 @@ class GA4_Client {
 
 		// For end boundary, return 'today' if not specified.
 		return 'today';
+	}
+
+	/**
+	 * Resolve a GA4 date token ('7daysAgo', 'yesterday', 'today') to Y-m-d.
+	 *
+	 * Reports return the resolved dates so the model can state the exact period.
+	 * Anything that is not a recognised relative token is returned unchanged.
+	 *
+	 * @param string $date Date token.
+	 * @return string Y-m-d date, or the original value.
+	 */
+	private function resolve_date( $date ) {
+		$now = new \DateTimeImmutable( 'now', wp_timezone() );
+
+		if ( 'today' === $date ) {
+			return $now->format( 'Y-m-d' );
+		}
+
+		if ( 'yesterday' === $date ) {
+			return $now->modify( '-1 day' )->format( 'Y-m-d' );
+		}
+
+		if ( preg_match( '/^(\d+)daysAgo$/', $date, $matches ) ) {
+			return $now->modify( '-' . (int) $matches[1] . ' days' )->format( 'Y-m-d' );
+		}
+
+		return $date;
 	}
 
 	/**

@@ -30,8 +30,13 @@ class Plugin {
 		$this->load_dependencies();
 		$this->define_admin_hooks();
 		$this->define_ajax_hooks();
+		$this->define_post_stats_hooks();
 		$this->define_abilities_hooks();
+		( new Content\Content_Platform() )->register_hooks();
 		$this->define_review_prompt_hooks();
+		$this->define_weekly_summary_hooks();
+		( new Integrations\Bing_Integration() )->register_hooks();
+		( new Integrations\PageSpeed_Platform() )->register_hooks();
 	}
 
 	/**
@@ -62,6 +67,23 @@ class Plugin {
 	}
 
 	/**
+	 * Register the per-post analytics column (admin only).
+	 */
+	private function define_post_stats_hooks() {
+		if ( ! is_admin() ) {
+			return;
+		}
+
+		$post_stats = new Admin\Post_Stats();
+
+		$this->loader->add_action( 'admin_init', $post_stats, 'register_columns' );
+		$this->loader->add_action( 'admin_enqueue_scripts', $post_stats, 'enqueue_assets' );
+		$this->loader->add_action( 'wp_ajax_' . Admin\Post_Stats::AJAX_ACTION, $post_stats, 'handle_ajax' );
+		$this->loader->add_action( 'enqueue_block_editor_assets', $post_stats, 'enqueue_editor_assets' );
+		$this->loader->add_action( 'wp_ajax_' . Admin\Post_Stats::PANEL_AJAX_ACTION, $post_stats, 'handle_panel_ajax' );
+	}
+
+	/**
 	 * Register the WordPress.org review prompt
 	 *
 	 * Registered outside the `is_admin()` guard because the fetch counter has
@@ -75,11 +97,27 @@ class Plugin {
 	}
 
 	/**
+	 * Register the weekly summary email hooks
+	 *
+	 * Outside the `is_admin()` guard: the cron event fires on front-end and
+	 * cron requests, and `init` self-heals a missing event on any request.
+	 */
+	private function define_weekly_summary_hooks() {
+		$scheduler = new Reports\Weekly_Summary_Scheduler();
+
+		$this->loader->add_action( Reports\Weekly_Summary_Scheduler::HOOK, $scheduler, 'run' );
+		$this->loader->add_action( 'init', $scheduler, 'sync_schedule' );
+	}
+
+	/**
 	 * Register AJAX hooks
 	 */
 	private function define_ajax_hooks() {
 		$ajax_handler = new Admin\Ajax_Handler();
 		$ajax_handler->register_hooks();
+
+		// Weekly email preview (admin-post.php).
+		( new Reports\Weekly_Summary_Preview() )->register_hooks();
 
 		// Register chat AJAX handlers.
 		$chat_ajax = new Chat\Chat_Ajax_Handler();
@@ -97,6 +135,9 @@ class Plugin {
 
 		// Register abilities when the Abilities API is ready.
 		$this->loader->add_action( 'wp_abilities_api_init', $abilities_registrar, 'register_all_abilities' );
+
+		// Background PageSpeed runs (WP-Cron), so uncached audits never block a chat request.
+		$this->loader->add_action( API_Clients\PageSpeed_Client::CRON_HOOK, API_Clients\PageSpeed_Client::class, 'run_background', 10, 2 );
 	}
 
 	/**

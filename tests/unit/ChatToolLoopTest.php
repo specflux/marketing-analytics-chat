@@ -220,6 +220,13 @@ class Fake_MCP_Client extends MCP_Client {
 	public $error = null;
 
 	/**
+	 * When set, call_tool() returns an in-band isError result with this text.
+	 *
+	 * @var string|null
+	 */
+	public $is_error_text = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array|null $tools Tool definitions.
@@ -232,11 +239,13 @@ class Fake_MCP_Client extends MCP_Client {
 				'name'        => 'wpab__marketing-analytics__get-ga4-metrics',
 				'description' => 'Get GA4 metrics.',
 				'inputSchema' => array( 'type' => 'object' ),
+				'annotations' => array( 'readonly' => true ),
 			),
 			array(
 				'name'        => 'wpab__marketing-analytics__compare-periods',
 				'description' => 'Compare two periods.',
 				'inputSchema' => array( 'type' => 'object' ),
+				'annotations' => array( 'readonly' => true ),
 			),
 		);
 	}
@@ -265,6 +274,18 @@ class Fake_MCP_Client extends MCP_Client {
 
 		if ( null !== $this->error ) {
 			return new \WP_Error( 'mcp_tool_failed', $this->error );
+		}
+
+		if ( null !== $this->is_error_text ) {
+			return array(
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Error: ' . $this->is_error_text,
+					),
+				),
+				'isError' => true,
+			);
 		}
 
 		return array(
@@ -318,6 +339,7 @@ class Fake_LLM_Provider implements LLM_Provider_Interface {
 		$this->sent[] = array(
 			'messages' => $messages,
 			'tools'    => $tools,
+			'options'  => $options,
 		);
 
 		$response = array_shift( $this->responses );
@@ -522,7 +544,7 @@ class ChatToolLoopTest extends TestCase {
 		$this->assertCount( 2, $this->provider->sent, 'Provider should be called twice: tool request, then answer' );
 
 		$follow_up = $this->provider->sent[1];
-		$this->assertSame( array(), $follow_up['tools'], 'Follow-up turn offers no tools' );
+		$this->assertNotEmpty( $follow_up['tools'], 'Follow-up turn keeps offering tools so the model can chain calls' );
 
 		$tool_messages = array_values(
 			array_filter(
@@ -594,6 +616,149 @@ class ChatToolLoopTest extends TestCase {
 			'Error: Clarity API rate limit reached',
 			$this->chat_manager->tool_results[0]['result']
 		);
+	}
+
+	/**
+	 * An in-band isError result is recorded as a failed tool.
+	 */
+	public function test_is_error_result_is_reported_as_failed_tool(): void {
+		$this->mcp_client->is_error_text = 'GA4 quota exceeded';
+
+		$this->make_handler()->send_message();
+
+		$response = $this->last_json_response();
+		$this->assertCount( 1, $response['data']['failed_tools'] );
+		$this->assertSame( 'GA4 quota exceeded', $response['data']['failed_tools'][0]['error'] );
+	}
+
+	/**
+	 * Build a scripted tool-call response.
+	 *
+	 * @param string $id Call id.
+	 * @return array
+	 */
+	private function tool_turn( $id ) {
+		return array(
+			'content'    => 'Checking ' . $id,
+			'tool_calls' => array(
+				array(
+					'id'        => $id,
+					'name'      => $this->tool_name,
+					'arguments' => array(),
+				),
+			),
+			'usage'      => array(
+				'input_tokens'  => 1,
+				'output_tokens' => 1,
+			),
+		);
+	}
+
+	/**
+	 * The model may chain several tool rounds before answering.
+	 */
+	public function test_multiple_tool_rounds_then_answer(): void {
+		$this->provider = new Fake_LLM_Provider(
+			array(
+				$this->tool_turn( 'call_1' ),
+				$this->tool_turn( 'call_2' ),
+				array(
+					'content' => 'All done.',
+					'usage'   => array(
+						'input_tokens'  => 1,
+						'output_tokens' => 1,
+					),
+				),
+			)
+		);
+
+		$this->make_handler()->send_message();
+
+		$this->assertCount( 2, $this->mcp_client->calls );
+		$this->assertCount( 3, $this->provider->sent );
+		$this->assertNotEmpty( $this->provider->sent[1]['tools'], 'Tools stay available on a middle round' );
+
+		$response = $this->last_json_response();
+		$this->assertSame( 'All done.', $response['data']['content'] );
+		$this->assertSame( 3, $response['data']['usage']['input_tokens'] );
+		$this->assertSame( 3, $response['data']['usage']['output_tokens'] );
+
+		// Interim text is stored exactly once (as a tool message, not a plain one).
+		$interim = array_filter(
+			$this->chat_manager->messages,
+			static function ( $m ) {
+				return 'Checking call_2' === $m->content;
+			}
+		);
+		$this->assertCount( 1, $interim );
+	}
+
+	/**
+	 * The last allowed round is sent without tools.
+	 */
+	public function test_last_round_is_sent_without_tools(): void {
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_chat_max_tool_rounds'] = static function () {
+			return 2;
+		};
+
+		$this->provider = new Fake_LLM_Provider(
+			array(
+				$this->tool_turn( 'call_1' ),
+				$this->tool_turn( 'call_2' ),
+				array(
+					'content' => 'Forced answer.',
+					'usage'   => array(),
+				),
+			)
+		);
+
+		$this->make_handler()->send_message();
+
+		$this->assertCount( 3, $this->provider->sent );
+		$this->assertNotEmpty( $this->provider->sent[1]['tools'] );
+		$this->assertSame( array(), $this->provider->sent[2]['tools'] );
+		$this->assertSame( 'Forced answer.', $this->last_json_response()['data']['content'] );
+
+		unset( $GLOBALS['specflux_mac_test_filters']['specflux_mac_chat_max_tool_rounds'] );
+	}
+
+	/**
+	 * A turn past its time budget stops offering tools.
+	 */
+	public function test_turn_over_time_budget_is_sent_without_tools(): void {
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_chat_time_budget'] = static function () {
+			return -1;
+		};
+
+		$this->provider = new Fake_LLM_Provider(
+			array(
+				$this->tool_turn( 'call_1' ),
+				array(
+					'content' => '',
+					'usage'   => array(),
+				),
+			)
+		);
+
+		$this->make_handler()->send_message();
+
+		unset( $GLOBALS['specflux_mac_test_filters']['specflux_mac_chat_time_budget'] );
+
+		$this->assertCount( 2, $this->provider->sent );
+		$this->assertSame( array(), $this->provider->sent[1]['tools'] );
+		$this->assertStringContainsString( 'could not finish the answer', $this->last_json_response()['data']['content'] );
+	}
+
+	/**
+	 * Every provider call carries the system prompt.
+	 */
+	public function test_every_provider_call_receives_the_system_prompt(): void {
+		$this->make_handler()->send_message();
+
+		$this->assertCount( 2, $this->provider->sent );
+		foreach ( $this->provider->sent as $call ) {
+			$this->assertStringContainsString( 'marketing analytics assistant', $call['options']['system'] );
+		}
 	}
 
 	/**

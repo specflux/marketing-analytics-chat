@@ -40,6 +40,13 @@ class Chat_Ajax_Handler {
 	private $llm_provider;
 
 	/**
+	 * Proposed actions collected from tool results during the current turn.
+	 *
+	 * @var array
+	 */
+	private $turn_actions = array();
+
+	/**
 	 * Constructor
 	 *
 	 * Collaborators are injected so the chat flow can be exercised offline;
@@ -64,6 +71,8 @@ class Chat_Ajax_Handler {
 		add_action( 'wp_ajax_specflux_mac_send_message', array( $this, 'send_message' ) );
 		add_action( 'wp_ajax_specflux_mac_retry_tool', array( $this, 'retry_tool_call' ) );
 		add_action( 'wp_ajax_specflux_mac_delete_conversation', array( $this, 'delete_conversation' ) );
+		add_action( 'wp_ajax_specflux_mac_apply_chat_action', array( $this, 'apply_chat_action' ) );
+		add_action( 'wp_ajax_specflux_mac_dismiss_chat_action', array( $this, 'dismiss_chat_action' ) );
 	}
 
 	/**
@@ -220,17 +229,27 @@ class Chat_Ajax_Handler {
 
 		// Track failed tools for retry functionality.
 		$failed_tools = array();
+		$actions      = array();
 
 		// If there were tool calls, execute them and get a final response.
 		if ( $tool_calls ) {
-			$final_response = $this->handle_tool_calls( $conversation_id, $tool_calls, $usage );
+			$final_response = $this->handle_tool_calls( $conversation_id, $tool_calls, $usage, $ai_response_result['tools_offered'] ?? array() );
 			if ( ! is_wp_error( $final_response ) ) {
+				// Any interim assistant text from intermediate tool rounds.
+				foreach ( $final_response['interim_messages'] ?? array() as $interim_message ) {
+					$all_messages[] = $interim_message;
+				}
 				// Add the final response as a separate message.
-				$all_messages[] = array(
+				$actions       = $final_response['actions'] ?? array();
+				$final_message = array(
 					'role'    => 'assistant',
 					'content' => $final_response['content'],
 					'usage'   => $final_response['usage'],
 				);
+				if ( $actions ) {
+					$final_message['actions'] = $actions;
+				}
+				$all_messages[] = $final_message;
 				// Update main response vars for backward compatibility.
 				$ai_response = $final_response['content'];
 				$usage       = $final_response['usage'];
@@ -273,6 +292,7 @@ class Chat_Ajax_Handler {
 				'usage'         => $usage,
 				'tool_metadata' => $ai_response_result['tool_metadata'] ?? null,
 				'failed_tools'  => $failed_tools_for_response, // Tools that failed for retry.
+				'actions'       => $actions, // Proposed actions (id, type, label, summary) awaiting a click.
 				'message'       => __( 'Message sent successfully', 'specflux-marketing-analytics-chat' ),
 			)
 		);
@@ -444,7 +464,7 @@ class Chat_Ajax_Handler {
 
 		// Get conversation history.
 		$formatted_messages = $this->format_messages_for_llm(
-			$this->chat_manager->get_messages( $conversation_id )
+			$this->chat_manager->get_messages_for_model( $conversation_id )
 		);
 
 		// Get available MCP tools.
@@ -453,15 +473,19 @@ class Chat_Ajax_Handler {
 			$mcp_tools = array(); // Fallback to no tools if MCP server is unavailable.
 		}
 
-		// Filter tools based on settings.
-		$filtered_tools = $this->filter_tools( $mcp_tools );
+		// Filter tools based on settings, then apply the safety policy: read-only
+		// abilities from enabled providers (write abilities only when allowed), capped.
+		$filtered_tools = Tool_Policy::select( $this->filter_tools( $mcp_tools ) );
 
 		// Send message to LLM.
-		$response = $this->llm_provider->send_message( $formatted_messages, $filtered_tools );
+		$response = $this->llm_provider->send_message( $formatted_messages, $filtered_tools, $this->get_provider_options() );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
+
+		// Tools to keep offering the model across follow-up tool rounds.
+		$response['tools_offered'] = $filtered_tools;
 
 		// Add tool metadata to response.
 		$response['tool_metadata'] = array(
@@ -476,19 +500,168 @@ class Chat_Ajax_Handler {
 	/**
 	 * Handle tool calls from AI
 	 *
+	 * Executes the requested tools, feeds the results back, and keeps going for
+	 * as long as the model asks for more tools, up to a capped number of
+	 * follow-up rounds. The final allowed round is sent without tools so the
+	 * model has to answer.
+	 *
 	 * @param int   $conversation_id Conversation ID.
 	 * @param array $tool_calls Tool calls from AI.
 	 * @param array $initial_usage Initial token usage from tool_use request.
-	 * @return array|WP_Error Array with 'content', 'usage', and 'failed_tools', or WP_Error.
+	 * @param array $tools Tools to keep offering the model between rounds.
+	 * @return array|WP_Error Array with 'content', 'usage', 'failed_tools' and 'interim_messages', or WP_Error.
 	 */
-	private function handle_tool_calls( $conversation_id, $tool_calls, $initial_usage = array() ) {
-		$tool_results = array();
+	private function handle_tool_calls( $conversation_id, $tool_calls, $initial_usage = array(), $tools = array() ) {
+		$failed_tools      = array();
+		$interim_messages  = array();
+		$this->turn_actions = array();
+		$cumulative_usage = is_array( $initial_usage ) ? $initial_usage : array();
+
+		/**
+		 * Filters how many follow-up model calls a single chat turn may make.
+		 *
+		 * The last allowed call is made without tools, so the model must answer.
+		 *
+		 * @param int $max_rounds Maximum rounds. Default 5.
+		 */
+		$max_rounds = max( 1, (int) apply_filters( 'specflux_mac_chat_max_tool_rounds', 5 ) );
+
+		/**
+		 * Filters how many seconds a chat turn may spend before the model must answer.
+		 *
+		 * Each round is a model call plus live API calls; many hosts stop PHP at
+		 * 30 to 60 seconds, which the user would see as a generic AI error.
+		 *
+		 * The final answer call still runs after the budget, so the default leaves
+		 * room for it inside a 60-second gateway timeout.
+		 *
+		 * @param int $budget Seconds. Default 25.
+		 */
+		$time_budget = (float) apply_filters( 'specflux_mac_chat_time_budget', 25 );
+		$started     = isset( $_SERVER['REQUEST_TIME_FLOAT'] ) ? (float) $_SERVER['REQUEST_TIME_FLOAT'] : microtime( true );
+
+		if ( function_exists( 'set_time_limit' ) ) {
+			set_time_limit( (int) $time_budget + 60 );
+		}
+
+		for ( $round = 1; $round <= $max_rounds; $round++ ) {
+			$failed_tools = array_merge( $failed_tools, $this->execute_tool_calls( $conversation_id, $tool_calls, $tools ) );
+
+			// Get updated conversation history with tool results.
+			$formatted_messages = $this->format_messages_for_llm(
+				$this->chat_manager->get_messages_for_model( $conversation_id )
+			);
+
+			// The last allowed round, or a turn out of time, gets no tools, forcing a written answer.
+			$out_of_time = ( microtime( true ) - $started ) > $time_budget;
+			$round_tools = ( $round < $max_rounds && ! $out_of_time ) ? $tools : array();
+
+			$response = $this->llm_provider->send_message( $formatted_messages, $round_tools, $this->get_provider_options() );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$cumulative_usage = $this->add_usage( $cumulative_usage, $response['usage'] ?? array() );
+
+			// More tools requested and rounds remain: persist and loop.
+			if ( ! empty( $response['tool_calls'] ) && ! empty( $round_tools ) ) {
+				$tool_calls = $response['tool_calls'];
+
+				// add_tool_message stores the interim text with the calls, so
+				// it must not also be saved through add_message.
+				$this->chat_manager->add_tool_message(
+					$conversation_id,
+					$tool_calls,
+					$response['content'] ?? ''
+				);
+
+				if ( ! empty( $response['content'] ) ) {
+					$interim_messages[] = array(
+						'role'       => 'assistant',
+						'content'    => $response['content'],
+						'usage'      => $response['usage'] ?? null,
+						'tool_calls' => $tool_calls,
+					);
+				}
+
+				continue;
+			}
+
+			if ( '' === trim( (string) ( $response['content'] ?? '' ) ) ) {
+				$response['content'] = __( 'I gathered the data but could not finish the answer. Please ask again, or narrow the question to one platform or period.', 'specflux-marketing-analytics-chat' );
+			}
+
+			// Save final response with cumulative usage.
+			$metadata = $cumulative_usage ? array( 'usage' => $cumulative_usage ) : array();
+			if ( $this->turn_actions ) {
+				$metadata['actions'] = $this->turn_actions;
+			}
+
+			$this->chat_manager->add_message(
+				$conversation_id,
+				'assistant',
+				$response['content'],
+				$metadata
+			);
+
+			return array(
+				'content'          => $response['content'],
+				'usage'            => $cumulative_usage,
+				'failed_tools'     => $failed_tools,
+				'interim_messages' => $interim_messages,
+				'actions'          => $this->turn_actions,
+			);
+		}
+
+		// Unreachable: the last round never continues. Satisfies static analysis.
+		return new \WP_Error( 'tool_loop_exhausted', __( 'The tool loop ended without an answer.', 'specflux-marketing-analytics-chat' ) );
+	}
+
+	/**
+	 * Execute one batch of tool calls and persist their results.
+	 *
+	 * @param int   $conversation_id Conversation ID.
+	 * @param array $tool_calls Tool calls from the model.
+	 * @param array $offered Tools that were offered to the model this turn.
+	 * @return array Failed tool entries (name, id, error, arguments).
+	 */
+	private function execute_tool_calls( $conversation_id, $tool_calls, $offered = array() ) {
 		$failed_tools = array();
 
-		// Execute each tool call.
+		$offered_by_name = array();
+		foreach ( (array) $offered as $offered_tool ) {
+			if ( ! empty( $offered_tool['name'] ) ) {
+				$offered_by_name[ Tool_Policy::canonical_name( $offered_tool['name'] ) ] = $offered_tool;
+			}
+		}
+
 		foreach ( $tool_calls as $tool_call ) {
 			$tool_name = $tool_call['name'];
 			$arguments = $tool_call['arguments'] ?? array();
+			$arguments = is_array( $arguments ) ? $arguments : array();
+
+			// Never trust the model: only run what was offered this turn, and
+			// never run a write ability directly.
+			$canonical = Tool_Policy::canonical_name( $tool_name );
+			$offer     = $offered_by_name[ $canonical ] ?? null;
+
+			if ( null === $offer || ( 'write' === Tool_Policy::classify_tool( $offer ) && ! Tool_Policy::allow_write() ) ) {
+				$message        = __( 'This tool is not available.', 'specflux-marketing-analytics-chat' );
+				$failed_tools[] = array(
+					'name'      => $tool_name,
+					'id'        => $tool_call['id'],
+					'error'     => $message,
+					'arguments' => $arguments,
+				);
+				$this->chat_manager->add_tool_result( $conversation_id, $tool_call['id'], $tool_name, 'Error: ' . $message );
+				continue;
+			}
+
+			if ( 'write' === Tool_Policy::classify_tool( $offer ) ) {
+				$this->chat_manager->add_tool_result( $conversation_id, $tool_call['id'], $tool_name, $this->propose_ability_run( $conversation_id, $canonical, $offer, $arguments ) );
+				continue;
+			}
 
 			// Call the MCP tool.
 			$result = $this->mcp_client->call_tool( $tool_name, $arguments );
@@ -504,6 +677,20 @@ class Chat_Ajax_Handler {
 				);
 			} else {
 				$result_content = $this->mcp_client->format_tool_result( $tool_name, $result );
+
+				if ( empty( $result['isError'] ) ) {
+					$this->collect_proposed_actions( $conversation_id, $result );
+				}
+
+				// An ability can report failure in-band with isError instead of a WP_Error.
+				if ( ! empty( $result['isError'] ) ) {
+					$failed_tools[] = array(
+						'name'      => $tool_name,
+						'id'        => $tool_call['id'],
+						'error'     => $this->extract_tool_error( $result ),
+						'arguments' => $arguments,
+					);
+				}
 			}
 
 			// Save tool result to database.
@@ -513,52 +700,304 @@ class Chat_Ajax_Handler {
 				$tool_name,
 				$result_content
 			);
-
-			$tool_results[] = array(
-				'role'         => 'tool',
-				'content'      => $result_content,
-				'tool_call_id' => $tool_call['id'],
-			);
 		}
 
-		// Get updated conversation history with tool results.
-		$formatted_messages = $this->format_messages_for_llm(
-			$this->chat_manager->get_messages( $conversation_id )
+		return $failed_tools;
+	}
+
+	/**
+	 * Turn a write-ability call into a pending proposal instead of running it.
+	 *
+	 * @param int    $conversation_id Conversation ID.
+	 * @param string $ability         Ability name (vendor/ability).
+	 * @param array  $offer           Offered tool definition.
+	 * @param array  $arguments       Arguments the model supplied.
+	 * @return string JSON tool result for the model.
+	 */
+	private function propose_ability_run( $conversation_id, $ability, $offer, $arguments ) {
+		$action = Pending_Actions::create(
+			array(
+				'type'       => 'run_ability',
+				'label'      => __( 'Run', 'specflux-marketing-analytics-chat' ),
+				'summary'    => Tool_Policy::summarize_call( $offer, $arguments ),
+				'payload'    => array(
+					'ability' => $ability,
+					'input'   => $arguments,
+				),
+				'capability' => 'manage_options',
+				'conversation_id' => (int) $conversation_id,
+			)
 		);
 
-		// Get final response from AI with tool results.
-		$final_response = $this->llm_provider->send_message( $formatted_messages, array() );
-
-		if ( is_wp_error( $final_response ) ) {
-			return $final_response;
+		if ( empty( $action['id'] ) ) {
+			return 'Error: ' . __( 'This change could not be proposed.', 'specflux-marketing-analytics-chat' );
 		}
 
-		// Accumulate token usage from both API calls.
-		$cumulative_usage = array();
-		if ( ! empty( $initial_usage ) && ! empty( $final_response['usage'] ) ) {
-			$cumulative_usage = array(
-				'input_tokens'  => ( $initial_usage['input_tokens'] ?? 0 ) + ( $final_response['usage']['input_tokens'] ?? 0 ),
-				'output_tokens' => ( $initial_usage['output_tokens'] ?? 0 ) + ( $final_response['usage']['output_tokens'] ?? 0 ),
-			);
-		} elseif ( ! empty( $final_response['usage'] ) ) {
-			$cumulative_usage = $final_response['usage'];
-		} elseif ( ! empty( $initial_usage ) ) {
-			$cumulative_usage = $initial_usage;
-		}
+		$this->turn_actions[] = $action;
 
-		// Save final response with cumulative usage.
-		$this->chat_manager->add_message(
-			$conversation_id,
-			'assistant',
-			$final_response['content'],
-			$cumulative_usage ? array( 'usage' => $cumulative_usage ) : array()
+		return wp_json_encode(
+			array(
+				'status'          => 'awaiting_approval',
+				'proposed_action' => $action,
+				'message'         => 'Not run yet. The user must click Run to apply it.',
+			)
 		);
+	}
+
+	/**
+	 * Collect proposed actions from a successful tool result.
+	 *
+	 * An ability proposes a change by returning a top-level `proposed_action`
+	 * (the output of Pending_Actions::create()) in its JSON result. Only the id
+	 * is trusted: label, summary and type are re-read from the server-side
+	 * record, which must belong to the current user and still be pending, so a
+	 * tool result cannot make the chat show a button for something that was
+	 * never really proposed.
+	 *
+	 * @param int   $conversation_id Conversation ID.
+	 * @param array $result          MCP tool result.
+	 */
+	private function collect_proposed_actions( $conversation_id, $result ) {
+		foreach ( (array) ( $result['content'] ?? array() ) as $item ) {
+			if ( ! isset( $item['text'] ) || ! is_string( $item['text'] ) ) {
+				continue;
+			}
+
+			$data = json_decode( $item['text'], true );
+			if ( ! is_array( $data ) || empty( $data['proposed_action']['id'] ) || ! is_string( $data['proposed_action']['id'] ) ) {
+				continue;
+			}
+
+			$action = Pending_Actions::bind_to_conversation( $data['proposed_action']['id'], $conversation_id, get_current_user_id() );
+			if ( $action ) {
+				$this->turn_actions[] = $action;
+			}
+		}
+	}
+
+	/**
+	 * Common checks for the action endpoints, returning the action record.
+	 *
+	 * Sends a JSON error and returns null when the request is not allowed.
+	 *
+	 * @return array|null Action record, or null after an error response.
+	 */
+	private function load_action_for_request() {
+		check_ajax_referer( 'specflux_mac_admin', 'nonce' );
+
+		if ( ! Permission_Manager::can_access_plugin() ) {
+			wp_send_json_error(
+				array( 'message' => __( 'Insufficient permissions', 'specflux-marketing-analytics-chat' ) ),
+				403
+			);
+			return null;
+		}
+
+		$action_id = isset( $_POST['action_id'] ) ? sanitize_text_field( wp_unslash( $_POST['action_id'] ) ) : '';
+		$record    = Pending_Actions::get( $action_id );
+
+		// An unknown id and another user's id look identical on purpose.
+		if ( null === $record || get_current_user_id() !== (int) $record['user_id'] ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'This action is no longer available.', 'specflux-marketing-analytics-chat' ),
+					'status'  => 'expired',
+				),
+				404
+			);
+			return null;
+		}
+
+		return $record;
+	}
+
+	/**
+	 * Apply a proposed chat action after the user clicks Apply.
+	 *
+	 * The change itself is made by a handler Pro (or another add-on) hooks onto
+	 * specflux_mac_apply_chat_action_{type}; this plugin registers none.
+	 */
+	public function apply_chat_action() {
+		$record = $this->load_action_for_request();
+		if ( null === $record ) {
+			return;
+		}
+
+		if ( 'applied' === $record['status'] || 'applying' === $record['status'] ) {
+			wp_send_json_error(
+				array(
+					'message' => 'applied' === $record['status']
+						? __( 'This action was already applied.', 'specflux-marketing-analytics-chat' )
+						: __( 'This action is already being applied.', 'specflux-marketing-analytics-chat' ),
+					'status'  => $record['status'],
+				),
+				409
+			);
+			return;
+		}
+
+		if ( 'dismissed' === $record['status'] ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'This action was dismissed.', 'specflux-marketing-analytics-chat' ),
+					'status'  => 'dismissed',
+				),
+				409
+			);
+			return;
+		}
+
+		if ( Pending_Actions::is_expired( $record ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'This action has expired. Ask again to get a fresh proposal.', 'specflux-marketing-analytics-chat' ),
+					'status'  => 'expired',
+				),
+				410
+			);
+			return;
+		}
+
+		$can = null === $record['object_id']
+			? current_user_can( $record['capability'] )
+			: current_user_can( $record['capability'], (int) $record['object_id'] );
+
+		if ( ! $can ) {
+			wp_send_json_error(
+				array( 'message' => __( 'You do not have permission to apply this change.', 'specflux-marketing-analytics-chat' ) ),
+				403
+			);
+			return;
+		}
+
+		// Claim the action before running the handler so a double click cannot apply twice.
+		Pending_Actions::mark( $record['id'], 'applying' );
+
+		/**
+		 * Applies a proposed chat action.
+		 *
+		 * Return null (the default) when no add-on handles this type, a WP_Error
+		 * to report a failure, or true or an array with an optional 'message'
+		 * on success. Permission, ownership, expiry and single-use checks have
+		 * already passed; the payload is the one stored when the action was
+		 * created, never anything sent by the browser.
+		 *
+		 * @param array|bool|\WP_Error|null $result  Handler result. Default null.
+		 * @param array                     $payload Payload stored with the action.
+		 * @param array                     $record  Full action record (id, type, object_id, user_id, ...).
+		 */
+		$result = apply_filters( 'specflux_mac_apply_chat_action_' . $record['type'], null, $record['payload'], $record );
+
+		if ( null === $result ) {
+			Pending_Actions::mark( $record['id'], 'failed', __( 'No handler is available for this action. Is the Pro add-on active?', 'specflux-marketing-analytics-chat' ) );
+			wp_send_json_error(
+				array( 'message' => __( 'No handler is available for this action. Is the Pro add-on active?', 'specflux-marketing-analytics-chat' ) ),
+				501
+			);
+			return;
+		}
+
+		if ( is_wp_error( $result ) ) {
+			Pending_Actions::mark( $record['id'], 'failed', $result->get_error_message() );
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+			return;
+		}
+
+		$message = is_array( $result ) && ! empty( $result['message'] ) && is_string( $result['message'] )
+			? sanitize_text_field( $result['message'] )
+			: '';
+
+		Pending_Actions::mark( $record['id'], 'applied', $message );
+
+		wp_send_json_success(
+			array(
+				'status'  => 'applied',
+				'message' => '' !== $message ? $message : __( 'Applied.', 'specflux-marketing-analytics-chat' ),
+			)
+		);
+	}
+
+	/**
+	 * Dismiss a proposed chat action.
+	 */
+	public function dismiss_chat_action() {
+		$record = $this->load_action_for_request();
+		if ( null === $record ) {
+			return;
+		}
+
+		if ( 'applied' === $record['status'] ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'This action was already applied.', 'specflux-marketing-analytics-chat' ),
+					'status'  => 'applied',
+				),
+				409
+			);
+			return;
+		}
+
+		Pending_Actions::mark( $record['id'], 'dismissed' );
+
+		wp_send_json_success(
+			array(
+				'status'  => 'dismissed',
+				'message' => __( 'Dismissed.', 'specflux-marketing-analytics-chat' ),
+			)
+		);
+	}
+
+	/**
+	 * Add two token usage arrays together.
+	 *
+	 * @param array $total Running total.
+	 * @param array $extra Usage to add.
+	 * @return array Combined usage, or the running total when there is nothing to add.
+	 */
+	private function add_usage( $total, $extra ) {
+		if ( empty( $extra ) || ! is_array( $extra ) ) {
+			return $total;
+		}
+
+		if ( empty( $total ) ) {
+			return $extra;
+		}
 
 		return array(
-			'content'      => $final_response['content'],
-			'usage'        => $cumulative_usage,
-			'failed_tools' => $failed_tools,
+			'input_tokens'  => ( $total['input_tokens'] ?? 0 ) + ( $extra['input_tokens'] ?? 0 ),
+			'output_tokens' => ( $total['output_tokens'] ?? 0 ) + ( $extra['output_tokens'] ?? 0 ),
 		);
+	}
+
+	/**
+	 * Provider options carrying the chat system prompt.
+	 *
+	 * @return array Options passed to every send_message() call.
+	 */
+	private function get_provider_options() {
+		return array(
+			'system' => ( new System_Prompt() )->build(),
+		);
+	}
+
+	/**
+	 * Pull a readable error message out of an isError tool result.
+	 *
+	 * @param array $result Tool result carrying isError.
+	 * @return string Error message with any "Error: " prefix removed.
+	 */
+	private function extract_tool_error( $result ) {
+		$message = '';
+
+		foreach ( (array) ( $result['content'] ?? array() ) as $item ) {
+			if ( isset( $item['text'] ) && is_string( $item['text'] ) ) {
+				$message .= $item['text'];
+			}
+		}
+
+		$message = trim( preg_replace( '/^Error:\s*/', '', $message ) );
+
+		return '' !== $message ? $message : __( 'The tool reported an error.', 'specflux-marketing-analytics-chat' );
 	}
 
 	/**
@@ -608,6 +1047,15 @@ class Chat_Ajax_Handler {
 			);
 		}
 
+		if ( ! empty( $result['isError'] ) ) {
+			wp_send_json_error(
+				array(
+					'message' => $this->extract_tool_error( $result ),
+					'tool'    => $tool_name,
+				)
+			);
+		}
+
 		// Format the result.
 		$formatted_result = $this->mcp_client->format_tool_result( $tool_name, $result );
 
@@ -647,7 +1095,7 @@ class Chat_Ajax_Handler {
 			),
 		);
 
-		$response = $this->llm_provider->send_message( $messages, array() );
+		$response = $this->llm_provider->send_message( $messages, array(), $this->get_provider_options() );
 
 		if ( is_wp_error( $response ) ) {
 			return $result;

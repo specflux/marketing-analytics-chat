@@ -12,6 +12,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use Specflux_Marketing_Analytics\Chat\Chat_Ajax_Handler;
 use Specflux_Marketing_Analytics\Chat\Chat_Manager;
+use Specflux_Marketing_Analytics\Chat\Pending_Actions;
+use Specflux_Marketing_Analytics\Admin\Widget_Headline;
+use Specflux_Marketing_Analytics\Reports\Weekly_Prompt_Builder;
 
 $chat_manager = new Chat_Manager();
 $user_id      = get_current_user_id();
@@ -65,7 +68,7 @@ if ( ! function_exists( 'specflux_mac_format_chat_markdown' ) ) {
 <div class="wrap specflux-marketing-analytics-chat">
 	<h1 class="wp-heading-inline"><?php esc_html_e( 'AI Assistant', 'specflux-marketing-analytics-chat' ); ?></h1>
 	<p class="description">
-		<?php esc_html_e( 'Chat with an AI assistant about your marketing analytics data. The assistant can access Clarity, Google Analytics, and Search Console data.', 'specflux-marketing-analytics-chat' ); ?>
+		<?php esc_html_e( 'Chat with an AI assistant about your marketing analytics data. The assistant answers from the sources connected on the Connections page: Google Analytics 4, Search Console, Microsoft Clarity, Bing Webmaster Tools, PageSpeed Insights, and your own posts and SEO plugin.', 'specflux-marketing-analytics-chat' ); ?>
 	</p>
 
 	<div class="chat-container">
@@ -123,6 +126,7 @@ if ( ! function_exists( 'specflux_mac_format_chat_markdown' ) ) {
 								<li><?php esc_html_e( 'Search Console rankings and queries', 'specflux-marketing-analytics-chat' ); ?></li>
 								<li><?php esc_html_e( 'User behavior insights from Clarity', 'specflux-marketing-analytics-chat' ); ?></li>
 								<li><?php esc_html_e( 'Period comparisons and analysis', 'specflux-marketing-analytics-chat' ); ?></li>
+								<li><?php esc_html_e( 'SEO fixes for your posts, page speed, and Bing search', 'specflux-marketing-analytics-chat' ); ?></li>
 							</ul>
 						</div>
 					<?php else : ?>
@@ -194,6 +198,38 @@ if ( ! function_exists( 'specflux_mac_format_chat_markdown' ) ) {
 											</ul>
 										</div>
 									<?php endif; ?>
+									<?php
+									$msg_actions = ( 'assistant' === $msg_role && is_array( $message->metadata ) && ! empty( $message->metadata['actions'] ) && is_array( $message->metadata['actions'] ) ) ? $message->metadata['actions'] : array();
+									foreach ( $msg_actions as $msg_action ) :
+										if ( empty( $msg_action['id'] ) ) {
+											continue;
+										}
+										$action_state  = Pending_Actions::status_for_display( (string) $msg_action['id'], get_current_user_id() );
+										$action_status = $action_state['status'];
+										?>
+										<div class="smac-action smac-action--<?php echo esc_attr( $action_status ); ?>" data-action-id="<?php echo esc_attr( (string) $msg_action['id'] ); ?>">
+											<?php if ( 'pending' === $action_status ) : ?>
+												<div class="smac-action-summary"><?php echo esc_html( (string) ( $msg_action['summary'] ?? '' ) ); ?></div>
+												<div class="smac-action-buttons">
+													<button type="button" class="button button-primary smac-action-apply"><?php echo esc_html( (string) ( $msg_action['label'] ?? __( 'Apply', 'specflux-marketing-analytics-chat' ) ) ); ?></button>
+													<a href="#" class="smac-action-dismiss"><?php esc_html_e( 'Dismiss', 'specflux-marketing-analytics-chat' ); ?></a>
+												</div>
+												<div class="smac-action-status" role="status"><?php echo esc_html( (string) $action_state['result'] ); ?></div>
+											<?php else : ?>
+												<div class="smac-action-status" role="status">
+													<?php
+													$status_labels = array(
+														'applied'   => __( 'Applied', 'specflux-marketing-analytics-chat' ),
+														'dismissed' => __( 'Dismissed', 'specflux-marketing-analytics-chat' ),
+														'expired'   => __( 'Expired', 'specflux-marketing-analytics-chat' ),
+													);
+													$status_text   = $status_labels[ $action_status ] ?? $action_status;
+													echo esc_html( trim( $status_text . ': ' . (string) ( $msg_action['summary'] ?? '' ) . ( $action_state['result'] ? ' - ' . $action_state['result'] : '' ) ) );
+													?>
+												</div>
+											<?php endif; ?>
+										</div>
+									<?php endforeach; ?>
 									<div class="message-time">
 										<?php echo esc_html( human_time_diff( strtotime( $message->created_at ), time() ) . ' ago' ); ?>
 									</div>
@@ -209,17 +245,15 @@ if ( ! function_exists( 'specflux_mac_format_chat_markdown' ) ) {
 						<?php wp_nonce_field( 'specflux_mac_admin', 'chat_nonce' ); ?>
 						<input type="hidden" name="conversation_id" value="<?php echo esc_attr( $active_conversation_id ); ?>">
 
-						<div class="suggested-prompts" id="suggested-prompts">
-							<button type="button" class="suggested-prompt" data-prompt="<?php esc_attr_e( 'Show me traffic trends for the last 30 days', 'specflux-marketing-analytics-chat' ); ?>">
-								<?php esc_html_e( 'Show me traffic trends for the last 30 days', 'specflux-marketing-analytics-chat' ); ?>
-							</button>
-							<button type="button" class="suggested-prompt" data-prompt="<?php esc_attr_e( 'What are my top performing pages?', 'specflux-marketing-analytics-chat' ); ?>">
-								<?php esc_html_e( 'What are my top performing pages?', 'specflux-marketing-analytics-chat' ); ?>
-							</button>
-							<button type="button" class="suggested-prompt" data-prompt="<?php esc_attr_e( 'Compare this week vs last week', 'specflux-marketing-analytics-chat' ); ?>">
-								<?php esc_html_e( 'Compare this week vs last week', 'specflux-marketing-analytics-chat' ); ?>
-							</button>
-						</div>
+						<?php if ( empty( $messages ) ) : ?>
+							<div class="suggested-prompts" id="suggested-prompts">
+								<?php foreach ( Weekly_Prompt_Builder::suggestions( Widget_Headline::cached() ) as $specflux_mac_chip ) : ?>
+									<button type="button" class="suggested-prompt" data-prompt="<?php echo esc_attr( $specflux_mac_chip ); ?>">
+										<?php echo esc_html( $specflux_mac_chip ); ?>
+									</button>
+								<?php endforeach; ?>
+							</div>
+						<?php endif; ?>
 
 						<div class="input-wrapper">
 							<textarea

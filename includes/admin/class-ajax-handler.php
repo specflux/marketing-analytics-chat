@@ -13,6 +13,8 @@ use Specflux_Marketing_Analytics\API_Clients\GSC_Client;
 use Specflux_Marketing_Analytics\Credentials\Connection_Tester;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
+use Specflux_Marketing_Analytics\Credentials\Platform_Registry;
+use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Scheduler;
 use Specflux_Marketing_Analytics\Utils\Logger;
 use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
@@ -38,6 +40,7 @@ class Ajax_Handler {
 
 		add_action( 'wp_ajax_specflux_mac_test_connection', array( $this, 'test_connection' ) );
 		add_action( 'wp_ajax_specflux_mac_save_credentials', array( $this, 'save_credentials' ) );
+		add_action( 'wp_ajax_specflux_mac_disconnect_platform', array( $this, 'disconnect_platform' ) );
 		add_action( 'wp_ajax_specflux_mac_clear_caches', array( $this, 'clear_caches' ) );
 		add_action( 'wp_ajax_specflux_mac_list_ga4_properties', array( $this, 'list_ga4_properties' ) );
 		add_action( 'wp_ajax_specflux_mac_save_ga4_property', array( $this, 'save_ga4_property' ) );
@@ -50,6 +53,9 @@ class Ajax_Handler {
 
 		// Dashboard insights panel refresh (transient reads only).
 		add_action( 'wp_ajax_specflux_mac_refresh_dashboard_metrics', array( $this, 'handle_refresh_dashboard_metrics' ) );
+
+		// Weekly summary email: send a test now.
+		add_action( 'wp_ajax_specflux_mac_send_test_summary', array( $this, 'send_test_summary' ) );
 
 		// Onboarding wizard dismissal.
 		add_action( 'wp_ajax_specflux_mac_dismiss_wizard', array( $this, 'dismiss_onboarding_wizard' ) );
@@ -127,13 +133,14 @@ class Ajax_Handler {
 		$platform = isset( $_POST['platform'] ) ? sanitize_text_field( wp_unslash( $_POST['platform'] ) ) : '';
 		Logger::debug( sprintf( 'Testing connection for platform: %s', $platform ) );
 
-		// Use Connection_Tester for OAuth-based platforms (GA4, GSC).
-		if ( in_array( $platform, array( 'ga4', 'gsc' ), true ) ) {
-			return $this->test_oauth_platform_connection( $platform );
-		}
-
+		// Clarity tests the (possibly unsaved) credentials posted by the form.
 		if ( 'clarity' === $platform ) {
 			return $this->test_clarity_connection();
+		}
+
+		// Every other registered platform tests through Connection_Tester.
+		if ( Platform_Registry::is_registered( $platform ) ) {
+			return $this->test_oauth_platform_connection( $platform );
 		}
 
 		Logger::debug( sprintf( 'ERROR: Unsupported platform: %s', $platform ) );
@@ -159,7 +166,8 @@ class Ajax_Handler {
 
 		$service = isset( $_POST['service'] ) ? sanitize_key( wp_unslash( $_POST['service'] ) ) : '';
 
-		if ( ! in_array( $service, array( 'ga4', 'gsc' ), true ) ) {
+		$service_definition = Platform_Registry::get( $service );
+		if ( null === $service_definition || 'google_oauth' !== $service_definition['auth'] ) {
 			wp_send_json_error( array( 'message' => __( 'Unsupported service.', 'specflux-marketing-analytics-chat' ) ) );
 			return;
 		}
@@ -261,7 +269,7 @@ class Ajax_Handler {
 	}
 
 	/**
-	 * Test OAuth platform connection (GA4 or GSC)
+	 * Test a registered platform's connection through Connection_Tester
 	 *
 	 * @param string $platform Platform key.
 	 * @return array Success payload for the JSON response.
@@ -272,22 +280,12 @@ class Ajax_Handler {
 		try {
 			$connection_tester = new Connection_Tester();
 
-			if ( 'ga4' === $platform ) {
-				$result = $connection_tester->test_ga4_connection();
-			} elseif ( 'gsc' === $platform ) {
-				$result = $connection_tester->test_gsc_connection();
-			} else {
-				$result = null;
-			}
+			$result = $connection_tester->test_connection( $platform );
 		} catch ( \Exception $e ) {
 			Logger::debug( '===== OAUTH CONNECTION TEST EXCEPTION =====' );
 			Logger::debug( sprintf( 'Exception: %s', $e->getMessage() ) );
 
 			throw new \RuntimeException( 'Connection test failed: ' . esc_html( $e->getMessage() ) );
-		}
-
-		if ( null === $result ) {
-			throw new \RuntimeException( 'Invalid platform for OAuth testing' );
 		}
 
 		Logger::debug( sprintf( 'OAuth connection test result: %s', wp_json_encode( $result ) ) );
@@ -335,8 +333,14 @@ class Ajax_Handler {
 		Logger::debug( sprintf( 'Saving credentials for platform: %s', $platform ) );
 
 		if ( 'clarity' !== $platform ) {
-			Logger::debug( sprintf( 'ERROR: Unsupported platform: %s', $platform ) );
-			throw new \RuntimeException( 'Unsupported platform.' );
+			$definition = Platform_Registry::get( $platform );
+
+			if ( null === $definition || 'api_key' !== $definition['auth'] ) {
+				Logger::debug( sprintf( 'ERROR: Unsupported platform: %s', $platform ) );
+				throw new \RuntimeException( 'Unsupported platform.' );
+			}
+
+			return $this->save_registered_platform( $definition );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in verify_request().
@@ -369,6 +373,92 @@ class Ajax_Handler {
 		return array(
 			'message' => 'Credentials saved successfully!',
 		);
+	}
+
+	/**
+	 * Save and test credentials for a registry-defined api_key platform.
+	 *
+	 * Reads only the definition's fields from $_POST['fields'][ name ]. A blank
+	 * secret field (or the displayed mask) keeps the stored value.
+	 *
+	 * @param array $definition Platform definition.
+	 * @return array Success payload for the JSON response.
+	 */
+	private function save_registered_platform( array $definition ) {
+		$platform = $definition['slug'];
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in verify_request(); each value is sanitised per field below.
+		$posted = isset( $_POST['fields'] ) && is_array( $_POST['fields'] ) ? wp_unslash( $_POST['fields'] ) : array();
+
+		$credential_manager = new Credential_Manager();
+		$existing           = $credential_manager->get_credentials( $platform );
+		$existing           = is_array( $existing ) ? $existing : array();
+		$mask               = Platform_Registry::SECRET_MASK;
+		$credentials        = array();
+		$missing            = array();
+
+		foreach ( $definition['fields'] as $field ) {
+			$value = isset( $posted[ $field ] ) && is_scalar( $posted[ $field ] ) ? (string) $posted[ $field ] : '';
+			$value = (bool) preg_match( '/url$/i', $field ) ? esc_url_raw( $value ) : sanitize_text_field( $value );
+
+			if ( Platform_Registry::is_secret_field( $field ) && ( '' === $value || $mask === $value ) && ! empty( $existing[ $field ] ) ) {
+				$value = $existing[ $field ];
+			}
+
+			if ( '' === $value && ! in_array( $field, $definition['optional_fields'], true ) ) {
+				$missing[] = $field;
+			}
+
+			$credentials[ $field ] = $value;
+		}
+
+		if ( ! empty( $missing ) ) {
+			throw new \RuntimeException( 'Missing required fields: ' . esc_html( implode( ', ', $missing ) ) );
+		}
+
+		if ( empty( $credentials ) || ! $credential_manager->save_credentials( $platform, $credentials ) ) {
+			throw new \RuntimeException( 'Failed to save credentials.' );
+		}
+
+		/** This action is documented in includes/admin/class-ajax-handler.php */
+		do_action( 'specflux_mac_platform_connected', $platform );
+
+		$tester = new Connection_Tester();
+		$result = $tester->test_connection( $platform );
+
+		if ( empty( $result['success'] ) ) {
+			throw new \RuntimeException( esc_html( 'Credentials saved, but the connection test failed: ' . ( $result['message'] ?? '' ) ) );
+		}
+
+		return array(
+			'message' => $result['message'],
+			'data'    => $result['data'] ?? null,
+		);
+	}
+
+	/**
+	 * Disconnect a registry-defined (non-Google) platform
+	 *
+	 * @return void
+	 */
+	public function disconnect_platform() {
+		if ( ! $this->verify_request() ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in verify_request().
+		$platform   = isset( $_POST['platform'] ) ? sanitize_key( wp_unslash( $_POST['platform'] ) ) : '';
+		$definition = Platform_Registry::get( $platform );
+
+		if ( null === $definition || 'api_key' !== $definition['auth'] ) {
+			wp_send_json_error( array( 'message' => 'Unsupported platform.' ) );
+			return;
+		}
+
+		$credential_manager = new Credential_Manager();
+		$credential_manager->delete_credentials( $platform );
+
+		wp_send_json_success( array( 'message' => 'Disconnected.' ) );
 	}
 
 	/**
@@ -412,6 +502,44 @@ class Ajax_Handler {
 		return array(
 			'message' => sprintf( 'Cleared %d cache entries', $deleted ),
 		);
+	}
+
+	/**
+	 * Send a test weekly summary immediately
+	 *
+	 * @return void
+	 */
+	public function send_test_summary() {
+		if ( ! $this->verify_request() ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'You do not have permission to perform this action.' ) );
+			return;
+		}
+
+		try {
+			wp_send_json_success( $this->do_send_test_summary() );
+		} catch ( \Throwable $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * Send the weekly summary to the saved recipients.
+	 *
+	 * @return array Success payload for the JSON response.
+	 * @throws \Exception With the user-facing reason when nothing was sent.
+	 */
+	private function do_send_test_summary() {
+		$result = ( new Weekly_Summary_Scheduler() )->send();
+
+		if ( ! $result['sent'] ) {
+			throw new \Exception( esc_html( $result['message'] ) );
+		}
+
+		return array( 'message' => $result['message'] );
 	}
 
 	/**
@@ -692,59 +820,13 @@ class Ajax_Handler {
 	/**
 	 * Refresh the dashboard widget transient from the connected platforms.
 	 *
+	 * Reuses the weekly summary collector so the widget headline matches the
+	 * weekly email. Each platform fails independently inside the collector.
+	 *
 	 * @return array Success payload for the JSON response.
 	 */
 	private function do_refresh_widget_data() {
-		$widget_data        = array();
-		$credential_manager = new Credential_Manager();
-
-		// Fetch GA4 metrics if connected.
-		// Signature: run_report( $metrics, $dimensions = array(), $date_range = '7daysAgo', $options = array() ).
-		if ( $credential_manager->has_credentials( 'ga4' ) ) {
-			try {
-				$ga4_client         = new GA4_Client();
-				$widget_data['ga4'] = $ga4_client->run_report(
-					array( 'sessions', 'activeUsers', 'screenPageViews' ),
-					array( 'date' ),
-					'7daysAgo'
-				);
-			} catch ( \Throwable $e ) {
-				$widget_data['ga4_error'] = $e->getMessage();
-			}
-		}
-
-		// Fetch GSC metrics if connected.
-		// Signature: query_search_analytics( $date_range = '7daysAgo', $dimensions = array(), ... ).
-		if ( $credential_manager->has_credentials( 'gsc' ) ) {
-			try {
-				$gsc_client         = new GSC_Client();
-				$widget_data['gsc'] = $gsc_client->query_search_analytics(
-					'7daysAgo',
-					array( 'date' )
-				);
-			} catch ( \Throwable $e ) {
-				$widget_data['gsc_error'] = $e->getMessage();
-			}
-		}
-
-		// Fetch Clarity metrics if connected. Clarity's data export API caps the
-		// window at 3 days, so request 3 (not 7) to get a live response.
-		if ( $credential_manager->has_credentials( 'clarity' ) ) {
-			try {
-				$clarity_client         = new Clarity_Client();
-				$widget_data['clarity'] = $clarity_client->get_insights( 3 );
-			} catch ( \Throwable $e ) {
-				$widget_data['clarity_error'] = $e->getMessage();
-			}
-		}
-
-		// Store in transient with 30 minute TTL.
-		set_transient( 'specflux_mac_widget_data', $widget_data, 30 * MINUTE_IN_SECONDS );
-
-		return array(
-			'message' => 'Widget data refreshed successfully.',
-			'data'    => $widget_data,
-		);
+		return Widget_Headline::refresh();
 	}
 
 	/**

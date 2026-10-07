@@ -1,0 +1,210 @@
+{
+  "kind": "pagespeedonline#result",
+  "id": "https://example.com/",
+  "analysisUTCTimestamp": "2026-10-06T10:00:00.000Z",
+  "loadingExperience": {
+    "id": "https://example.com/",
+    "metrics": {
+      "LARGEST_CONTENTFUL_PAINT_MS": {
+        "percentile": 2900,
+        "category": "AVERAGE"
+      },
+      "INTERACTION_TO_NEXT_PAINT": {
+        "percentile": 150,
+        "category": "FAST"
+      },
+      "CUMULATIVE_LAYOUT_SHIFT_SCORE": {
+        "percentile": 4,
+        "category": "FAST"
+      },
+      "FIRST_CONTENTFUL_PAINT_MS": {
+        "percentile": 1700,
+        "category": "AVERAGE"
+      },
+      "EXPERIMENTAL_TIME_TO_FIRST_BYTE": {
+        "percentile": 600,
+        "category": "FAST"
+      }
+    },
+    "overall_category": "AVERAGE"
+  },
+  "originLoadingExperience": {
+    "id": "https://example.com",
+    "metrics": {
+      "LARGEST_CONTENTFUL_PAINT_MS": {
+        "percentile": 2100,
+        "category": "FAST"
+      },
+      "INTERACTION_TO_NEXT_PAINT": {
+        "percentile": 120,
+        "category": "FAST"
+      },
+      "CUMULATIVE_LAYOUT_SHIFT_SCORE": {
+        "percentile": 2,
+        "category": "FAST"
+      }
+    },
+    "overall_category": "FAST"
+  },
+  "lighthouseResult": {
+    "finalUrl": "https://example.com/",
+    "categories": {
+      "performance": {
+        "score": 0.32,
+        "auditRefs": [
+          {
+            "id": "first-contentful-paint",
+            "weight": 10,
+            "group": "metrics",
+            "acronym": "FCP"
+          },
+          {
+            "id": "largest-contentful-paint",
+            "weight": 25,
+            "group": "metrics",
+            "acronym": "LCP"
+          },
+          {
+            "id": "total-blocking-time",
+            "weight": 30,
+            "group": "metrics",
+            "acronym": "TBT"
+          },
+          {
+            "id": "cumulative-layout-shift",
+            "weight": 25,
+            "group": "metrics",
+            "acronym": "CLS"
+          },
+          {
+            "id": "speed-index",
+            "weight": 10,
+            "group": "metrics",
+            "acronym": "SI"
+          },
+          {
+            "id": "interactive",
+            "weight": 0,
+            "group": "hidden",
+            "acronym": "TTI"
+          },
+          {
+            "id": "unminified-javascript",
+            "weight": 0,
+            "group": "diagnostics"
+          },
+          {
+            "id": "unused-css-rules",
+            "weight": 0,
+            "group": "diagnostics"
+          },
+          {
+            "id": "unused-javascript",
+            "weight": 0,
+            "group": "diagnostics"
+          },
+          {
+            "id": "mainthread-work-breakdown",
+            "weight": 0,
+            "group": "diagnostics"
+          },
+          {
+            "id": "unsized-images",
+            "weight": 0,
+            "group": "diagnostics"
+          },
+          {
+            "id": "bf-cache",
+            "weight": 0,
+            "group": "diagnostics"
+          }
+        ]
+      }
+    },
+    "audits": {
+      "largest-contentful-paint": {
+        "numericValue": 10884.681,
+        "displayValue": "10.9\u00a0s",
+        "score": 0
+      },
+      "cumulative-layout-shift": {
+        "numericValue": 0.099576,
+        "displayValue": "0.1",
+        "score": 0.9
+      },
+      "total-blocking-time": {
+        "numericValue": 1055.1980000000003,
+        "displayValue": "1,060\u00a0ms",
+        "score": 0.25
+      },
+      "first-contentful-paint": {
+        "numericValue": 6795.362,
+        "displayValue": "6.8\u00a0s",
+        "score": 0.02
+      },
+      "speed-index": {
+        "numericValue": 8296,
+        "displayValue": "8.3\u00a0s",
+        "score": 0.19
+      },
+      "interactive": {
+        "numericValue": 8012.46,
+        "displayValue": "8.0\u00a0s",
+        "score": 0.42
+      },
+      "unminified-javascript": {
+        "title": "Minify JavaScript",
+        "score": 0,
+        "displayValue": "Est savings of 81\u00a0KiB",
+        "details": {
+          "type": "opportunity",
+          "overallSavingsMs": 580,
+          "overallSavingsBytes": 83453
+        }
+      },
+      "unused-javascript": {
+        "title": "Reduce unused JavaScript",
+        "score": 0,
+        "displayValue": "Est savings of 92\u00a0KiB",
+        "details": {
+          "type": "opportunity",
+          "overallSavingsMs": 580,
+          "overallSavingsBytes": 94194
+        }
+      },
+      "unused-css-rules": {
+        "title": "Reduce unused CSS",
+        "score": 1,
+        "displayValue": "",
+        "details": {
+          "type": "opportunity",
+          "overallSavingsMs": 0,
+          "overallSavingsBytes": 0
+        }
+      },
+      "mainthread-work-breakdown": {
+        "title": "Minimize main-thread work",
+        "score": 0,
+        "displayValue": "2.9\u00a0s",
+        "details": {
+          "type": "table"
+        }
+      },
+      "bf-cache": {
+        "title": "Page prevented back/forward cache restoration",
+        "score": 0,
+        "displayValue": "1 failure reason",
+        "details": {
+          "type": "table"
+        }
+      },
+      "unsized-images": {
+        "title": "Image elements do not have explicit `width` and `height`",
+        "score": 0.5,
+        "details": {
+          "type": "table"
+        }
+      }
+    }
+  }
+}

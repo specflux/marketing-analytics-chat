@@ -90,6 +90,66 @@ if ( empty( $mac_abilities ) ) {
 			'icon'        => 'dashicons-search',
 		),
 
+		// Bing Webmaster Tools abilities.
+		array(
+			'name'        => __( 'Get Bing Search Performance', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-bing-search-performance',
+			'description' => __( 'Daily clicks and impressions from Bing and Microsoft Copilot search.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'bing',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-search',
+		),
+		array(
+			'name'        => __( 'Get Bing Top Queries', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-bing-top-queries',
+			'description' => __( 'Top Bing search queries with clicks, impressions, CTR, and position.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'bing',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-search',
+		),
+		array(
+			'name'        => __( 'Get Bing Top Pages', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-bing-top-pages',
+			'description' => __( 'Top pages by Bing clicks and impressions.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'bing',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-search',
+		),
+		array(
+			'name'        => __( 'Get Bing Crawl Stats', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-bing-crawl-stats',
+			'description' => __( 'Bing crawl errors, indexed pages, and HTTP status counts.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'bing',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-search',
+		),
+
+		// PageSpeed abilities.
+		array(
+			'name'        => __( 'Get Page Speed', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-page-speed',
+			'description' => __( 'Lighthouse score, lab metrics, field data and top fixes for a page.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'pagespeed',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-performance',
+		),
+		array(
+			'name'        => __( 'Get Core Web Vitals', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-core-web-vitals',
+			'description' => __( 'Real-user LCP, INP and CLS for a page and its origin with pass/fail.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'pagespeed',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-performance',
+		),
+		array(
+			'name'        => __( 'Audit Top Pages Speed', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/audit-top-pages-speed',
+			'description' => __( 'Rank your most-visited pages by speed, slowest first.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'pagespeed',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-performance',
+		),
+
 		// Clarity abilities.
 		array(
 			'name'        => __( 'Get Clarity Insights', 'specflux-marketing-analytics-chat' ),
@@ -126,6 +186,40 @@ if ( empty( $mac_abilities ) ) {
 			'icon'        => 'dashicons-networking',
 		),
 
+		// WordPress content and SEO abilities.
+		array(
+			'name'        => __( 'Get Content Inventory', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-content-inventory',
+			'description' => __( 'List published posts and pages with dates, author, categories, word count, and comment count.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'wpcontent',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-admin-page',
+		),
+		array(
+			'name'        => __( 'Get Content Performance', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-content-performance',
+			'description' => __( 'Join content with 28-day GA4 views and Search Console clicks, impressions, CTR, and position; find stale content to refresh.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'wpcontent',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-admin-page',
+		),
+		array(
+			'name'        => __( 'Get SEO Metadata', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-seo-metadata',
+			'description' => __( 'Read SEO titles, meta descriptions, focus keywords, noindex, and canonicals from Yoast SEO, Rank Math, All in One SEO, or SEOPress.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'wpcontent',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-admin-page',
+		),
+		array(
+			'name'        => __( 'Find SEO Issues', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/find-seo-issues',
+			'description' => __( 'Ranked list of SEO problems: missing or duplicate titles and descriptions, noindex on pages with traffic, and low CTR on high-impression pages.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'wpcontent',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-admin-page',
+		),
+
 	);
 }
 
@@ -149,11 +243,20 @@ $mac_mcp_endpoint = rest_url( 'mcp/mcp-adapter-default-server' );
 		<button type="button" class="smac-abilities-filter-btn" data-filter="gsc">
 			<?php esc_html_e( 'Search Console', 'specflux-marketing-analytics-chat' ); ?>
 		</button>
+		<button type="button" class="smac-abilities-filter-btn" data-filter="bing">
+			<?php esc_html_e( 'Bing', 'specflux-marketing-analytics-chat' ); ?>
+		</button>
 		<button type="button" class="smac-abilities-filter-btn" data-filter="clarity">
 			<?php esc_html_e( 'Clarity', 'specflux-marketing-analytics-chat' ); ?>
 		</button>
+		<button type="button" class="smac-abilities-filter-btn" data-filter="pagespeed">
+			<?php esc_html_e( 'PageSpeed', 'specflux-marketing-analytics-chat' ); ?>
+		</button>
 		<button type="button" class="smac-abilities-filter-btn" data-filter="cross-platform">
 			<?php esc_html_e( 'Cross-Platform', 'specflux-marketing-analytics-chat' ); ?>
+		</button>
+		<button type="button" class="smac-abilities-filter-btn" data-filter="wpcontent">
+			<?php esc_html_e( 'Content & SEO', 'specflux-marketing-analytics-chat' ); ?>
 		</button>
 	</div>
 

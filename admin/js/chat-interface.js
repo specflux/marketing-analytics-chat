@@ -19,6 +19,37 @@
 			this.bindEvents();
 			this.renderStoredMessages();
 			this.scrollToBottom();
+			this.prefillFromQuery();
+		},
+
+		/**
+		 * Prefill (never send) the message box from a ?prompt= query param.
+		 */
+		prefillFromQuery: function() {
+			if (typeof URLSearchParams === 'undefined') {
+				return;
+			}
+			var prompt = new URLSearchParams(window.location.search).get('prompt');
+			if (!prompt) {
+				return;
+			}
+			prompt = prompt.substring(0, 500);
+
+			if ($('#message-input').length) {
+				$('#message-input').val(prompt).focus();
+				return;
+			}
+
+			// No conversation is open, so there is no input to fill yet: open one and carry the prompt over.
+			$.post(specfluxMacChat.ajaxUrl, {
+				action: 'specflux_mac_create_conversation',
+				nonce: specfluxMacChat.nonce,
+				user_id: specfluxMacChat.userId
+			}).done(function(response) {
+				if (response.success && response.data.conversation_id) {
+					window.location.href = specfluxMacChat.chatPageUrl + '&conversation_id=' + response.data.conversation_id + '&_wpnonce=' + specfluxMacChat.conversationNonce + '&prompt=' + encodeURIComponent(prompt);
+				}
+			});
 		},
 
 		/**
@@ -36,6 +67,18 @@
 		 * Bind event handlers
 		 */
 		bindEvents: function() {
+			// Proposed-action cards (live and server-rendered) share delegated handlers.
+			var self = this;
+			$('#chat-messages').on('click', '.smac-action-apply', function() {
+				self.sendActionDecision($(this).closest('.smac-action'), 'apply');
+			});
+			$('#chat-messages').on('click', '.smac-action-dismiss', function(e) {
+				e.preventDefault();
+				if (!$(this).prop('disabled')) {
+					self.sendActionDecision($(this).closest('.smac-action'), 'dismiss');
+				}
+			});
+
 			// New conversation buttons
 			$('#new-conversation, #new-conversation-main').on('click', this.createNewConversation.bind(this));
 
@@ -206,14 +249,14 @@
 								// Add each message to UI. Tool calls render as a
 								// compact chip rather than inline pseudo-text.
 								if (msg.tool_calls && msg.tool_calls.length > 0) {
-									self.addMessageToUI('assistant', msg.content || '', msg.usage || null, response.data.tool_metadata, null, msg.tool_calls);
+									self.addMessageToUI('assistant', msg.content || '', msg.usage || null, response.data.tool_metadata, null, msg.tool_calls, msg.actions);
 								} else if (msg.content) {
 									// Regular message or final response after tool calls
 									// Use 'error' role if is_error flag is set for distinct styling
 									var msgRole = msg.is_error ? 'error' : 'assistant';
 									// Pass failed_tools for retry buttons on error messages
 									var failedTools = msg.is_error ? response.data.failed_tools : null;
-									self.addMessageToUI(msgRole, msg.content, msg.usage, index === 0 ? response.data.tool_metadata : null, failedTools);
+									self.addMessageToUI(msgRole, msg.content, msg.usage, index === 0 ? response.data.tool_metadata : null, failedTools, null, msg.actions);
 								}
 							});
 						} else if (response.data.content) {
@@ -233,9 +276,17 @@
 					$input.prop('disabled', false).focus();
 					$sendButton.prop('disabled', false).html('<span class="dashicons dashicons-arrow-up-alt2"></span> Send');
 				}.bind(this),
-				error: function() {
+				error: function(xhr) {
 					this.hideTypingIndicator();
-					this.addMessageToUI('system', 'Sorry, I couldn\'t send your message. Please check your connection and try again.');
+					// A gateway timeout means the web server stopped waiting, but PHP keeps
+					// running and saves the answer, so reload the transcript instead of
+					// telling the user to resend (which would ask the question twice).
+					if (xhr && (xhr.status === 502 || xhr.status === 503 || xhr.status === 504)) {
+						this.addMessageToUI('system', 'This answer is taking longer than usual. It will appear here in about half a minute.');
+						setTimeout(function() { window.location.reload(); }, 30000);
+					} else {
+						this.addMessageToUI('system', 'Sorry, I couldn\'t send your message. Please check your connection and try again.');
+					}
 
 					// Re-enable form
 					$input.prop('disabled', false).focus();
@@ -271,7 +322,7 @@
 		/**
 		 * Add message to UI
 		 */
-		addMessageToUI: function(role, content, usage, toolMetadata, failedTools, toolCalls) {
+		addMessageToUI: function(role, content, usage, toolMetadata, failedTools, toolCalls, actions) {
 			var $messages = $('#chat-messages');
 			var self = this;
 
@@ -368,6 +419,13 @@
 
 			var textHTML = hasText ? '<div class="message-text">' + this.formatMessage(content) + '</div>' : '';
 
+			var $actionCards = $();
+			if (role === 'assistant' && actions && actions.length > 0) {
+				actions.forEach(function(action) {
+					$actionCards = $actionCards.add(self.buildActionCard(action));
+				});
+			}
+
 			var messageHTML = '<div class="message message-' + role + '">' +
 				'<div class="message-avatar" role="img" aria-label="' + roleName + '">' +
 					'<span class="dashicons dashicons-' + avatarIcon + '"></span>' +
@@ -382,6 +440,7 @@
 			'</div>';
 
 			var $message = $(messageHTML);
+			$message.find('.message-time').before($actionCards);
 			$messages.append($message);
 
 			// Bind retry button click handlers
@@ -393,6 +452,69 @@
 			});
 
 			this.scrollToBottom();
+		},
+
+		/**
+		 * Build the card for a proposed action. All text goes in via .text().
+		 */
+		buildActionCard: function(action) {
+			var $card = $('<div class="smac-action smac-action--pending"></div>').attr('data-action-id', String(action.id));
+			$card.append($('<div class="smac-action-summary"></div>').text(action.summary || ''));
+			$card.append(
+				$('<div class="smac-action-buttons"></div>')
+					.append($('<button type="button" class="button button-primary smac-action-apply"></button>').text(action.label || 'Apply'))
+					.append(' ')
+					.append($('<a href="#" class="smac-action-dismiss"></a>').text('Dismiss'))
+			);
+			$card.append($('<div class="smac-action-status" role="status"></div>'));
+			return $card;
+		},
+
+		/**
+		 * Apply or dismiss a proposed action; show the outcome inline.
+		 */
+		sendActionDecision: function($card, decision) {
+			var $buttons = $card.find('.smac-action-apply, .smac-action-dismiss');
+			var $status = $card.find('.smac-action-status');
+
+			if ($card.data('busy')) {
+				return;
+			}
+			$card.data('busy', true);
+			$buttons.prop('disabled', true).attr('aria-disabled', 'true');
+			$status.removeClass('smac-action-status--error').text(decision === 'apply' ? 'Applying...' : 'Dismissing...');
+
+			$.ajax({
+				url: specfluxMacChat.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: decision === 'apply' ? 'specflux_mac_apply_chat_action' : 'specflux_mac_dismiss_chat_action',
+					nonce: specfluxMacChat.nonce,
+					action_id: $card.attr('data-action-id')
+				}
+			}).done(function(response) {
+				var data = response && response.data ? response.data : {};
+				var summary = $card.find('.smac-action-summary').text();
+				if (response && response.success) {
+					var label = data.status === 'dismissed' ? 'Dismissed' : 'Applied';
+					$card.removeClass('smac-action--pending').addClass('smac-action--' + data.status);
+					$card.find('.smac-action-summary, .smac-action-buttons').remove();
+					$status.text(label + ': ' + summary + (decision === 'apply' && data.message ? ' - ' + data.message : ''));
+				} else {
+					var terminal = data.status === 'applied' || data.status === 'dismissed' || data.status === 'expired';
+					$status.addClass('smac-action-status--error').text(data.message || 'Something went wrong.');
+					if (terminal) {
+						$card.find('.smac-action-buttons').remove();
+					} else {
+						$card.data('busy', false);
+						$buttons.prop('disabled', false).removeAttr('aria-disabled');
+					}
+				}
+			}).fail(function() {
+				$status.addClass('smac-action-status--error').text('Could not reach the server. Please try again.');
+				$card.data('busy', false);
+				$buttons.prop('disabled', false).removeAttr('aria-disabled');
+			});
 		},
 
 		/**
