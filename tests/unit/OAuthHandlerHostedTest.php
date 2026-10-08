@@ -222,6 +222,37 @@ class OAuthHandlerHostedTest extends TestCase {
 		$this->assertNotContains( OAuth_Handler::DEFAULT_PROXY_URL . '/oauth/google/refresh', $urls );
 	}
 
+	public function test_clear_custom_client_switches_to_hosted_and_disconnects_its_tokens(): void {
+		$this->handler->set_oauth_credentials( 'abc.apps.googleusercontent.com', 'GOCSPX-secret' );
+		$manager = new Credential_Manager();
+		$manager->save_credentials( 'ga4', array( 'access_token' => 'byo', 'refresh_token' => '1//BYO', 'expires_at' => time() + 3600 ) );
+		$manager->save_credentials( 'gsc', array( 'access_token' => 'tok', 'refresh_token' => '1//HOSTED', 'expires_at' => time() + 3600, 'auth_mode' => 'hosted' ) );
+		$GLOBALS['mock_http_handler'] = function () {
+			return $this->response( 200, array() );
+		};
+
+		$this->assertFalse( $this->handler->uses_hosted_auth() );
+
+		$this->assertSame( array( 'ga4' ), $this->handler->clear_oauth_credentials() );
+
+		$this->assertTrue( $this->handler->uses_hosted_auth() );
+		$this->assertFalse( $this->handler->has_oauth_credentials() );
+		$this->assertFalse( $manager->has_credentials( 'ga4' ), 'Tokens from the removed client cannot refresh, so they are dropped.' );
+		$this->assertTrue( $manager->has_credentials( 'gsc' ), 'Hosted connections are kept.' );
+
+		$this->assertCount( 1, $GLOBALS['mock_http_requests'] );
+		$this->assertSame( OAuth_Handler::GOOGLE_REVOKE_URL, $GLOBALS['mock_http_requests'][0]['url'] );
+		$this->assertSame( '1//BYO', $GLOBALS['mock_http_requests'][0]['args']['body']['token'] );
+	}
+
+	public function test_clear_without_connections_only_removes_client(): void {
+		$this->handler->set_oauth_credentials( 'abc.apps.googleusercontent.com', 'GOCSPX-secret' );
+
+		$this->assertSame( array(), $this->handler->clear_oauth_credentials() );
+		$this->assertTrue( $this->handler->uses_hosted_auth() );
+		$this->assertSame( array(), $GLOBALS['mock_http_requests'] );
+	}
+
 	public function test_describe_hosted_error_messages(): void {
 		$this->assertStringContainsString( 'cancelled', $this->handler->describe_hosted_error( 'access_denied' ) );
 		$this->assertStringContainsString( 'invalid_grant', $this->handler->describe_hosted_error( 'invalid_grant' ) );

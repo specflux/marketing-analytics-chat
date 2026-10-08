@@ -46,6 +46,15 @@ if ( isset( $_POST['save_google_oauth'] ) && current_user_can( 'manage_options' 
 	$active_tab = 'google-api';
 }
 
+if ( isset( $_POST['remove_google_oauth'] ) && current_user_can( 'manage_options' ) && check_admin_referer( 'specflux_mac_remove_google_oauth', 'remove_google_oauth_nonce' ) ) {
+	$disconnected    = $oauth_handler->clear_oauth_credentials();
+	$success_message = __( 'Your Google OAuth client was removed. Connections now use Specflux sign-in.', 'specflux-marketing-analytics-chat' );
+	if ( ! empty( $disconnected ) ) {
+		$success_message .= ' ' . __( 'Google connections made with that client were disconnected; reconnect them from the Connections page.', 'specflux-marketing-analytics-chat' );
+	}
+	$active_tab = 'google-api';
+}
+
 	// Handle general settings form submission.
 if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) && check_admin_referer( 'specflux_mac_save_settings', 'settings_nonce' ) ) {
 	$existing_settings = get_option( 'specflux_mac_settings', array() );
@@ -344,6 +353,19 @@ if ( isset( $_POST['save_email_settings'] ) && current_user_can( 'manage_options
 								</a>
 							</p>
 						</div>
+						<?php if ( '' !== $oauth_handler->get_proxy_url() ) : ?>
+							<form method="post" action="" style="margin: 0 0 20px;">
+								<?php wp_nonce_field( 'specflux_mac_remove_google_oauth', 'remove_google_oauth_nonce' ); ?>
+								<p class="description">
+									<?php esc_html_e( 'Google shows an "unverified app" warning for OAuth clients that Google has not verified. Remove your client to connect through Specflux sign-in instead. Connections made with your client will be disconnected and need reconnecting.', 'specflux-marketing-analytics-chat' ); ?>
+								</p>
+								<p>
+									<button type="submit" name="remove_google_oauth" class="button button-secondary">
+										<?php esc_html_e( 'Remove my client and use Specflux sign-in', 'specflux-marketing-analytics-chat' ); ?>
+									</button>
+								</p>
+							</form>
+						<?php endif; ?>
 					<?php endif; ?>
 
 					<!-- Progress Indicator -->

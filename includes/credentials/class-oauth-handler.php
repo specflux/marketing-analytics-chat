@@ -689,6 +689,49 @@ class OAuth_Handler {
 	}
 
 	/**
+	 * Remove the site's own Google OAuth client and switch to hosted sign-in
+	 *
+	 * Connections made through the removed client cannot refresh without it,
+	 * so they are revoked and deleted; hosted connections are kept.
+	 *
+	 * @return string[] Services that were disconnected and need reconnecting.
+	 */
+	public function clear_oauth_credentials() {
+		$disconnected = array();
+
+		foreach ( Platform_Registry::all() as $slug => $definition ) {
+			if ( 'google_oauth' !== $definition['auth'] || ! $this->credential_manager->has_credentials( $slug ) ) {
+				continue;
+			}
+
+			$credentials = $this->credential_manager->get_credentials( $slug );
+			if ( 'hosted' === ( $credentials['auth_mode'] ?? '' ) ) {
+				continue;
+			}
+
+			$token = $credentials['refresh_token'] ?? ( $credentials['access_token'] ?? '' );
+			if ( '' !== $token ) {
+				wp_remote_post(
+					self::GOOGLE_REVOKE_URL,
+					array(
+						'timeout' => 10,
+						'body'    => array( 'token' => $token ),
+					)
+				);
+			}
+
+			$this->credential_manager->delete_credentials( $slug );
+			$disconnected[] = $slug;
+		}
+
+		delete_option( self::OPTION_CLIENT_ID );
+		delete_option( self::OPTION_CLIENT_SECRET );
+		delete_option( self::OPTION_OAUTH_STATE );
+
+		return $disconnected;
+	}
+
+	/**
 	 * Get configured OAuth client ID (for display purposes)
 	 *
 	 * @return string|null Client ID or null if not set.
