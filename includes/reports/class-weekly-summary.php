@@ -11,6 +11,7 @@ use Specflux_Marketing_Analytics\API_Clients\Bing_Webmaster_Client;
 use Specflux_Marketing_Analytics\API_Clients\Clarity_Client;
 use Specflux_Marketing_Analytics\API_Clients\GA4_Client;
 use Specflux_Marketing_Analytics\API_Clients\GSC_Client;
+use Specflux_Marketing_Analytics\Commerce\Woo_Sales_Reader;
 use Specflux_Marketing_Analytics\Content\Seo_Issue_Summary;
 use Specflux_Marketing_Analytics\Credentials\Connection_Tester;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
@@ -72,16 +73,25 @@ class Weekly_Summary {
 	private $seo;
 
 	/**
+	 * Injected WooCommerce sales reader (tests pass doubles).
+	 *
+	 * @var Woo_Sales_Reader|null
+	 */
+	private $woo;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array                  $clients   Optional platform => client object overrides (ga4, gsc, clarity, bing).
 	 * @param string[]|null          $connected Optional connected-platform override (may include bing).
 	 * @param Seo_Issue_Summary|null $seo       Optional SEO summary service.
+	 * @param Woo_Sales_Reader|null  $woo       Optional WooCommerce sales reader.
 	 */
-	public function __construct( array $clients = array(), ?array $connected = null, ?Seo_Issue_Summary $seo = null ) {
+	public function __construct( array $clients = array(), ?array $connected = null, ?Seo_Issue_Summary $seo = null, ?Woo_Sales_Reader $woo = null ) {
 		$this->clients   = $clients;
 		$this->connected = $connected;
 		$this->seo       = $seo;
+		$this->woo       = $woo;
 	}
 
 	/**
@@ -251,7 +261,64 @@ class Weekly_Summary {
 			unset( $context['seo'] );
 		}
 
+		try {
+			$sales = $this->collect_sales( $context['ranges']['ga4'] ?? $this->get_ranges( $now )['ga4'] );
+			if ( null !== $sales ) {
+				$context['sales'] = array(
+					'status' => 'ok',
+					'data'   => $sales,
+				);
+			}
+		} catch ( \Throwable $e ) {
+			unset( $context['sales'] );
+		}
+
 		return $context;
+	}
+
+	/**
+	 * WooCommerce revenue for a week against the week before, with the top channels.
+	 *
+	 * Returns null when WooCommerce is not active or the week has no paid orders,
+	 * so the email and the dashboard widget simply leave the section out.
+	 *
+	 * @param array $range Window with `current` and `previous` (each start, end Y-m-d).
+	 * @return array|null Keys: currency, revenue, previous_revenue, change, orders, range, channels.
+	 */
+	public function collect_sales( array $range ) {
+		$reader = $this->woo ?? new Woo_Sales_Reader();
+
+		if ( ! $reader->available() ) {
+			return null;
+		}
+
+		$current = $reader->get_sales_by_source( $range['current'][0], $range['current'][1], 'channel', 10, false );
+		if ( (int) $current['total_orders'] < 1 ) {
+			return null;
+		}
+
+		$previous = $reader->get_sales_by_source( $range['previous'][0], $range['previous'][1], 'channel', 1, false );
+		$prior    = (float) $previous['total_revenue'];
+		$revenue  = (float) $current['total_revenue'];
+
+		$channels = array();
+		foreach ( array_slice( $current['rows'], 0, 3 ) as $row ) {
+			$channels[] = array(
+				'label'   => (string) $row['label'],
+				'revenue' => (float) $row['revenue'],
+				'share'   => (float) $row['share'],
+			);
+		}
+
+		return array(
+			'currency'         => (string) $current['currency'],
+			'revenue'          => $revenue,
+			'previous_revenue' => $prior,
+			'change'           => $prior > 0 ? round( ( $revenue - $prior ) / $prior * 100, 1 ) : null,
+			'orders'           => (int) $current['total_orders'],
+			'range'            => $range['current'],
+			'channels'         => $channels,
+		);
 	}
 
 	/**
