@@ -30,7 +30,7 @@ class Woo_Sales_Reader {
 	const CHANNEL_OTHER          = 'Other';
 	const CHANNEL_NOT_TRACKED    = 'Not tracked';
 
-	const GROUPS = array( 'channel', 'source', 'source_medium', 'campaign', 'device', 'landing_page' );
+	const GROUPS = array( 'channel', 'source', 'source_medium', 'campaign', 'source_campaign', 'device', 'landing_page' );
 
 	/**
 	 * Orders requested per query page.
@@ -133,6 +133,10 @@ class Woo_Sales_Reader {
 			if ( 'campaign' === $group_by ) {
 				$row['source'] = $this->dominant( $group['sources'] );
 				$row['medium'] = $this->dominant( $group['mediums'] );
+			} elseif ( 'source_campaign' === $group_by ) {
+				$row['source']   = (string) $group['pair_source'];
+				$row['medium']   = $this->dominant( $group['mediums'] );
+				$row['campaign'] = (string) $group['pair_campaign'];
 			}
 
 			$rows[] = $row;
@@ -414,13 +418,16 @@ class Woo_Sales_Reader {
 				'sources'  => array(),
 				'mediums'  => array(),
 			);
+			if ( 'source_campaign' === $group_by ) {
+				list( $out['groups'][ $key ]['pair_source'], $out['groups'][ $key ]['pair_campaign'] ) = $this->pair_parts( $order, $tracked, $source, $type );
+			}
 		}
 
 		$group             = &$out['groups'][ $key ];
 		$group['orders']  += 1;
 		$group['revenue'] += $revenue;
 		$group['channels'][ $channel ] = ( $group['channels'][ $channel ] ?? 0.0 ) + $revenue;
-		if ( 'campaign' === $group_by ) {
+		if ( 'campaign' === $group_by || 'source_campaign' === $group_by ) {
 			$src = '' === $this->clean( $source ) ? '(none)' : $this->clean( $source );
 			$mdm = '' === $this->clean( $medium ) ? '(none)' : $this->clean( $medium );
 
@@ -470,6 +477,12 @@ class Woo_Sales_Reader {
 		$src = $this->clean( $source );
 		$mdm = $this->clean( $medium );
 
+		if ( 'source_campaign' === $group_by ) {
+			list( $pair_source, $pair_campaign ) = $this->pair_parts( $order, true, $source, $type );
+			$pair                                = $pair_source . ' / ' . ( '' === $pair_campaign ? '(no campaign)' : $pair_campaign );
+			return array( $pair, $pair );
+		}
+
 		if ( 'campaign' === $group_by ) {
 			$campaign = trim( (string) $order->get_meta( $this->meta_key( 'utm_campaign' ) ) );
 			return '' === $campaign || '(none)' === $campaign ? array( '(no campaign)', 'No campaign' ) : array( $campaign, $campaign );
@@ -486,6 +499,30 @@ class Woo_Sales_Reader {
 		$pair = $src . ' / ' . ( '' === $mdm ? '(none)' : $mdm );
 
 		return array( $pair, $pair );
+	}
+
+	/**
+	 * Source and exact campaign of an order for the source_campaign grouping.
+	 *
+	 * @param object $order   Order.
+	 * @param bool   $tracked Whether the order has attribution data.
+	 * @param string $source  Raw utm_source.
+	 * @param string $type    Raw source type.
+	 * @return array{0:string,1:string} Source (lowercased) and campaign ('' when none or untracked).
+	 */
+	private function pair_parts( $order, bool $tracked, string $source, string $type ): array {
+		if ( ! $tracked ) {
+			return array( '(none)', '' );
+		}
+
+		$src = $this->clean( $source );
+		if ( '' === $src ) {
+			$src = 'typein' === strtolower( trim( $type ) ) ? 'direct' : '(none)';
+		}
+
+		$campaign = trim( (string) $order->get_meta( $this->meta_key( 'utm_campaign' ) ) );
+
+		return array( $src, '(none)' === $campaign ? '' : $campaign );
 	}
 
 	/**

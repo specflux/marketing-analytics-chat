@@ -494,6 +494,57 @@ class WooSalesTest extends TestCase {
 	}
 
 	/**
+	 * The source_campaign grouping keeps the same campaign on two sources apart.
+	 */
+	public function test_source_campaign_pairs(): void {
+		$reader = $this->reader(
+			array(
+				$this->order( 100.0, array( 'source_type' => 'utm', 'utm_source' => 'Google ', 'utm_medium' => 'cpc', 'utm_campaign' => 'Spring' ) ),
+				$this->order( 40.0, array( 'source_type' => 'utm', 'utm_source' => 'google', 'utm_medium' => 'organic', 'utm_campaign' => 'Spring' ) ),
+				$this->order( 70.0, array( 'source_type' => 'utm', 'utm_source' => 'facebook', 'utm_medium' => 'paid-social', 'utm_campaign' => 'Spring' ) ),
+				$this->order( 30.0, array( 'source_type' => 'typein' ) ),
+				$this->order( 20.0 ),
+			)
+		);
+
+		$result = $reader->get_sales_by_source( self::START, self::END, 'source_campaign', 20, false );
+		$rows   = array();
+		foreach ( $result['rows'] as $row ) {
+			$rows[ $row['key'] ] = $row;
+		}
+
+		$this->assertSame( array( 'google / Spring', 'facebook / Spring', 'direct / (no campaign)', '(not tracked)' ), array_keys( $rows ) );
+		$google = $rows['google / Spring'];
+		$this->assertSame( 'google / Spring', $google['label'] );
+		$this->assertSame( 140.0, $google['revenue'] );
+		$this->assertSame( 2, $google['orders'] );
+		$this->assertSame( 'google', $google['source'] );
+		$this->assertSame( 'Spring', $google['campaign'] );
+		$this->assertSame( 'cpc', $google['medium'], 'Dominant medium by revenue.' );
+		$this->assertSame( 'Paid Search', $google['channel'] );
+		$this->assertSame( 'Paid Social', $rows['facebook / Spring']['channel'] );
+		$this->assertSame( 'paid-social', $rows['facebook / Spring']['medium'] );
+		$this->assertSame( '', $rows['direct / (no campaign)']['campaign'] );
+		$this->assertSame( '', $rows['(not tracked)']['campaign'] );
+		$this->assertArrayHasKey( 'previous_revenue', $google );
+		$this->assertArrayHasKey( 'revenue_change', $google );
+		$this->assertSame( 'source_campaign', $result['group_by'] );
+	}
+
+	/**
+	 * The ability accepts source_campaign in its enum and passes it through.
+	 */
+	public function test_ability_accepts_source_campaign(): void {
+		$reader = $this->reader( array( $this->order( 10.0, array( 'source_type' => 'utm', 'utm_source' => 'google', 'utm_medium' => 'cpc', 'utm_campaign' => 'X' ) ) ) );
+		( new Woo_Abilities( $reader ) )->register();
+		$tool = Abilities_Registrar::get_registered_tools()['marketing-analytics/get-sales-by-source'];
+		$this->assertContains( 'source_campaign', $tool['input_schema']['properties']['group_by']['enum'] );
+
+		$data = $this->decode( ( new Woo_Abilities( $reader ) )->execute_get_sales_by_source( array( 'start_date' => self::START, 'end_date' => self::END, 'group_by' => 'source_campaign' ) ) );
+		$this->assertSame( 'google / X', $data['rows'][0]['key'] );
+	}
+
+	/**
 	 * Results are cached for 15 minutes.
 	 */
 	public function test_results_are_cached(): void {
