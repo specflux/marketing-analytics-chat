@@ -1525,3 +1525,28 @@ if ( ! function_exists( 'home_url' ) ) {
 		return 'https://example.com' . $path;
 	}
 }
+
+// WooCommerce helpers used by the sales reader. wc_get_orders() is deliberately NOT
+// defined here: its presence is how the plugin detects WooCommerce, so tests inject orders
+// through a reader double instead.
+if ( ! function_exists( 'wc_get_is_paid_statuses' ) ) {
+	/**
+	 * Mock wc_get_is_paid_statuses function.
+	 *
+	 * @return string[]
+	 */
+	function wc_get_is_paid_statuses() {
+		return array( 'processing', 'completed' );
+	}
+}
+
+if ( ! function_exists( 'get_woocommerce_currency' ) ) {
+	/**
+	 * Mock get_woocommerce_currency function.
+	 *
+	 * @return string
+	 */
+	function get_woocommerce_currency() {
+		return 'USD';
+	}
+}

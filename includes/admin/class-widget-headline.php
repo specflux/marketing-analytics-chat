@@ -39,6 +39,11 @@ class Widget_Headline {
 	const TRANSIENT = 'specflux_mac_widget_data';
 
 	/**
+	 * Transient holding the WooCommerce sales row (a "none" marker when the week has no sales).
+	 */
+	const SALES_TRANSIENT = 'specflux_mac_widget_sales';
+
+	/**
 	 * Transient lifetime in seconds (a glance view; the API clients cache too).
 	 *
 	 * @return int
@@ -101,6 +106,7 @@ class Widget_Headline {
 	 * @return array
 	 */
 	public static function refresh( ?Weekly_Summary $summary = null, ?Seo_Issue_Summary $seo = null ) {
+		$summary = $summary ?? new Weekly_Summary();
 		$headline = self::build( $summary );
 		$payload  = array(
 			'headline'     => $headline,
@@ -109,8 +115,13 @@ class Widget_Headline {
 
 		set_transient( self::TRANSIENT, $payload, self::ttl() );
 
+		$sales = self::refresh_sales( $summary );
+
+		// A store with sales but no analytics connection shows only the sales row.
+		$sales_only = empty( $headline ) && is_array( $sales );
+
 		try {
-			$seo_summary = ( $seo ?? new Seo_Issue_Summary() )->get_or_refresh();
+			$seo_summary = $sales_only ? null : ( $seo ?? new Seo_Issue_Summary() )->get_or_refresh();
 		} catch ( \Throwable $e ) {
 			$seo_summary = null;
 		}
@@ -118,9 +129,90 @@ class Widget_Headline {
 		return array(
 			'message'       => 'Widget data refreshed successfully.',
 			'headline'      => $headline,
-			'headline_html' => self::render( $headline ),
+			'headline_html' => $sales_only ? '' : self::render( $headline ),
 			'seo_html'      => self::render_seo( $seo_summary ),
+			'sales_html'    => self::render_sales( $sales ),
 		);
+	}
+
+	/**
+	 * Rebuild and store the WooCommerce sales row. Failures leave the row empty.
+	 *
+	 * @param Weekly_Summary $summary Collector.
+	 * @return array|null Sales data, or null when WooCommerce is off or there are no paid orders.
+	 */
+	public static function refresh_sales( Weekly_Summary $summary ) {
+		try {
+			$ranges = $summary->get_ranges();
+			$sales  = $summary->collect_sales( $ranges['ga4'] );
+		} catch ( \Throwable $e ) {
+			$sales = null;
+		}
+
+		set_transient( self::SALES_TRANSIENT, null === $sales ? 'none' : $sales, self::ttl() );
+
+		return $sales;
+	}
+
+	/**
+	 * Cached sales row: an array, 'none' (nothing to show) or null (not cached yet).
+	 *
+	 * @return array|string|null
+	 */
+	public static function cached_sales() {
+		$stored = get_transient( self::SALES_TRANSIENT );
+
+		if ( is_array( $stored ) || 'none' === $stored ) {
+			return $stored;
+		}
+
+		return null;
+	}
+
+	/**
+	 * The "Sales:" row: revenue this week against last, and the top channel.
+	 *
+	 * Reads data that was already built; it never queries orders.
+	 *
+	 * @param array|string|null $sales Sales data from collect_sales(), 'none' or null.
+	 * @return string HTML (escaped).
+	 */
+	public static function render_sales( $sales ) {
+		if ( ! is_array( $sales ) ) {
+			return '';
+		}
+
+		$top = is_array( $sales['channels'][0] ?? null ) ? $sales['channels'][0] : null;
+
+		ob_start();
+		?>
+		<p class="smac-widget-sales-line">
+			<strong>
+				<?php
+				printf(
+					/* translators: %s: revenue with currency code, e.g. "1,234.50 USD" */
+					esc_html__( 'Sales: %s', 'specflux-marketing-analytics-chat' ),
+					esc_html( number_format_i18n( (float) $sales['revenue'], 2 ) . ' ' . $sales['currency'] )
+				);
+				?>
+			</strong>
+			<?php echo self::format_change( $sales['change'] ?? null ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in format_change(). ?>
+			<span class="smac-widget-stat-period"><?php esc_html_e( 'vs last week', 'specflux-marketing-analytics-chat' ); ?></span>
+		</p>
+		<?php if ( null !== $top ) : ?>
+			<p class="smac-widget-sales-top">
+				<?php
+				printf(
+					/* translators: 1: channel such as "Organic Search", 2: share of revenue such as "42.5" */
+					esc_html__( 'Top channel: %1$s (%2$s%% of revenue)', 'specflux-marketing-analytics-chat' ),
+					esc_html( (string) $top['label'] ),
+					esc_html( number_format_i18n( (float) $top['share'], 1 ) )
+				);
+				?>
+			</p>
+		<?php endif; ?>
+		<?php
+		return (string) ob_get_clean();
 	}
 
 	/**

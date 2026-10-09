@@ -200,10 +200,10 @@ class Weekly_Summary_Scheduler {
 	 * @return array{sent:bool,message:string} Outcome with a human-readable message.
 	 */
 	public function send() {
-		if ( empty( $this->summary->get_connected_platforms() ) ) {
+		if ( ! $this->summary->has_data_source() ) {
 			return array(
 				'sent'    => false,
-				'message' => __( 'No analytics platform is connected yet, so there is nothing to summarise.', 'specflux-marketing-analytics-chat' ),
+				'message' => __( 'No analytics platform is connected yet and there are no paid WooCommerce orders this week, so there is nothing to summarise.', 'specflux-marketing-analytics-chat' ),
 			);
 		}
 
@@ -224,6 +224,10 @@ class Weekly_Summary_Scheduler {
 				$has_data = true;
 				break;
 			}
+		}
+
+		if ( 'ok' === ( $context['sales']['status'] ?? '' ) ) {
+			$has_data = true;
 		}
 
 		if ( ! $has_data || empty( $sections ) ) {
