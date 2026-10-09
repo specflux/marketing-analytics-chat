@@ -117,6 +117,25 @@ class Weekly_Summary {
 	}
 
 	/**
+	 * Whether there is anything to summarise: a connected analytics platform, or a
+	 * WooCommerce store with paid orders this week.
+	 *
+	 * @param int|null $now Unix timestamp to treat as "now".
+	 * @return bool
+	 */
+	public function has_data_source( $now = null ) {
+		if ( ! empty( $this->get_connected_platforms() ) ) {
+			return true;
+		}
+
+		try {
+			return null !== $this->collect_sales( $this->get_ranges( $now )['ga4'] );
+		} catch ( \Throwable $e ) {
+			return false;
+		}
+	}
+
+	/**
 	 * Percentage change from the previous value to the current one.
 	 *
 	 * @param float|int $current  Current value.

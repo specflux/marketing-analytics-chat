@@ -103,8 +103,8 @@ class Weekly_Summary_Preview {
 	 * @return string HTML.
 	 */
 	public function get_html() {
-		if ( empty( $this->summary->get_connected_platforms() ) ) {
-			return $this->message_page( __( 'No analytics platform is connected yet, so there is nothing to preview. Connect one on the Connections screen.', 'specflux-marketing-analytics-chat' ) );
+		if ( ! $this->summary->has_data_source() ) {
+			return $this->message_page( __( 'No analytics platform is connected yet and there are no paid WooCommerce orders this week, so there is nothing to preview. Connect one on the Connections screen.', 'specflux-marketing-analytics-chat' ) );
 		}
 
 		$context  = $this->summary->collect_report();

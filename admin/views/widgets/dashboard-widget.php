@@ -29,31 +29,41 @@ foreach ( $platforms as $platform_key ) {
 	}
 }
 $has_connection = ! empty( $connected );
-$headline_items = $has_connection ? Widget_Headline::cached() : null;
-$seo_summary    = $has_connection ? Seo_Issue_Summary::cached() : null;
-$sales_row      = $has_connection ? Widget_Headline::cached_sales() : null;
-$needs_autoload = null === $headline_items || null === $seo_summary || ( Woo_Sales_Reader::is_available() && null === $sales_row );
+// WooCommerce is a data source on its own: a store with paid orders needs no Google connection.
+$sales_row        = Woo_Sales_Reader::is_available() ? Widget_Headline::cached_sales() : 'none';
+$has_sales_source = 'none' !== $sales_row;
+$has_source       = $has_connection || $has_sales_source;
+$headline_items   = $has_connection ? Widget_Headline::cached() : array();
+$seo_summary      = $has_connection ? Seo_Issue_Summary::cached() : array();
+$needs_autoload   = null === $headline_items || null === $seo_summary || null === $sales_row;
 ?>
 <div class="smac-widget">
-	<?php if ( ! $has_connection ) : ?>
+	<?php if ( ! $has_source ) : ?>
 		<div class="smac-widget-section">
 			<?php echo Widget_Headline::render_empty_state(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer. ?>
 		</div>
 	<?php else : ?>
-		<!-- This week (loaded automatically when nothing is cached) -->
+		<!-- This week (loaded automatically when nothing is cached; empty for a store without Google connections) -->
 		<div class="smac-widget-section smac-widget-headline"<?php echo $needs_autoload ? ' data-autoload="1"' : ''; ?>>
-			<?php
+		<?php
 			// Never call the APIs while the dashboard renders: show a loading state and let the script fetch.
-			echo null === $headline_items ? Widget_Headline::render_loading() : Widget_Headline::render( $headline_items ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer.
-			?>
+		if ( null === $headline_items || ( ! $has_connection && null === $sales_row ) ) {
+			echo Widget_Headline::render_loading(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer.
+		} elseif ( $has_connection ) {
+			echo Widget_Headline::render( $headline_items ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer.
+		}
+		?>
 		</div>
 
-		<!-- SEO (cached summary only; the AJAX refresh fills it when cold) -->
-		<div class="smac-widget-section smac-widget-seo"><?php echo Widget_Headline::render_seo( $seo_summary ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer. ?></div>
+		<?php if ( $has_connection ) : ?>
+			<!-- SEO (cached summary only; the AJAX refresh fills it when cold) -->
+			<div class="smac-widget-section smac-widget-seo"><?php echo Widget_Headline::render_seo( $seo_summary ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer. ?></div>
+		<?php endif; ?>
 
 		<!-- WooCommerce sales (cached only; the AJAX refresh fills it when cold) -->
 		<div class="smac-widget-section smac-widget-sales"><?php echo Widget_Headline::render_sales( $sales_row ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer. ?></div>
 
+		<?php if ( $has_connection ) : ?>
 	<!-- Platform Status -->
 	<div class="smac-widget-section">
 		<h4 class="smac-widget-heading">
@@ -68,6 +78,7 @@ $needs_autoload = null === $headline_items || null === $seo_summary || ( Woo_Sal
 			<?php endforeach; ?>
 		</div>
 	</div>
+	<?php endif; ?>
 	<?php endif; ?>
 
 	<!-- Recent Anomalies -->
@@ -101,10 +112,10 @@ $needs_autoload = null === $headline_items || null === $seo_summary || ( Woo_Sal
 		</div>
 	<?php endif; ?>
 
-	<?php if ( $has_connection ) : ?>
+	<?php if ( $has_source ) : ?>
 	<!-- Quick Action -->
 	<div class="smac-widget-section" style="margin-top: 15px; text-align: center;">
-		<a href="<?php echo esc_url( Weekly_Prompt_Builder::assistant_url( Weekly_Prompt_Builder::from_headline( $headline_items ) ) ); ?>" class="button button-primary" style="width: 100%; text-align: center;">
+		<a href="<?php echo esc_url( Weekly_Prompt_Builder::assistant_url( Weekly_Prompt_Builder::from_headline( $has_connection ? $headline_items : array() ) ) ); ?>" class="button button-primary" style="width: 100%; text-align: center;">
 			<?php esc_html_e( 'Open AI Assistant', 'specflux-marketing-analytics-chat' ); ?>
 		</a>
 	</div>

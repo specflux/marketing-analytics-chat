@@ -17,6 +17,8 @@ use Specflux_Marketing_Analytics\Commerce\Woo_Sales_Reader;
 use Specflux_Marketing_Analytics\Credentials\Platform_Registry;
 use Specflux_Marketing_Analytics\Reports\Weekly_Summary;
 use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Email;
+use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Preview;
+use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Scheduler;
 
 /**
  * Minimal stand-in for WC_Order.
@@ -767,5 +769,89 @@ class WooSalesTest extends TestCase {
 		$this->assertNull( Widget_Headline::cached_sales() );
 		set_transient( Widget_Headline::SALES_TRANSIENT, 'none', 60 );
 		$this->assertSame( 'none', Widget_Headline::cached_sales() );
+	}
+
+	/**
+	 * Weekly_Summary with no analytics connection and orders placed relative to now.
+	 *
+	 * @param bool $with_orders Whether the store has paid orders this week.
+	 * @return Weekly_Summary
+	 */
+	private function woo_only_summary( bool $with_orders ): Weekly_Summary {
+		$orders = array();
+		if ( $with_orders ) {
+			$day      = gmdate( 'Y-m-d', strtotime( '-2 days' ) ) . ' 10:00';
+			$orders[] = $this->order( 120.0, array( 'source_type' => 'organic', 'utm_source' => 'google', 'utm_medium' => 'organic' ), $day );
+			$orders[] = $this->order( 80.0, array( 'source_type' => 'typein' ), $day );
+		}
+		return new Weekly_Summary( array(), array(), null, $this->reader( $orders ) );
+	}
+
+	/**
+	 * A WooCommerce store with paid orders counts as a data source with no connections.
+	 */
+	public function test_woo_only_counts_as_data_source(): void {
+		$this->assertTrue( $this->woo_only_summary( true )->has_data_source() );
+		$this->assertSame( array(), $this->woo_only_summary( true )->get_connected_platforms() );
+	}
+
+	/**
+	 * WooCommerce active with zero paid orders behaves like no data at all.
+	 */
+	public function test_woo_with_zero_paid_orders_is_no_data(): void {
+		$summary = $this->woo_only_summary( false );
+		$this->assertFalse( $summary->has_data_source() );
+
+		$GLOBALS['specflux_mac_test_mail'] = array();
+		$result                            = ( new Weekly_Summary_Scheduler( $summary ) )->send();
+		$this->assertFalse( $result['sent'] );
+		$this->assertSame( array(), $GLOBALS['specflux_mac_test_mail'] );
+
+		$html = ( new Weekly_Summary_Preview( $summary ) )->get_html();
+		$this->assertStringContainsString( 'nothing to preview', $html );
+
+		$this->assertSame( '', Widget_Headline::render_sales( Widget_Headline::refresh_sales( $summary ) ) );
+		$this->assertSame( 'none', Widget_Headline::cached_sales() );
+	}
+
+	/**
+	 * The scheduler sends a sales-only email for a store with no connections, without empty sections.
+	 */
+	public function test_scheduler_sends_for_woo_only_site(): void {
+		$GLOBALS['specflux_mac_test_mail'] = array();
+
+		$result = ( new Weekly_Summary_Scheduler( $this->woo_only_summary( true ) ) )->send();
+
+		$this->assertTrue( $result['sent'], $result['message'] );
+		$this->assertCount( 1, $GLOBALS['specflux_mac_test_mail'] );
+		$body = $GLOBALS['specflux_mac_test_mail'][0]['message'];
+		$this->assertStringContainsString( 'Sales by channel', $body );
+		$this->assertStringContainsString( '200.00 USD', $body );
+		foreach ( array( 'Google Analytics', 'Search Console', 'Clarity', 'Bing search', 'SEO to fix' ) as $absent ) {
+			$this->assertStringNotContainsString( $absent, $body );
+		}
+	}
+
+	/**
+	 * The preview renders the sales section for a Woo-only store.
+	 */
+	public function test_preview_renders_for_woo_only_site(): void {
+		$html = ( new Weekly_Summary_Preview( $this->woo_only_summary( true ) ) )->get_html();
+
+		$this->assertStringContainsString( 'Sales by channel', $html );
+		$this->assertStringContainsString( 'Organic Search', $html );
+		$this->assertStringNotContainsString( 'nothing to preview', $html );
+	}
+
+	/**
+	 * The widget refresh for a Woo-only store returns the sales row and an empty headline (no empty-state, no SEO).
+	 */
+	public function test_widget_refresh_for_woo_only_site(): void {
+		$data = Widget_Headline::refresh( $this->woo_only_summary( true ) );
+
+		$this->assertSame( '', $data['headline_html'] );
+		$this->assertSame( '', $data['seo_html'] );
+		$this->assertStringContainsString( 'Sales: 200.00 USD', $data['sales_html'] );
+		$this->assertIsArray( Widget_Headline::cached_sales() );
 	}
 }

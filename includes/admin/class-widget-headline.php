@@ -115,18 +115,21 @@ class Widget_Headline {
 
 		set_transient( self::TRANSIENT, $payload, self::ttl() );
 
+		$sales = self::refresh_sales( $summary );
+
+		// A store with sales but no analytics connection shows only the sales row.
+		$sales_only = empty( $headline ) && is_array( $sales );
+
 		try {
-			$seo_summary = ( $seo ?? new Seo_Issue_Summary() )->get_or_refresh();
+			$seo_summary = $sales_only ? null : ( $seo ?? new Seo_Issue_Summary() )->get_or_refresh();
 		} catch ( \Throwable $e ) {
 			$seo_summary = null;
 		}
 
-		$sales = self::refresh_sales( $summary );
-
 		return array(
 			'message'       => 'Widget data refreshed successfully.',
 			'headline'      => $headline,
-			'headline_html' => self::render( $headline ),
+			'headline_html' => $sales_only ? '' : self::render( $headline ),
 			'seo_html'      => self::render_seo( $seo_summary ),
 			'sales_html'    => self::render_sales( $sales ),
 		);

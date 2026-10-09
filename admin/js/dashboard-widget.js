@@ -23,7 +23,7 @@ jQuery(document).ready(function($) {
 				nonce: specfluxMacDashboardWidget.nonce
 			}
 		}).done(function(response) {
-			if (response && response.success && response.data && response.data.headline_html) {
+			if (response && response.success && response.data && typeof response.data.headline_html === 'string') {
 				$headline.removeAttr('data-autoload').html(response.data.headline_html);
 			} else {
 				showUnavailable();

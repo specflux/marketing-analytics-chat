@@ -176,6 +176,11 @@
 	color: var(--smac-text-secondary);
 }
 
+/* Empty headline (store with sales and no analytics connection) */
+.smac-widget-headline:empty {
+	display: none;
+}
+
 /* Widget WooCommerce sales row */
 .smac-widget-sales:empty {
 	display: none;
