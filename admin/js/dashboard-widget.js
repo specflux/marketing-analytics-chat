@@ -3,6 +3,7 @@ jQuery(document).ready(function($) {
 
 	var $headline = $('.smac-widget-headline');
 	var $seo = $('.smac-widget-seo');
+	var $sales = $('.smac-widget-sales');
 	var $btn = $('.smac-refresh-widget');
 	var running = false;
 
@@ -22,13 +23,16 @@ jQuery(document).ready(function($) {
 				nonce: specfluxMacDashboardWidget.nonce
 			}
 		}).done(function(response) {
-			if (response && response.success && response.data && response.data.headline_html) {
+			if (response && response.success && response.data && typeof response.data.headline_html === 'string') {
 				$headline.removeAttr('data-autoload').html(response.data.headline_html);
 			} else {
 				showUnavailable();
 			}
 			if (response && response.success && response.data && typeof response.data.seo_html === 'string') {
 				$seo.html(response.data.seo_html);
+			}
+			if (response && response.success && response.data && typeof response.data.sales_html === 'string') {
+				$sales.html(response.data.sales_html);
 			}
 		}).fail(showUnavailable).always(function() {
 			running = false;

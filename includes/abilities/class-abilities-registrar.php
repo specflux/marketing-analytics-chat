@@ -174,6 +174,11 @@ class Abilities_Registrar {
 		// Register form entry abilities (only when a supported form plugin is active).
 		$form_abilities = new Form_Abilities();
 		$form_abilities->register();
+
+		// Register WooCommerce sales abilities (only when WooCommerce is active).
+		$woo_abilities = new Woo_Abilities();
+		$woo_abilities->register();
+
 		// Register site analytics plugin abilities (only when Burst, Independent Analytics or Koko has data).
 		$local_analytics_abilities = new Local_Analytics_Abilities();
 		$local_analytics_abilities->register();

@@ -73,7 +73,7 @@ class Weekly_Summary_Email {
 			}
 		}
 
-		foreach ( array( 'build_bing_section', 'build_seo_section' ) as $builder ) {
+		foreach ( array( 'build_sales_section', 'build_bing_section', 'build_seo_section' ) as $builder ) {
 			try {
 				$section = $this->$builder( $context );
 			} catch ( \Throwable $e ) {
@@ -189,6 +189,62 @@ class Weekly_Summary_Email {
 			'title' => $titles[ $platform ],
 			'html'  => $html,
 		);
+	}
+
+	/**
+	 * Build the "Sales by channel" section.
+	 *
+	 * Present only when WooCommerce is active and the week has paid orders.
+	 *
+	 * @param array $context Weekly_Summary context.
+	 * @return array|null Section, or null when it should be skipped.
+	 */
+	private function build_sales_section( array $context ) {
+		$result = $context['sales'] ?? null;
+
+		if ( ! is_array( $result ) || 'ok' !== ( $result['status'] ?? '' ) || ! is_array( $result['data'] ?? null ) ) {
+			return null;
+		}
+
+		$data = $result['data'];
+		$html = $this->note(
+			sprintf(
+				/* translators: %s: date range such as "Sep 28 - Oct 4" */
+				__( '%s compared with the 7 days before. Paid orders only, refunds subtracted. Attribution is last-click as recorded by WooCommerce.', 'specflux-marketing-analytics-chat' ),
+				$this->format_range( $data['range'] )
+			)
+		);
+
+		$html .= '<div style="font-size:12px;line-height:16px;color:' . esc_attr( self::COLOR_MUTED ) . ';">' . esc_html__( 'Revenue', 'specflux-marketing-analytics-chat' ) . '</div>';
+		$html .= '<div style="font-size:22px;line-height:30px;font-weight:700;color:' . esc_attr( self::COLOR_TEXT ) . ';">' . esc_html( $this->format_money( $data['revenue'], $data['currency'] ) ) . '</div>';
+		$html .= '<div style="margin:0 0 12px;">' . $this->format_change( $data['change'] ) . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in format_change().
+
+		if ( ! empty( $data['channels'] ) ) {
+			$html .= '<div style="margin:12px 0 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:' . esc_attr( self::COLOR_MUTED ) . ';">' . esc_html__( 'Top channels', 'specflux-marketing-analytics-chat' ) . '</div>';
+			$html .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px;">';
+			foreach ( $data['channels'] as $channel ) {
+				$html .= '<tr><td style="padding:6px 8px 6px 0;border-top:1px solid ' . esc_attr( self::COLOR_BORDER ) . ';font-size:14px;color:' . esc_attr( self::COLOR_TEXT ) . ';">' . esc_html( $channel['label'] ) . '</td>';
+				$html .= '<td align="right" style="padding:6px 0;border-top:1px solid ' . esc_attr( self::COLOR_BORDER ) . ';font-size:14px;font-weight:600;color:' . esc_attr( self::COLOR_TEXT ) . ';white-space:nowrap;">' . esc_html( $this->format_money( $channel['revenue'], $data['currency'] ) ) . ' <span style="font-weight:400;color:' . esc_attr( self::COLOR_MUTED ) . ';">(' . esc_html( number_format_i18n( $channel['share'], 1 ) ) . '%)</span></td></tr>';
+			}
+			$html .= '</table>';
+		}
+
+		return array(
+			'id'    => 'sales',
+			'title' => __( 'Sales by channel', 'specflux-marketing-analytics-chat' ),
+			'html'  => $html,
+		);
+	}
+
+	/**
+	 * Format an amount with its currency code, e.g. "1,234.50 USD".
+	 *
+	 * @param float  $amount   Amount.
+	 * @param string $currency Currency code.
+	 * @return string Plain text.
+	 */
+	public function format_money( $amount, $currency ) {
+		return number_format_i18n( (float) $amount, 2 ) . ' ' . $currency;
 	}
 
 	/**
