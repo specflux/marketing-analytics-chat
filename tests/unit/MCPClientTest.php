@@ -27,7 +27,7 @@ class MCPClientTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->client = new MCP_Client( 1 );
+		$this->client = new MCP_Client();
 	}
 
 	/**
@@ -38,28 +38,16 @@ class MCPClientTest extends TestCase {
 	}
 
 	/**
-	 * Test constructor sets user ID.
+	 * Building the client and the chat handler must not resolve the current user:
+	 * both are constructed at plugins_loaded, before WordPress sets the user up.
 	 */
-	public function test_constructor_sets_user_id(): void {
-		$reflection = new \ReflectionClass( $this->client );
-		$property   = $reflection->getProperty( 'user_id' );
-		$property->setAccessible( true );
+	public function test_construction_does_not_resolve_current_user(): void {
+		$GLOBALS['specflux_mac_test_current_user_calls'] = 0;
 
-		$this->assertEquals( 1, $property->getValue( $this->client ) );
-	}
+		new MCP_Client();
+		new \Specflux_Marketing_Analytics\Chat\Chat_Ajax_Handler();
 
-	/**
-	 * Test constructor uses current user ID when none provided.
-	 */
-	public function test_constructor_uses_current_user(): void {
-		$client = new MCP_Client();
-
-		$reflection = new \ReflectionClass( $client );
-		$property   = $reflection->getProperty( 'user_id' );
-		$property->setAccessible( true );
-
-		// get_current_user_id() returns 1 in our mock.
-		$this->assertEquals( 1, $property->getValue( $client ) );
+		$this->assertSame( 0, $GLOBALS['specflux_mac_test_current_user_calls'] );
 	}
 
 	/**

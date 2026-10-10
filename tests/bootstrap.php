@@ -465,6 +465,7 @@ if ( ! function_exists( 'user_can' ) ) {
 
 if ( ! function_exists( 'get_current_user_id' ) ) {
     function get_current_user_id() {
+        $GLOBALS['specflux_mac_test_current_user_calls'] = ( $GLOBALS['specflux_mac_test_current_user_calls'] ?? 0 ) + 1;
         return 1; // Mock admin user
     }
 }
