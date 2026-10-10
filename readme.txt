@@ -326,6 +326,8 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 * Added: A "Get started" link in the plugin's row on the Plugins screen
 * Added: The Live Preview on WordPress.org now opens with demo data
 * Fixed: The Dashboard widget's styles never loaded on the WordPress Dashboard
+* Fixed: On a server running PHP older than 8.1 the plugin stopped the whole site with an error; it now stays inactive and shows a notice asking for a PHP upgrade
+* Fixed: The plugin looked up the logged-in user before WordPress had set it up, which could break login or API token plugins and crashed one site running another MCP connector
 * Changed: Top pages and traffic sources are now explicitly sorted by their metric
 * Readme: installation steps and the chat FAQ now describe one-click Google sign-in and the WordPress AI Client
 
