@@ -29,6 +29,27 @@ define( 'SPECFLUX_MAC_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SPECFLUX_MAC_URL', plugin_dir_url( __FILE__ ) );
 define( 'SPECFLUX_MAC_BASENAME', plugin_basename( __FILE__ ) );
 
+// WordPress checks "Requires PHP" only on activation; a later PHP downgrade, or a CLI
+// activation under a different PHP than the web server's, would otherwise fatal the site.
+if ( version_compare( PHP_VERSION, '8.1', '<' ) ) {
+	add_action(
+		'admin_notices',
+		function () {
+			wp_admin_notice(
+				'<strong>Specflux Marketing Analytics Chat:</strong> ' . esc_html(
+					sprintf(
+						/* translators: %s: the PHP version the site runs. */
+						__( 'This plugin needs PHP 8.1 or newer and this site runs PHP %s, so it is not running. Ask your host to upgrade PHP.', 'specflux-marketing-analytics-chat' ),
+						PHP_VERSION
+					)
+				),
+				array( 'type' => 'error' )
+			);
+		}
+	);
+	return;
+}
+
 // Load Composer autoloader.
 if ( file_exists( SPECFLUX_MAC_PATH . 'vendor/autoload.php' ) ) {
 	require_once SPECFLUX_MAC_PATH . 'vendor/autoload.php';

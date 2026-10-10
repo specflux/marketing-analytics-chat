@@ -21,19 +21,22 @@ defined( 'ABSPATH' ) || exit;
 class MCP_Client {
 
 	/**
-	 * WordPress user for MCP context
+	 * WordPress user for MCP context, when the caller supplies one.
 	 *
-	 * @var int
+	 * @var int|null
 	 */
 	private $user_id;
 
 	/**
 	 * Constructor
 	 *
-	 * @param int $user_id WordPress user ID for MCP context.
+	 * Never resolves the current user: this is built at plugins_loaded, before WordPress
+	 * sets the user up, and an early lookup breaks authentication plugins that hook later.
+	 *
+	 * @param int|null $user_id WordPress user ID for MCP context.
 	 */
 	public function __construct( $user_id = null ) {
-		$this->user_id = $user_id ?: get_current_user_id();
+		$this->user_id = $user_id;
 	}
 
 	/**
