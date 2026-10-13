@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	use Specflux_Marketing_Analytics\Chat\MCP_Client;
 	use Specflux_Marketing_Analytics\Chat\Tool_Policy;
 	use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
+	use Specflux_Marketing_Analytics\Attribution\Source_Capture;
 	use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Preview;
 	use Specflux_Marketing_Analytics\Reports\Weekly_Summary_Scheduler;
 	use Specflux_Marketing_Analytics\Utils\Permission_Manager;
@@ -91,6 +92,11 @@ if ( isset( $_POST['save_settings'] ) && current_user_can( 'manage_options' ) &&
 
 	// Debug Settings.
 	$new_settings['debug_mode'] = ! empty( $_POST['debug_mode'] ) ? 1 : 0;
+
+	// Source capture switch. Only saved when its checkbox was on the submitted form.
+	if ( isset( $_POST['source_capture_submitted'] ) ) {
+		update_option( Source_Capture::OPTION_ENABLED, ! empty( $_POST['source_capture_enabled'] ) ? 1 : 0 );
+	}
 
 	// Preserve keys not present in the form (e.g. platforms, version).
 	$new_settings = array_merge( $existing_settings, $new_settings );
@@ -942,6 +948,22 @@ if ( isset( $_POST['save_email_settings'] ) && current_user_can( 'manage_options
 						<?php esc_html_e( 'Enable debug logging', 'specflux-marketing-analytics-chat' ); ?>
 								</label>
 								<p class="description"><?php esc_html_e( 'Log API requests and responses to the WordPress debug log (credentials are never logged).', 'specflux-marketing-analytics-chat' ); ?></p>
+							</td>
+						</tr>
+					</table>
+
+					<h2><?php esc_html_e( 'Visit source capture', 'specflux-marketing-analytics-chat' ); ?></h2>
+
+					<table class="form-table">
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Source cookie', 'specflux-marketing-analytics-chat' ); ?></th>
+							<td>
+								<input type="hidden" name="source_capture_submitted" value="1" />
+								<label for="source_capture_enabled">
+									<input type="checkbox" id="source_capture_enabled" name="source_capture_enabled" value="1" <?php checked( (bool) get_option( Source_Capture::OPTION_ENABLED, 1 ) ); ?> />
+									<?php esc_html_e( 'Record where visitors came from', 'specflux-marketing-analytics-chat' ); ?>
+								</label>
+								<p class="description"><?php esc_html_e( 'Sets an anonymous first-party cookie (no identifier, 30 minutes after the last page view) and saves the source on new Easy Digital Downloads orders, GiveWP donations and form entries. Respects the WP Consent API when a consent plugin is active.', 'specflux-marketing-analytics-chat' ); ?></p>
 							</td>
 						</tr>
 					</table>
