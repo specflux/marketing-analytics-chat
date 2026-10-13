@@ -41,6 +41,19 @@ class Admin {
 			array( $this, 'render_dashboard_page' )
 		);
 
+		// AI Chat page.
+		add_submenu_page(
+			'specflux-mac',
+			__( 'AI Assistant', 'specflux-marketing-analytics-chat' ),
+			__( 'AI Assistant', 'specflux-marketing-analytics-chat' ),
+			'access_specflux_mac', // phpcs:ignore WordPress.WP.Capabilities.Unknown -- Custom capability registered on activation.
+			'specflux-mac-ai-assistant',
+			array( $this, 'render_chat_page' )
+		);
+
+		/**
+		 * Allow pro add-on to register additional submenu pages.
+		 */
 		// Connections page.
 		add_submenu_page(
 			'specflux-mac',
@@ -84,19 +97,6 @@ class Admin {
 			array( $this, 'render_settings_page' )
 		);
 
-		// AI Chat page.
-		add_submenu_page(
-			'specflux-mac',
-			__( 'AI Assistant', 'specflux-marketing-analytics-chat' ),
-			__( 'AI Assistant', 'specflux-marketing-analytics-chat' ),
-			'access_specflux_mac', // phpcs:ignore WordPress.WP.Capabilities.Unknown -- Custom capability registered on activation.
-			'specflux-mac-ai-assistant',
-			array( $this, 'render_chat_page' )
-		);
-
-		/**
-		 * Allow pro add-on to register additional submenu pages.
-		 */
 		do_action( 'specflux_mac_admin_menu' );
 	}
 
