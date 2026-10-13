@@ -305,6 +305,9 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 
 == Changelog ==
 
+= 0.6.0 =
+* Added: Jetpack Stats as a site analytics source. On a WordPress.com-connected site (Jetpack, or the standalone Jetpack Stats plugin) the chat, the dashboard widget and the weekly email can read views, visitors, top posts and referrers from Jetpack Stats when GA4 is not connected, and say which plugin answered. Not connected sites get a clear message instead of an error
+
 = 0.5.0 - 2026-10-06 =
 * Added: Matomo connection (self-hosted or Matomo Cloud) with visits and change against the previous period, top pages, traffic sources and goal conversions
 * Added: Site analytics plugin source. Sites without GA4 can ask about traffic, top pages and referrers answered from Burst Statistics, Independent Analytics or Koko Analytics (whichever is active and has data), with the plugin named in every answer. Jetpack Stats is detected but not supported yet

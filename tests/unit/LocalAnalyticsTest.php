@@ -298,7 +298,7 @@ class LocalAnalyticsTest extends TestCase {
 	}
 
 	/**
-	 * Jetpack is detected but unsupported and never becomes the active adapter.
+	 * Jetpack is detected but unsupported (stats class missing) and never becomes the active adapter.
 	 */
 	public function test_jetpack_is_detected_but_not_supported(): void {
 		Jetpack_Test_Adapter::$active = array( 'JETPACK__VERSION' );
@@ -309,7 +309,7 @@ class LocalAnalyticsTest extends TestCase {
 		$this->assertFalse( $jetpack->is_supported() );
 		$this->assertSame( '', $reader->detect() );
 		$this->assertArrayHasKey( 'Jetpack Stats', $reader->get_unsupported() );
-		$this->assertStringContainsString( 'not supported yet', $reader->get_unsupported()['Jetpack Stats'] );
+		$this->assertStringContainsString( 'WPCOM_Stats', $reader->get_unsupported()['Jetpack Stats'] );
 	}
 
 	/**

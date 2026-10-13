@@ -248,6 +248,16 @@ class Widget_Headline {
 				);
 				$row  = self::find_metric( $data, 'sessions' );
 				break;
+			case Weekly_Summary::LOCAL_PLATFORM:
+				$item = array(
+					'platform'   => Weekly_Summary::LOCAL_PLATFORM,
+					/* translators: %s: analytics plugin name, e.g. Jetpack Stats. */
+					'label'      => sprintf( __( '%s visitors', 'specflux-marketing-analytics-chat' ), (string) ( $data['source_label'] ?? __( 'Site', 'specflux-marketing-analytics-chat' ) ) ),
+					'has_change' => true,
+					'period'     => '',
+				);
+				$row  = self::find_metric( $data, 'visitors' );
+				break;
 			case 'gsc':
 				$item = array(
 					'platform'   => 'gsc',

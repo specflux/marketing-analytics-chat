@@ -2,16 +2,17 @@
 /**
  * Site Analytics Plugin Abilities
  *
- * Traffic, top pages and referrers from a privacy-first analytics plugin
- * installed on this site (Burst Statistics, Independent Analytics, Koko
- * Analytics), for sites that do not use GA4. Registered only when such a
+ * Traffic, top pages and referrers from an analytics plugin installed on this
+ * site (Burst Statistics, Independent Analytics, Koko Analytics, or a
+ * WordPress.com-connected Jetpack Stats), for sites that do not use GA4. Registered only when such a
  * plugin with recorded data is active.
  *
  * None of the supported plugins registers WordPress Abilities for historical
  * traffic: Burst Statistics registers a few opt-in live/today abilities
  * (includes/Admin/Abilities_Api/class-abilities-api.php, off by default) but
  * no date-range totals, pages or referrers; Independent Analytics and Koko
- * Analytics register none; Jetpack registers none for stats. These abilities
+ * Analytics register none; Jetpack Stats registers its own jetpack-stats/* abilities (newer
+ * Jetpack releases) that are not date-range comparable with these. These abilities
  * therefore do not duplicate them.
  *
  * @package Specflux_Marketing_Analytics

@@ -85,6 +85,24 @@ abstract class Local_Analytics_Adapter {
 	}
 
 	/**
+	 * Which plugin answers when more than one can (e.g. Jetpack vs standalone Jetpack Stats). '' = the plugin itself.
+	 *
+	 * @return string
+	 */
+	public function provider() {
+		return '';
+	}
+
+	/**
+	 * Last problem met while reading, or '' (remote adapters only).
+	 *
+	 * @return string
+	 */
+	public function last_error() {
+		return '';
+	}
+
+	/**
 	 * Whether the plugin is active.
 	 *
 	 * @return bool

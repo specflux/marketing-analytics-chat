@@ -12,6 +12,7 @@ use Specflux_Marketing_Analytics\API_Clients\Clarity_Client;
 use Specflux_Marketing_Analytics\API_Clients\GA4_Client;
 use Specflux_Marketing_Analytics\API_Clients\GSC_Client;
 use Specflux_Marketing_Analytics\Commerce\Woo_Sales_Reader;
+use Specflux_Marketing_Analytics\Content\Local_Analytics_Reader;
 use Specflux_Marketing_Analytics\Content\Seo_Issue_Summary;
 use Specflux_Marketing_Analytics\Credentials\Connection_Tester;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
@@ -50,6 +51,11 @@ class Weekly_Summary {
 	 * @var string[]
 	 */
 	const PLATFORMS = array( 'ga4', 'gsc', 'clarity' );
+
+	/**
+	 * Pseudo platform for the on-site analytics plugin fallback (non-GA4 traffic headline).
+	 */
+	const LOCAL_PLATFORM = 'localstats';
 
 	/**
 	 * Injected API clients keyed by platform (tests pass doubles).
@@ -101,7 +107,7 @@ class Weekly_Summary {
 	 */
 	public function get_connected_platforms() {
 		if ( null !== $this->connected ) {
-			return array_values( array_intersect( self::PLATFORMS, $this->connected ) );
+			return array_values( array_intersect( array_merge( self::PLATFORMS, array( self::LOCAL_PLATFORM ) ), $this->connected ) );
 		}
 
 		$credential_manager = new Credential_Manager();
@@ -111,6 +117,11 @@ class Weekly_Summary {
 			if ( $credential_manager->has_credentials( $platform ) ) {
 				$connected[] = $platform;
 			}
+		}
+
+		// Without GA4, an on-site analytics plugin (Burst, Koko, Independent Analytics, Jetpack Stats) supplies the traffic headline.
+		if ( ! in_array( 'ga4', $connected, true ) && '' !== $this->local_reader()->get_label() ) {
+			$connected[] = self::LOCAL_PLATFORM;
 		}
 
 		return $connected;
@@ -216,6 +227,9 @@ class Weekly_Summary {
 						break;
 					case 'gsc':
 						$data = $this->collect_gsc( $ranges['gsc'] );
+						break;
+					case self::LOCAL_PLATFORM:
+						$data = $this->collect_localstats( $ranges['ga4'] );
 						break;
 					default:
 						$data = $this->collect_clarity();
@@ -568,6 +582,67 @@ class Weekly_Summary {
 			'sources'  => $sources,
 			'range'    => $range['current'],
 			'previous' => $range['previous'],
+		);
+	}
+
+	/**
+	 * The on-site analytics plugin reader (tests pass a double under the `localstats` client key).
+	 *
+	 * @return Local_Analytics_Reader
+	 */
+	private function local_reader() {
+		return $this->clients[ self::LOCAL_PLATFORM ] ?? new Local_Analytics_Reader();
+	}
+
+	/**
+	 * Collect the traffic headline from the on-site analytics plugin (GA4 fallback).
+	 *
+	 * @param array $range Current and previous windows (same as GA4).
+	 * @return array Same shape as collect_ga4(), plus `source_label` and `answered_by`.
+	 */
+	private function collect_localstats( array $range ) {
+		$reader  = $this->local_reader();
+		$bounds  = Local_Analytics_Reader::build_range(
+			array(
+				'start_date' => $range['current'][0],
+				'end_date'   => $range['current'][1],
+			)
+		);
+		$traffic = $reader->get_traffic( $bounds );
+		$totals  = $traffic['totals'];
+		$prev    = $traffic['previous_totals'];
+
+		$rows   = array();
+		$rows[] = $this->metric( 'visitors', __( 'Visitors', 'specflux-marketing-analytics-chat' ), (float) $totals['visitors'], (float) $prev['visitors'] );
+		$rows[] = $this->metric( 'pageviews', __( 'Page views', 'specflux-marketing-analytics-chat' ), (float) $totals['pageviews'], (float) $prev['pageviews'] );
+
+		$pages   = array();
+		$sources = array();
+		try {
+			foreach ( $reader->get_top_pages( $bounds, 5 )['items'] as $item ) {
+				$pages[] = array(
+					'label' => (string) $item['path'],
+					'value' => (float) $item['pageviews'],
+				);
+			}
+			foreach ( $reader->get_referrers( $bounds, 3 )['items'] as $item ) {
+				$sources[] = array(
+					'label' => (string) $item['source'],
+					'value' => (float) ( null !== $item['pageviews'] ? $item['pageviews'] : $item['sessions'] ),
+				);
+			}
+		} catch ( \Throwable $e ) {
+			unset( $e ); // Detail lists are best-effort.
+		}
+
+		return array(
+			'metrics'      => $rows,
+			'pages'        => $pages,
+			'sources'      => $sources,
+			'range'        => $range['current'],
+			'previous'     => $range['previous'],
+			'source_label' => $traffic['source']['plugin'],
+			'answered_by'  => $traffic['source']['answered_by'] ?? '',
 		);
 	}
 

@@ -21,9 +21,9 @@
  *   viewed_at UTC), `_sessions` (session_id, visitor_id, referrer_id, created_at UTC), `_resources`
  *   (cached_url, cached_title), `_referrers` (domain, referrer_type_id), `_referrer_types`;
  *   IAWP/Tables.php, IAWP/Public_API/Analytics.php, IAWP/Migrations/Migration_45.php.
- * - Jetpack Stats 16.3: data lives on WordPress.com and is fetched with a remote request
- *   (jetpack_vendor/automattic/jetpack-stats/src/class-wpcom-stats.php fetch_stats), so it is
- *   detected but not supported yet.
+ * - Jetpack Stats (Jetpack 16.3.1 / standalone Jetpack Stats 1.0.0): data lives on WordPress.com and is
+ *   read through Automattic\Jetpack\Stats\WPCOM_Stats (get_visits, get_top_posts, get_referrers; arrays or
+ *   WP_Error), so it needs a WordPress.com connection. See .scratch/integrations-roadmap/research/verify-a4.md.
  *
  * @package Specflux_Marketing_Analytics
  */
@@ -129,6 +129,33 @@ class Local_Analytics_Reader {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Active readable plugins that cannot answer right now, with the reason (e.g. Jetpack not connected).
+	 *
+	 * @return array<string,string> Map of label => reason.
+	 */
+	public function get_unreadable() {
+		$out = $this->get_unsupported();
+		foreach ( $this->adapters as $adapter ) {
+			if ( $adapter->is_supported() && $adapter->is_active() && ! $adapter->has_data() && '' !== $adapter->last_error() ) {
+				$out[ $adapter->label() ] = $adapter->last_error();
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Provider (which plugin answered) of the active adapter, or ''.
+	 *
+	 * @return string
+	 */
+	public function get_provider() {
+		$adapter = $this->get_active_adapter();
+
+		return $adapter ? $adapter->provider() : '';
 	}
 
 	/**
@@ -308,7 +335,7 @@ class Local_Analytics_Reader {
 	private function require_adapter() {
 		$adapter = $this->get_active_adapter();
 		if ( ! $adapter ) {
-			throw new \RuntimeException( esc_html( 'No supported site analytics plugin with recorded data was found (Burst Statistics, Independent Analytics and Koko Analytics are supported).' ) );
+			throw new \RuntimeException( esc_html( 'No supported site analytics plugin with recorded data was found (Burst Statistics, Independent Analytics, Koko Analytics and a WordPress.com-connected Jetpack Stats are supported).' ) );
 		}
 
 		return $adapter;
@@ -321,10 +348,16 @@ class Local_Analytics_Reader {
 	 * @return array
 	 */
 	private function source_block( Local_Analytics_Adapter $adapter ) {
-		return array(
+		$provider = $adapter->provider();
+		$block    = array(
 			'plugin' => $adapter->label(),
 			'slug'   => $adapter->slug(),
 			'note'   => 'First-party numbers recorded on this site by the ' . $adapter->label() . ' plugin (no personal data). They are not GA4 numbers and usually differ from them.',
 		);
+		if ( '' !== $provider ) {
+			$block['answered_by'] = $provider;
+		}
+
+		return $block;
 	}
 }

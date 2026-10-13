@@ -296,11 +296,11 @@ if ( empty( $mac_abilities ) ) {
 			'icon'        => 'dashicons-cart',
 		),
 
-		// Site analytics plugin abilities (registered only when Burst, Independent Analytics, or Koko Analytics has data).
+		// Site analytics plugin abilities (registered only when Burst, Independent Analytics, Koko Analytics, or a WordPress.com-connected Jetpack Stats has data).
 		array(
 			'name'        => __( 'Get Site Traffic', 'specflux-marketing-analytics-chat' ),
 			'slug'        => 'marketing-analytics/get-site-traffic',
-			'description' => __( 'Visitors, pageviews, change vs the previous period and a daily series from Burst Statistics, Independent Analytics, or Koko Analytics, for sites without GA4.', 'specflux-marketing-analytics-chat' ),
+			'description' => __( 'Visitors, pageviews, change vs the previous period and a daily series from Burst Statistics, Independent Analytics, Koko Analytics, or Jetpack Stats, for sites without GA4.', 'specflux-marketing-analytics-chat' ),
 			'category'    => 'localstats',
 			'tier'        => 'free',
 			'icon'        => 'dashicons-chart-area',
