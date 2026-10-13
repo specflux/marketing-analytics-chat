@@ -251,4 +251,93 @@ class WidgetHeadlineTest extends TestCase {
 		$this->assertStringContainsString( 'Weekly email summary: on', preg_replace( '/\s+/', ' ', $on ) );
 		$this->assertStringContainsString( 'Weekly email summary: off', preg_replace( '/\s+/', ' ', $off ) );
 	}
+
+	/**
+	 * A filter callback can add a row, rendered with value_text.
+	 */
+	public function test_rows_filter_adds_a_row(): void {
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_widget_headline_rows'] = static function ( array $rows ) {
+			$rows[] = array(
+				'platform'   => 'stripe',
+				'label'      => 'Stripe net revenue',
+				'value'      => null,
+				'value_text' => '1,200 USD',
+			);
+			return $rows;
+		};
+
+		$html = Widget_Headline::render( array( array( 'platform' => 'ga4', 'label' => 'GA4 sessions', 'value' => 5.0 ) ) );
+		unset( $GLOBALS['specflux_mac_test_filters'] );
+
+		$this->assertStringContainsString( 'GA4 sessions', $html );
+		$this->assertStringContainsString( 'Stripe net revenue', $html );
+		$this->assertStringContainsString( '1,200 USD', $html );
+	}
+
+	/**
+	 * Malformed rows are dropped, good rows survive.
+	 */
+	public function test_rows_filter_drops_malformed_rows(): void {
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_widget_headline_rows'] = static function () {
+			return array(
+				'not an array',
+				array( 'platform' => 'x' ),
+				array( 'label' => 'No platform' ),
+				array( 'platform' => array(), 'label' => 'Bad platform' ),
+				array( 'platform' => 'ok', 'label' => 'Good row', 'value' => 'abc' ),
+			);
+		};
+
+		$rows = Widget_Headline::filter_rows( array() );
+		unset( $GLOBALS['specflux_mac_test_filters'] );
+
+		$this->assertCount( 1, $rows );
+		$this->assertSame( 'Good row', $rows[0]['label'] );
+		$this->assertNull( $rows[0]['value'] );
+	}
+
+	/**
+	 * A throwing or non-array callback keeps the original rows.
+	 */
+	public function test_rows_filter_failure_keeps_original_rows(): void {
+		$original = array( array( 'platform' => 'ga4', 'label' => 'GA4 sessions', 'value' => 1.0 ) );
+
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_widget_headline_rows'] = static function () {
+			throw new \RuntimeException( 'boom' );
+		};
+		$thrown = Widget_Headline::filter_rows( $original );
+
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_widget_headline_rows'] = static function () {
+			return 'nope';
+		};
+		$scalar = Widget_Headline::filter_rows( $original );
+		unset( $GLOBALS['specflux_mac_test_filters'] );
+
+		$this->assertSame( 'GA4 sessions', $thrown[0]['label'] );
+		$this->assertSame( 'GA4 sessions', $scalar[0]['label'] );
+	}
+
+	/**
+	 * Filter-added rows are escaped on output.
+	 */
+	public function test_rows_filter_output_is_escaped(): void {
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_widget_headline_rows'] = static function () {
+			return array(
+				array(
+					'platform'   => 'x',
+					'label'      => '<script>alert(1)</script>',
+					'value_text' => '<img src=x onerror=1>',
+					'period'     => '<b>p</b>',
+				),
+			);
+		};
+
+		$html = Widget_Headline::render( array() );
+		unset( $GLOBALS['specflux_mac_test_filters'] );
+
+		$this->assertStringNotContainsString( '<script>', $html );
+		$this->assertStringNotContainsString( '<img', $html );
+		$this->assertStringNotContainsString( '<b>', $html );
+		$this->assertStringContainsString( '&lt;script&gt;', $html );
+	}
 }
