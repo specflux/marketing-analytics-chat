@@ -305,6 +305,9 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 
 == Changelog ==
 
+= 0.6.0 =
+* Added: GiveWP donations by source. Ask where completed live-mode donations came from by channel, source, campaign or donation form, with donors (a count only), recurring share and the change against the previous period, per currency. Donations made before source tracking was on show as Not tracked. The weekly email and Dashboard widget get a Donations row
+
 = 0.5.0 - 2026-10-06 =
 * Added: Matomo connection (self-hosted or Matomo Cloud) with visits and change against the previous period, top pages, traffic sources and goal conversions
 * Added: Site analytics plugin source. Sites without GA4 can ask about traffic, top pages and referrers answered from Burst Statistics, Independent Analytics or Koko Analytics (whichever is active and has data), with the plugin named in every answer. Jetpack Stats is detected but not supported yet

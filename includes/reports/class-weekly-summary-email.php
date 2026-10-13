@@ -73,7 +73,7 @@ class Weekly_Summary_Email {
 			}
 		}
 
-		foreach ( array( 'build_sales_section', 'build_bing_section', 'build_seo_section' ) as $builder ) {
+		foreach ( array( 'build_sales_section', 'build_donations_section', 'build_bing_section', 'build_seo_section' ) as $builder ) {
 			try {
 				$section = $this->$builder( $context );
 			} catch ( \Throwable $e ) {
@@ -232,6 +232,48 @@ class Weekly_Summary_Email {
 		return array(
 			'id'    => 'sales',
 			'title' => __( 'Sales by channel', 'specflux-marketing-analytics-chat' ),
+			'html'  => $html,
+		);
+	}
+
+	/**
+	 * Build the "Donations" section (GiveWP), one block per currency.
+	 *
+	 * @param array $context Weekly_Summary context.
+	 * @return array|null Section, or null when it should be skipped.
+	 */
+	private function build_donations_section( array $context ) {
+		$result = $context['donations'] ?? null;
+
+		if ( ! is_array( $result ) || 'ok' !== ( $result['status'] ?? '' ) || ! is_array( $result['data']['currencies'] ?? null ) ) {
+			return null;
+		}
+
+		$data = $result['data'];
+		$html = $this->note(
+			sprintf(
+				/* translators: %s: date range such as "Sep 28 - Oct 4" */
+				__( '%s compared with the 7 days before. Completed live GiveWP donations only. Each currency is shown separately.', 'specflux-marketing-analytics-chat' ),
+				$this->format_range( $data['range'] )
+			)
+		);
+
+		foreach ( $data['currencies'] as $row ) {
+			$html .= '<div style="font-size:22px;line-height:30px;font-weight:700;color:' . esc_attr( self::COLOR_TEXT ) . ';">' . esc_html( $this->format_money( $row['amount'], $row['currency'] ) ) . '</div>';
+			$html .= '<div style="margin:0 0 4px;">' . $this->format_change( $row['change'] ) . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in format_change().
+			$html .= '<div style="margin:0 0 12px;font-size:13px;color:' . esc_attr( self::COLOR_MUTED ) . ';">' . esc_html(
+				sprintf(
+					/* translators: 1: number of donations, 2: number of donors */
+					_n( '%1$d donation from %2$d donor', '%1$d donations from %2$d donors', $row['donations'], 'specflux-marketing-analytics-chat' ),
+					$row['donations'],
+					$row['donors']
+				)
+			) . '</div>';
+		}
+
+		return array(
+			'id'    => 'donations',
+			'title' => __( 'Donations', 'specflux-marketing-analytics-chat' ),
 			'html'  => $html,
 		);
 	}

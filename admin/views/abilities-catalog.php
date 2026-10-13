@@ -296,6 +296,16 @@ if ( empty( $mac_abilities ) ) {
 			'icon'        => 'dashicons-cart',
 		),
 
+		// GiveWP abilities (registered only when GiveWP is active).
+		array(
+			'name'        => __( 'Get Donations by Source', 'specflux-marketing-analytics-chat' ),
+			'slug'        => 'marketing-analytics/get-donations-by-source',
+			'description' => __( 'GiveWP completed donations, donors, amount and recurring share by channel, source, campaign or form, per currency, with the change versus the previous period. Totals only, never donor details.', 'specflux-marketing-analytics-chat' ),
+			'category'    => 'store',
+			'tier'        => 'free',
+			'icon'        => 'dashicons-heart',
+		),
+
 		// Site analytics plugin abilities (registered only when Burst, Independent Analytics, or Koko Analytics has data).
 		array(
 			'name'        => __( 'Get Site Traffic', 'specflux-marketing-analytics-chat' ),
