@@ -308,6 +308,7 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 = 0.6.0 =
 * Added: First-party visit source capture. An anonymous cookie records how a visitor arrived and saves it with new Easy Digital Downloads orders, GiveWP donations and form entries (Ninja Forms, Formidable, Contact Form 7 with Flamingo, Fluent Forms, Gravity Forms, WPForms Pro). Respects the WP Consent API; can be turned off under Settings > Advanced
 * Added: Ninja Forms support in Form entries. Leads are counted per form and day, and pages, sources and channels appear for submissions the attribution tracker recorded. Names, emails and messages are never read. Formidable Forms entries now also show a channel per source.
+* Added: Jetpack Stats as a site analytics source. On a WordPress.com-connected site (Jetpack, or the standalone Jetpack Stats plugin) the chat, the dashboard widget and the weekly email can read views, visitors, top posts and referrers from Jetpack Stats when GA4 is not connected, and say which plugin answered. Not connected sites get a clear message instead of an error
 
 = 0.5.0 - 2026-10-06 =
 * Added: Matomo connection (self-hosted or Matomo Cloud) with visits and change against the previous period, top pages, traffic sources and goal conversions

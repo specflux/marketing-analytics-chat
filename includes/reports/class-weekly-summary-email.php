@@ -138,6 +138,11 @@ class Weekly_Summary_Email {
 			'clarity' => __( 'Microsoft Clarity', 'specflux-marketing-analytics-chat' ),
 		);
 
+		if ( Weekly_Summary::LOCAL_PLATFORM === $platform ) {
+			/* translators: %s: analytics plugin name, e.g. Jetpack Stats. */
+			$titles[ $platform ] = sprintf( __( 'Site analytics (%s)', 'specflux-marketing-analytics-chat' ), (string) ( $result['data']['source_label'] ?? __( 'on-site plugin', 'specflux-marketing-analytics-chat' ) ) );
+		}
+
 		if ( ! isset( $titles[ $platform ] ) ) {
 			return null;
 		}
@@ -158,7 +163,7 @@ class Weekly_Summary_Email {
 		$data = $result['data'];
 		$html = '';
 
-		if ( 'ga4' === $platform ) {
+		if ( 'ga4' === $platform || Weekly_Summary::LOCAL_PLATFORM === $platform ) {
 			$html .= $this->note(
 				sprintf(
 				/* translators: %s: date range such as "Sep 28 - Oct 4" */
