@@ -357,6 +357,22 @@ if ( ! function_exists( 'delete_option' ) ) {
 	}
 }
 
+if ( ! function_exists( 'maybe_unserialize' ) ) {
+	/**
+	 * Mock maybe_unserialize function.
+	 *
+	 * @param mixed $data Possibly serialized data.
+	 * @return mixed
+	 */
+	function maybe_unserialize( $data ) {
+		if ( is_string( $data ) && preg_match( '/^[aOsibd]:/', $data ) ) {
+			$value = @unserialize( $data, array( 'allowed_classes' => false ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize
+			return false === $value && 'b:0;' !== $data ? $data : $value;
+		}
+		return $data;
+	}
+}
+
 if ( ! function_exists( 'wp_json_encode' ) ) {
 	/**
 	 * Mock wp_json_encode function.

@@ -611,7 +611,7 @@ class NamingConsistencyTest extends TestCase {
 				if ( preg_match_all( $pattern, $line, $matches ) ) {
 					foreach ( $matches[1] as $table_suffix ) {
 						// Skip tables owned by SEO and form plugins that the content integrations read.
-						if ( in_array( $table_suffix, array( 'aioseo_posts', 'rank_math_404_logs', 'frm_items', 'frm_item_metas', 'wpforms_entries' ), true ) ) {
+						if ( in_array( $table_suffix, array( 'aioseo_posts', 'rank_math_404_logs', 'frm_items', 'frm_item_metas', 'wpforms_entries', 'give_donationmeta' ), true ) ) {
 							continue;
 						}
 

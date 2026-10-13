@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use Specflux_Marketing_Analytics\Admin\Widget_Headline;
 use Specflux_Marketing_Analytics\Commerce\Woo_Sales_Reader;
+use Specflux_Marketing_Analytics\Donations\Givewp_Donations_Reader;
 use Specflux_Marketing_Analytics\Content\Seo_Issue_Summary;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 use Specflux_Marketing_Analytics\Reports\Weekly_Prompt_Builder;
@@ -32,10 +33,12 @@ $has_connection = ! empty( $connected );
 // WooCommerce is a data source on its own: a store with paid orders needs no Google connection.
 $sales_row        = Woo_Sales_Reader::is_available() ? Widget_Headline::cached_sales() : 'none';
 $has_sales_source = 'none' !== $sales_row;
-$has_source       = $has_connection || $has_sales_source;
+// GiveWP donations are a data source on their own too.
+$donations_row    = Givewp_Donations_Reader::is_available() ? Widget_Headline::cached_donations() : 'none';
+$has_source       = $has_connection || $has_sales_source || 'none' !== $donations_row;
 $headline_items   = $has_connection ? Widget_Headline::cached() : array();
 $seo_summary      = $has_connection ? Seo_Issue_Summary::cached() : array();
-$needs_autoload   = null === $headline_items || null === $seo_summary || null === $sales_row;
+$needs_autoload   = null === $headline_items || null === $seo_summary || null === $sales_row || null === $donations_row;
 ?>
 <div class="smac-widget">
 	<?php if ( ! $has_source ) : ?>
@@ -47,7 +50,7 @@ $needs_autoload   = null === $headline_items || null === $seo_summary || null ==
 		<div class="smac-widget-section smac-widget-headline"<?php echo $needs_autoload ? ' data-autoload="1"' : ''; ?>>
 		<?php
 			// Never call the APIs while the dashboard renders: show a loading state and let the script fetch.
-		if ( null === $headline_items || ( ! $has_connection && null === $sales_row ) ) {
+		if ( null === $headline_items || ( ! $has_connection && null === $sales_row && null === $donations_row ) ) {
 			echo Widget_Headline::render_loading(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer.
 		} elseif ( $has_connection ) {
 			echo Widget_Headline::render( $headline_items ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer.
@@ -62,6 +65,9 @@ $needs_autoload   = null === $headline_items || null === $seo_summary || null ==
 
 		<!-- WooCommerce sales (cached only; the AJAX refresh fills it when cold) -->
 		<div class="smac-widget-section smac-widget-sales"><?php echo Widget_Headline::render_sales( $sales_row ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer. ?></div>
+
+		<!-- GiveWP donations (cached only; the AJAX refresh fills it when cold) -->
+		<div class="smac-widget-section smac-widget-donations"><?php echo Widget_Headline::render_donations( $donations_row ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the renderer. ?></div>
 
 		<?php if ( $has_connection ) : ?>
 	<!-- Platform Status -->

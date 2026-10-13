@@ -13,6 +13,7 @@ use Specflux_Marketing_Analytics\API_Clients\GA4_Client;
 use Specflux_Marketing_Analytics\API_Clients\GSC_Client;
 use Specflux_Marketing_Analytics\Commerce\Woo_Sales_Reader;
 use Specflux_Marketing_Analytics\Content\Local_Analytics_Reader;
+use Specflux_Marketing_Analytics\Donations\Givewp_Donations_Reader;
 use Specflux_Marketing_Analytics\Content\Seo_Issue_Summary;
 use Specflux_Marketing_Analytics\Credentials\Connection_Tester;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
@@ -86,18 +87,27 @@ class Weekly_Summary {
 	private $woo;
 
 	/**
+	 * Injected GiveWP donations reader (tests pass doubles).
+	 *
+	 * @var Givewp_Donations_Reader|null
+	 */
+	private $give;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param array                  $clients   Optional platform => client object overrides (ga4, gsc, clarity, bing).
-	 * @param string[]|null          $connected Optional connected-platform override (may include bing).
-	 * @param Seo_Issue_Summary|null $seo       Optional SEO summary service.
-	 * @param Woo_Sales_Reader|null  $woo       Optional WooCommerce sales reader.
+	 * @param array                        $clients   Optional platform => client object overrides (ga4, gsc, clarity, bing).
+	 * @param string[]|null                $connected Optional connected-platform override (may include bing).
+	 * @param Seo_Issue_Summary|null       $seo       Optional SEO summary service.
+	 * @param Woo_Sales_Reader|null        $woo       Optional WooCommerce sales reader.
+	 * @param Givewp_Donations_Reader|null $give Optional GiveWP donations reader.
 	 */
-	public function __construct( array $clients = array(), ?array $connected = null, ?Seo_Issue_Summary $seo = null, ?Woo_Sales_Reader $woo = null ) {
+	public function __construct( array $clients = array(), ?array $connected = null, ?Seo_Issue_Summary $seo = null, ?Woo_Sales_Reader $woo = null, ?Givewp_Donations_Reader $give = null ) {
 		$this->clients   = $clients;
 		$this->connected = $connected;
 		$this->seo       = $seo;
 		$this->woo       = $woo;
+		$this->give      = $give;
 	}
 
 	/**
@@ -140,7 +150,9 @@ class Weekly_Summary {
 		}
 
 		try {
-			return null !== $this->collect_sales( $this->get_ranges( $now )['ga4'] );
+			$ranges = $this->get_ranges( $now )['ga4'];
+
+			return null !== $this->collect_sales( $ranges ) || null !== $this->collect_donations( $ranges );
 		} catch ( \Throwable $e ) {
 			return false;
 		}
@@ -306,7 +318,65 @@ class Weekly_Summary {
 			unset( $context['sales'] );
 		}
 
+		try {
+			$donations = $this->collect_donations( $context['ranges']['ga4'] ?? $this->get_ranges( $now )['ga4'] );
+			if ( null !== $donations ) {
+				$context['donations'] = array(
+					'status' => 'ok',
+					'data'   => $donations,
+				);
+			}
+		} catch ( \Throwable $e ) {
+			unset( $context['donations'] );
+		}
+
 		return $context;
+	}
+
+	/**
+	 * GiveWP donations for a week against the week before, one entry per currency.
+	 *
+	 * Returns null when GiveWP is not active or the week has no completed donations,
+	 * so the email and the dashboard widget leave the section out.
+	 *
+	 * @param array $range Window with `current` and `previous` (each start, end Y-m-d).
+	 * @return array|null Keys: range, currencies (each: currency, amount, previous_amount, change, donations, donors).
+	 */
+	public function collect_donations( array $range ) {
+		$reader = $this->give ?? new Givewp_Donations_Reader();
+
+		if ( ! $reader->available() ) {
+			return null;
+		}
+
+		$current = $reader->get_donations_by_source( $range['current'][0], $range['current'][1], 'channel', 1, false );
+		if ( (int) $current['total_donations'] < 1 ) {
+			return null;
+		}
+
+		$previous = $reader->get_donations_by_source( $range['previous'][0], $range['previous'][1], 'channel', 1, false );
+		$prior    = array();
+		foreach ( $previous['currencies'] as $row ) {
+			$prior[ $row['currency'] ] = (float) $row['amount'];
+		}
+
+		$currencies = array();
+		foreach ( $current['currencies'] as $row ) {
+			$before       = $prior[ $row['currency'] ] ?? 0.0;
+			$currencies[] = array(
+				'currency'        => (string) $row['currency'],
+				'amount'          => (float) $row['amount'],
+				'previous_amount' => $before,
+				'change'          => $before > 0 ? round( ( $row['amount'] - $before ) / $before * 100, 1 ) : null,
+				'donations'       => (int) $row['donations'],
+				'donors'          => (int) $row['donors'],
+			);
+		}
+
+		return array(
+			'range'      => $range['current'],
+			'currencies' => $currencies,
+		);
 	}
 
 	/**
