@@ -51,12 +51,20 @@ class Jetpack_Stats_Adapter extends Local_Analytics_Adapter {
 	private static $has_data_memo = null;
 
 	/**
+	 * Reason behind a failed has_data(), so every instance can still explain it.
+	 *
+	 * @var string
+	 */
+	private static $has_data_error = '';
+
+	/**
 	 * Forget the per-request has_data() memo (tests, or after reconnecting in the same request).
 	 *
 	 * @return void
 	 */
 	public static function reset_request_memo() {
-		self::$has_data_memo = null;
+		self::$has_data_memo  = null;
+		self::$has_data_error = '';
 	}
 
 	/**
@@ -163,6 +171,10 @@ class Jetpack_Stats_Adapter extends Local_Analytics_Adapter {
 	 */
 	public function has_data() {
 		if ( null !== self::$has_data_memo ) {
+			if ( '' === $this->last_error ) {
+				$this->last_error = self::$has_data_error;
+			}
+
 			return self::$has_data_memo;
 		}
 		self::$has_data_memo = false;
@@ -177,6 +189,8 @@ class Jetpack_Stats_Adapter extends Local_Analytics_Adapter {
 				break;
 			}
 		}
+
+		self::$has_data_error = $this->last_error;
 
 		return self::$has_data_memo;
 	}

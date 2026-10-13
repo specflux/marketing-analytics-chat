@@ -456,5 +456,6 @@ class JetpackStatsAdapterTest extends TestCase {
 		$this->assertFalse( $second->has_data(), 'second instance reuses the first answer' );
 		$this->assertArrayNotHasKey( 'get_visits', $second->client->calls );
 		$this->assertCount( 1, $first->client->calls['get_visits'] );
+		$this->assertStringContainsString( 'not connected', $second->last_error(), 'the reason travels with the memo' );
 	}
 }
