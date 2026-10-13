@@ -41,11 +41,31 @@ class Jetpack_Stats_Adapter extends Local_Analytics_Adapter {
 	private $visits_memo = array();
 
 	/**
-	 * Per-request memo of has_data().
+	 * Per-request memo of has_data(), shared by every instance: the reader, the platform
+	 * and the abilities each build their own adapter, and a failed WordPress.com call is
+	 * not cached by Jetpack for connection errors, so each instance would otherwise repeat
+	 * the (up to 20 second) request.
 	 *
 	 * @var bool|null
 	 */
-	private $has_data_memo = null;
+	private static $has_data_memo = null;
+
+	/**
+	 * Reason behind a failed has_data(), so every instance can still explain it.
+	 *
+	 * @var string
+	 */
+	private static $has_data_error = '';
+
+	/**
+	 * Forget the per-request has_data() memo (tests, or after reconnecting in the same request).
+	 *
+	 * @return void
+	 */
+	public static function reset_request_memo() {
+		self::$has_data_memo  = null;
+		self::$has_data_error = '';
+	}
 
 	/**
 	 * Slug.
@@ -150,10 +170,14 @@ class Jetpack_Stats_Adapter extends Local_Analytics_Adapter {
 	 * @return bool
 	 */
 	public function has_data() {
-		if ( null !== $this->has_data_memo ) {
-			return $this->has_data_memo;
+		if ( null !== self::$has_data_memo ) {
+			if ( '' === $this->last_error ) {
+				$this->last_error = self::$has_data_error;
+			}
+
+			return self::$has_data_memo;
 		}
-		$this->has_data_memo = false;
+		self::$has_data_memo = false;
 		if ( ! $this->stats_class_exists() || ! $this->is_connected() ) {
 			return false;
 		}
@@ -161,12 +185,14 @@ class Jetpack_Stats_Adapter extends Local_Analytics_Adapter {
 		$rows  = $this->visits( array_merge( $range, array( 'days' => 30 ) ) );
 		foreach ( $rows as $row ) {
 			if ( $row['pageviews'] > 0 ) {
-				$this->has_data_memo = true;
+				self::$has_data_memo = true;
 				break;
 			}
 		}
 
-		return $this->has_data_memo;
+		self::$has_data_error = $this->last_error;
+
+		return self::$has_data_memo;
 	}
 
 	/**
@@ -220,7 +246,8 @@ class Jetpack_Stats_Adapter extends Local_Analytics_Adapter {
 	public function top_pages( array $range, $limit ) {
 		$raw = $this->remote( 'get_top_posts', $this->content_args( $range, $limit ) );
 		if ( null === $raw ) {
-			return array();
+			// A failed fetch is not "no pages": say so instead of answering with an empty list.
+			throw new \RuntimeException( esc_html( $this->last_error() ) );
 		}
 		$paths = array();
 		foreach ( $this->day_lists( $raw, 'postviews' ) as $row ) {
@@ -252,7 +279,7 @@ class Jetpack_Stats_Adapter extends Local_Analytics_Adapter {
 	public function referrers( array $range, $limit ) {
 		$raw = $this->remote( 'get_referrers', $this->content_args( $range, $limit ) );
 		if ( null === $raw ) {
-			return array();
+			throw new \RuntimeException( esc_html( $this->last_error() ) );
 		}
 		$merged = array();
 		foreach ( $this->day_lists( $raw, 'groups' ) as $group ) {
