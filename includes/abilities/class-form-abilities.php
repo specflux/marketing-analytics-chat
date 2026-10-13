@@ -81,7 +81,7 @@ class Form_Abilities {
 			'marketing-analytics/get-form-entries',
 			$this->definition(
 				__( 'Get Form Entries', 'specflux-marketing-analytics-chat' ),
-				__( 'Count this site\'s form submissions (leads) per form and per day or week, with totals and the change versus the previous period of the same length. Reads Contact Form 7 (with Flamingo), Fluent Forms, Gravity Forms, Formidable Forms and WPForms from the site database; only counts and form titles are returned, never names, emails or messages. Use it for "how many leads did I get", "which form performs best" or "are leads trending up". Default period is the last 28 days.', 'specflux-marketing-analytics-chat' ),
+				__( 'Count this site\'s form submissions (leads) per form and per day or week, with totals and the change versus the previous period of the same length. Reads Contact Form 7 (with Flamingo), Fluent Forms, Gravity Forms, Formidable Forms, Ninja Forms and WPForms from the site database; only counts and form titles are returned, never names, emails or messages. Use it for "how many leads did I get", "which form performs best" or "are leads trending up". Default period is the last 28 days.', 'specflux-marketing-analytics-chat' ),
 				array_merge(
 					$dates,
 					array(
@@ -355,6 +355,7 @@ class Form_Abilities {
 					'period'              => $period,
 					'entries_with_utm'    => $grouped['with_utm'],
 					'entries_without_utm' => $grouped['without_utm'],
+					'channels'            => $grouped['channels'],
 					'sources'             => array_slice( $sources, 0, self::TOP_N ),
 					'notes'               => $notes,
 				);
@@ -422,7 +423,7 @@ class Form_Abilities {
 	 */
 	private function require_plugin() {
 		if ( ! $this->reader->detect() ) {
-			throw new \Exception( 'No supported form plugin is active (WPForms, Gravity Forms, Fluent Forms, Contact Form 7 with Flamingo, or Formidable Forms).' );
+			throw new \Exception( 'No supported form plugin is active (WPForms, Gravity Forms, Fluent Forms, Contact Form 7 with Flamingo, Formidable Forms, or Ninja Forms).' );
 		}
 	}
 

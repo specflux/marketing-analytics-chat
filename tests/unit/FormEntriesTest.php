@@ -232,6 +232,7 @@ class FormEntriesTest extends TestCase {
 		$this->assertSame( array( 'fluentform' ), $this->reader( array( 'FLUENTFORM' ) )->detect() );
 		$this->assertSame( array( 'gravityforms' ), $this->reader( array(), array( 'GFForms' ) )->detect() );
 		$this->assertSame( array( 'formidable' ), $this->reader( array(), array( 'FrmAppHelper' ) )->detect() );
+		$this->assertSame( array( 'ninjaforms' ), $this->reader( array(), array( 'Ninja_Forms' ) )->detect() );
 		$this->assertSame( array( 'cf7' ), $this->reader( array( 'WPCF7_VERSION', 'FLAMINGO_VERSION' ) )->detect() );
 		$this->assertSame( array(), $this->reader( array( 'WPCF7_VERSION' ) )->detect(), 'Contact Form 7 alone stores nothing.' );
 		$this->assertSame( array(), $this->reader()->detect() );
@@ -274,7 +275,7 @@ class FormEntriesTest extends TestCase {
 		$this->assertSame( 'Contact us', $rows[0]['title'] );
 		$this->assertSame( 4, $rows[0]['count'] );
 
-		$sql = end( $wpdb->prepared );
+		$sql = $this->grouped_sql( $wpdb );
 		$this->assertStringContainsString( "created_at >= '2026-10-01 00:00:00'", $sql );
 		$this->assertStringContainsString( "created_at < '2026-10-08 00:00:00'", $sql );
 		$this->assertStringContainsString( "status NOT IN ('trashed','spam')", $sql );
@@ -325,7 +326,7 @@ class FormEntriesTest extends TestCase {
 
 		$this->assertSame( 'Quote', $rows[0]['title'] );
 		$this->assertSame( 5, $rows[0]['count'] );
-		$this->assertStringContainsString( "status = 'active'", end( $wpdb->prepared ) );
+		$this->assertStringContainsString( "status = 'active'", $this->grouped_sql( $wpdb ) );
 	}
 
 	/**
@@ -362,6 +363,133 @@ class FormEntriesTest extends TestCase {
 		$this->assertSame( 2, $rows[0]['count'] );
 		$this->assertSame( 'https://example.test/blog/post-a/', $rows[0]['url'] );
 		$this->assertStringNotContainsString( 'SECRET-UA', wp_json_encode( $rows ) );
+	}
+
+	/**
+	 * Ninja Forms: counted per form and day; attribution meta gives page, source and channel.
+	 */
+	public function test_ninja_forms_counts_by_form_with_attribution(): void {
+		$attr = serialize(
+			array(
+				'source_type'  => 'utm',
+				'source'       => 'Google',
+				'medium'       => 'cpc',
+				'campaign'     => 'Spring',
+				'landing_page' => 'https://example.test/landing/',
+				'email'        => 'secret@example.test',
+			)
+		);
+		$this->fake_wpdb(
+			array( 'wp_nf3_forms' ),
+			array(
+				'FROM wp_nf3_forms' => array(
+					array(
+						'id'    => '3',
+						'title' => 'Contact me',
+					),
+				),
+				'nf_sub'            => array(
+					array(
+						'day'         => '2026-10-04',
+						'form_id'     => '3',
+						'attribution' => $attr,
+					),
+					array(
+						'day'         => '2026-10-04',
+						'form_id'     => '3',
+						'attribution' => $attr,
+					),
+					array(
+						'day'         => '2026-10-05',
+						'form_id'     => '3',
+						'attribution' => null,
+					),
+				),
+			)
+		);
+
+		$rows = $this->reader( array(), array( 'Ninja_Forms' ) )->get_rows( '2026-10-01', '2026-10-07' );
+
+		$this->assertCount( 2, $rows );
+		$this->assertSame( 'Contact me', $rows[0]['title'] );
+		$this->assertSame( 2, $rows[0]['count'] );
+		$this->assertSame( 'https://example.test/landing/', $rows[0]['url'] );
+		$this->assertStringNotContainsString( 'secret@example.test', wp_json_encode( $rows ) );
+
+		$grouped = Form_Entries_Reader::group_by_source( $rows );
+		$this->assertSame( 2, $grouped['with_utm'] );
+		$this->assertSame( 1, $grouped['without_utm'] );
+		$this->assertSame( 'Paid Search', $grouped['sources']['google|cpc|spring']['channel'] );
+		$this->assertSame( 1, $grouped['channels']['Not tracked'] );
+	}
+
+	/**
+	 * Ninja Forms: the SQL never selects field values.
+	 */
+	public function test_ninja_forms_never_reads_field_values(): void {
+		$db = $this->fake_wpdb( array(), array() );
+		$this->reader( array(), array( 'Ninja_Forms' ) )->get_rows( '2026-10-01', '2026-10-07' );
+
+		$sql = implode( ' ', $db->prepared );
+		$this->assertStringContainsString( "'_form_id'", $sql );
+		$this->assertStringNotContainsString( '_field_', $sql );
+		$this->assertStringNotContainsString( 'post_content', $sql );
+	}
+
+	/**
+	 * Ninja Forms: no submissions gives no rows, and the plugin missing gives no rows.
+	 */
+	public function test_ninja_forms_empty_and_missing(): void {
+		$this->fake_wpdb( array(), array() );
+		$this->assertSame( array(), $this->reader( array(), array( 'Ninja_Forms' ) )->get_rows( '2026-10-01', '2026-10-07' ) );
+		$this->assertSame( array(), $this->reader()->get_rows( '2026-10-01', '2026-10-07' ) );
+	}
+
+	/**
+	 * Attribution meta parsing ignores malformed values and unknown keys.
+	 */
+	public function test_parse_attribution_is_defensive(): void {
+		$this->assertNull( Form_Entries_Reader::parse_attribution( '' ) );
+		$this->assertNull( Form_Entries_Reader::parse_attribution( 'not serialized' ) );
+		$this->assertNull( Form_Entries_Reader::parse_attribution( serialize( array( 'x' => 'y' ) ) ) );
+		$parsed = Form_Entries_Reader::parse_attribution( serialize( array( 'source' => 'Bing', 'ip' => '1.2.3.4' ) ) );
+		$this->assertSame( 'bing', $parsed['source'] );
+		$this->assertArrayNotHasKey( 'ip', $parsed );
+	}
+
+	/**
+	 * Formidable: malformed or missing description JSON counts the entry with no page.
+	 */
+	public function test_formidable_malformed_description_has_no_page(): void {
+		$this->fake_wpdb(
+			array( 'wp_frm_items' ),
+			array(
+				'FROM wp_frm_items' => array(
+					array(
+						'form_id'     => '2',
+						'day'         => '2026-10-04',
+						'description' => '{not json',
+					),
+					array(
+						'form_id'     => '2',
+						'day'         => '2026-10-04',
+						'description' => '',
+					),
+					array(
+						'form_id'     => '2',
+						'day'         => '2026-10-04',
+						'description' => '{"referrer":["array"]}',
+					),
+				),
+			)
+		);
+
+		$rows = $this->reader( array(), array( 'FrmAppHelper' ) )->get_rows( '2026-10-01', '2026-10-07' );
+
+		$this->assertCount( 1, $rows );
+		$this->assertSame( 3, $rows[0]['count'] );
+		$this->assertSame( '', $rows[0]['url'] );
+		$this->assertSame( 3, Form_Entries_Reader::group_by_source( $rows )['channels']['Not tracked'] );
 	}
 
 	/**
@@ -715,5 +843,307 @@ class FormEntriesTest extends TestCase {
 		$this->assertFalse( Platform_Registry::is_registered( 'forms' ) );
 		$this->assertTrue( Platform_Registry::is_registered( 'gsc' ) );
 		$this->assertFalse( $inactive->test_connection()['success'] );
+	}
+	/**
+	 * The grouped-count query (the first non-SHOW TABLES statement).
+	 *
+	 * @param object $wpdb Fake.
+	 * @return string
+	 */
+	private function grouped_sql( $wpdb ) {
+		foreach ( $wpdb->prepared as $q ) {
+			if ( 0 !== strpos( $q, 'SHOW TABLES' ) && false !== strpos( $q, 'COUNT(*)' ) ) {
+				return $q;
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * A0 attribution array used by the per-plugin tests.
+	 *
+	 * @return array<string,string>
+	 */
+	private function a0_attribution() {
+		return array(
+			'source_type'  => 'utm',
+			'source'       => 'Google',
+			'medium'       => 'cpc',
+			'campaign'     => 'Spring',
+			'landing_page' => 'https://example.test/landing/',
+			'email'        => 'secret@example.test',
+		);
+	}
+
+	/**
+	 * Assert A0 attribution reached the rows and the grouped source/channel output.
+	 *
+	 * @param array[] $rows        Reader rows.
+	 * @param int     $attributed  Expected attributed entries.
+	 * @param int     $untracked   Expected entries without any source.
+	 */
+	private function assert_a0_rows( array $rows, $attributed, $untracked ): void {
+		$this->assertStringNotContainsString( 'secret@example.test', wp_json_encode( $rows ) );
+		$grouped = Form_Entries_Reader::group_by_source( $rows );
+		$this->assertSame( $attributed, $grouped['with_utm'] );
+		$this->assertSame( $untracked, $grouped['without_utm'] );
+		$this->assertSame( 'Paid Search', $grouped['sources']['google|cpc|spring']['channel'] );
+		$pages = Form_Entries_Reader::group_by_page( $rows );
+		$this->assertSame( $attributed, $pages['pages']['/landing']['entries'] );
+	}
+
+	/**
+	 * Fluent Forms: serialized submission meta wins; malformed meta keeps the source_url fallback.
+	 */
+	public function test_fluent_forms_reads_a0_attribution(): void {
+		$db = $this->fake_wpdb(
+			array( 'wp_fluentform_submissions', 'wp_fluentform_submission_meta' ),
+			array(
+				'wp_fluentform_submission_meta' => array(
+					array(
+						'entry_id'    => '1',
+						'form_id'     => '3',
+						'day'         => '2026-10-01',
+						'url'         => 'https://example.test/pricing/',
+						'attribution' => serialize( $this->a0_attribution() ),
+					),
+					array(
+						'entry_id'    => '2',
+						'form_id'     => '3',
+						'day'         => '2026-10-01',
+						'url'         => 'https://example.test/pricing/',
+						'attribution' => 'garbage',
+					),
+				),
+				'FROM wp_fluentform_submissions' => array(
+					array(
+						'form_id' => '3',
+						'day'     => '2026-10-01',
+						'url'     => 'https://example.test/pricing/',
+						'count'   => '2',
+					),
+				),
+			)
+		);
+
+		$rows = $this->reader( array( 'FLUENTFORM' ) )->get_rows( '2026-10-01', '2026-10-07' );
+
+		$this->assertCount( 2, $rows );
+		$this->assertSame( 1, $rows[0]['count'] );
+		$this->assertSame( 'https://example.test/pricing/', $rows[0]['url'] );
+		$this->assertArrayNotHasKey( 'attr', $rows[0] );
+		$this->assertSame( 'https://example.test/landing/', $rows[1]['url'] );
+		$this->assert_a0_rows( $rows, 1, 1 );
+
+		$meta_sql = implode( ' ', $db->prepared );
+		$this->assertStringContainsString( "m.meta_key = '_specflux_mac_attribution'", $meta_sql );
+		$this->assertStringContainsString( 'm.value AS attribution', $meta_sql );
+		$this->assertStringNotContainsString( 'SELECT *', $meta_sql );
+		$this->assertStringNotContainsString( 'e.fields', $meta_sql );
+	}
+
+	/**
+	 * Gravity Forms: gf_entry_meta value (serialized or JSON) is read; field values never are.
+	 */
+	public function test_gravity_forms_reads_a0_attribution(): void {
+		$db = $this->fake_wpdb(
+			array( 'wp_gf_entry', 'wp_gf_entry_meta' ),
+			array(
+				'wp_gf_entry_meta' => array(
+					array(
+						'entry_id'    => '9',
+						'form_id'     => '1',
+						'day'         => '2026-10-02',
+						'url'         => 'https://example.test/x/',
+						'attribution' => wp_json_encode( $this->a0_attribution() ),
+					),
+				),
+				'FROM wp_gf_entry' => array(
+					array(
+						'form_id' => '1',
+						'day'     => '2026-10-02',
+						'url'     => 'https://example.test/x/',
+						'count'   => '1',
+					),
+				),
+			)
+		);
+
+		$rows = $this->reader( array(), array( 'GFForms' ) )->get_rows( '2026-10-01', '2026-10-07' );
+
+		$this->assertCount( 1, $rows );
+		$this->assert_a0_rows( $rows, 1, 0 );
+		$sql = implode( ' ', $db->prepared );
+		$this->assertStringContainsString( "m.meta_key = '_specflux_mac_attribution'", $sql );
+		$this->assertStringNotContainsString( 'wp_gf_entry_notes', $sql );
+	}
+
+	/**
+	 * WPForms Pro: JSON entry meta of type _specflux_mac_attribution; page comes from it.
+	 */
+	public function test_wpforms_pro_reads_a0_attribution(): void {
+		$db = $this->fake_wpdb(
+			array( 'wp_wpforms_entries', 'wp_wpforms_entry_meta' ),
+			array(
+				'wp_wpforms_entry_meta' => array(
+					array(
+						'entry_id'    => '5',
+						'form_id'     => '7',
+						'day'         => '2026-10-03',
+						'url'         => '',
+						'attribution' => wp_json_encode( $this->a0_attribution() ),
+					),
+					array(
+						'entry_id'    => '6',
+						'form_id'     => '7',
+						'day'         => '2026-10-03',
+						'url'         => '',
+						'attribution' => '{broken',
+					),
+				),
+				'FROM wp_wpforms_entries' => array(
+					array(
+						'form_id' => '7',
+						'day'     => '2026-10-03',
+						'count'   => '2',
+					),
+				),
+			)
+		);
+
+		$rows = $this->reader( array( 'WPFORMS_VERSION' ) )->get_rows( '2026-10-01', '2026-10-07' );
+
+		$this->assertCount( 2, $rows );
+		$this->assertSame( 1, $rows[0]['count'] );
+		$this->assertSame( '', $rows[0]['url'] );
+		$this->assert_a0_rows( $rows, 1, 1 );
+		$sql = implode( ' ', $db->prepared );
+		$this->assertStringContainsString( "m.type = '_specflux_mac_attribution'", $sql );
+		$this->assertStringNotContainsString( 'e.fields', $sql );
+		$this->assertStringNotContainsString( 'ip_address', $sql );
+	}
+
+	/**
+	 * Formidable: the field_id 0 value is unwrapped; without it the referrer fallback applies.
+	 */
+	public function test_formidable_unwraps_a0_attribution(): void {
+		$wrapped = serialize( array( '_specflux_mac_attribution' => $this->a0_attribution() ) );
+		$desc    = '{"browser":"Mozilla SECRET-UA","referrer":"https://example.test/blog/post-a/"}';
+		$db      = $this->fake_wpdb(
+			array( 'wp_frm_items', 'wp_frm_item_metas' ),
+			array(
+				'FROM wp_frm_items' => array(
+					array(
+						'entry_id'    => '1',
+						'form_id'     => '2',
+						'day'         => '2026-10-04',
+						'description' => $desc,
+						'attribution' => $wrapped,
+					),
+					array(
+						'entry_id'    => '1',
+						'form_id'     => '2',
+						'day'         => '2026-10-04',
+						'description' => $desc,
+						'attribution' => $wrapped,
+					),
+					array(
+						'entry_id'    => '2',
+						'form_id'     => '2',
+						'day'         => '2026-10-04',
+						'description' => $desc,
+						'attribution' => serialize( $this->a0_attribution() ),
+					),
+					array(
+						'entry_id'    => '3',
+						'form_id'     => '2',
+						'day'         => '2026-10-04',
+						'description' => $desc,
+						'attribution' => null,
+					),
+				),
+			)
+		);
+
+		$rows = $this->reader( array(), array( 'FrmAppHelper' ) )->get_rows( '2026-10-01', '2026-10-07' );
+
+		$this->assertCount( 2, $rows );
+		$by_url = array_column( $rows, 'count', 'url' );
+		$this->assertSame( 1, $by_url['https://example.test/landing/'] );
+		$this->assertSame( 2, $by_url['https://example.test/blog/post-a/'] );
+		$this->assertStringNotContainsString( 'SECRET-UA', wp_json_encode( $rows ) );
+		$this->assert_a0_rows( $rows, 1, 2 );
+
+		$sql = implode( ' ', $db->prepared );
+		$this->assertStringContainsString( 'm.field_id = 0', $sql );
+		$this->assertStringContainsString( 'm.meta_value AS attribution', $sql );
+		$this->assertStringNotContainsString( 'SELECT m.', $sql );
+	}
+
+	/**
+	 * Flamingo: attribution post meta is joined into the one query; garbage falls back to _meta url.
+	 */
+	public function test_flamingo_reads_a0_attribution(): void {
+		$meta = serialize(
+			array(
+				'url'        => 'https://example.test/contact/',
+				'user_email' => 'secret@example.test',
+			)
+		);
+		$db   = $this->fake_wpdb(
+			array(),
+			array(
+				'flamingo_inbound'   => array(
+					array(
+						'day'          => '2026-10-05',
+						'meta'         => $meta,
+						'attribution'  => serialize( $this->a0_attribution() ),
+						'channel_slug' => 'cf',
+						'channel_name' => 'CF',
+					),
+					array(
+						'day'          => '2026-10-05',
+						'meta'         => $meta,
+						'attribution'  => 'junk',
+						'channel_slug' => 'cf',
+						'channel_name' => 'CF',
+					),
+				),
+				'wpcf7_contact_form' => array(),
+			)
+		);
+
+		$rows = $this->reader( array( 'WPCF7_VERSION', 'FLAMINGO_VERSION' ) )->get_rows( '2026-10-01', '2026-10-07' );
+
+		$this->assertCount( 2, $rows );
+		$this->assertSame( 'https://example.test/landing/', $rows[0]['url'] );
+		$this->assertSame( 'https://example.test/contact/', $rows[1]['url'] );
+		$this->assertArrayNotHasKey( 'attr', $rows[1] );
+		$this->assert_a0_rows( $rows, 1, 1 );
+
+		$flamingo_sql = '';
+		foreach ( $db->prepared as $q ) {
+			if ( false !== strpos( $q, 'flamingo_inbound' ) ) {
+				$flamingo_sql = $q;
+			}
+		}
+		$this->assertStringContainsString( "am.meta_key = '_specflux_mac_attribution'", $flamingo_sql );
+		$this->assertStringNotContainsString( 'post_content', $flamingo_sql );
+	}
+
+	/**
+	 * Malformed attribution values of every shape are ignored; wrapped and JSON forms parse.
+	 */
+	public function test_parse_attribution_formats(): void {
+		$a = array(
+			'source'       => 'Bing',
+			'landing_page' => 'https://example.test/p/',
+		);
+		$this->assertNull( Form_Entries_Reader::parse_attribution( '{broken' ) );
+		$this->assertNull( Form_Entries_Reader::parse_attribution( '[1,2]' ) );
+		$this->assertNull( Form_Entries_Reader::parse_attribution( serialize( $a ), true ) );
+		$this->assertNull( Form_Entries_Reader::parse_attribution( serialize( array( '_specflux_mac_attribution' => 'x' ) ), true ) );
+		$this->assertSame( 'bing', Form_Entries_Reader::parse_attribution( wp_json_encode( $a ) )['source'] );
+		$this->assertSame( 'bing', Form_Entries_Reader::parse_attribution( serialize( array( '_specflux_mac_attribution' => $a ) ), true )['source'] );
 	}
 }

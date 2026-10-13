@@ -35,12 +35,15 @@ class Plugin {
 		( new Content\Content_Platform() )->register_hooks();
 		( new Content\Forms_Platform() )->register_hooks();
 		( new Commerce\Woo_Platform() )->register_hooks();
+		( new Commerce\Edd_Platform() )->register_hooks();
+		( new Donations\Givewp_Platform() )->register_hooks();
 		( new Content\Local_Analytics_Platform() )->register_hooks();
 		$this->define_review_prompt_hooks();
 		$this->define_weekly_summary_hooks();
 		( new Integrations\Bing_Integration() )->register_hooks();
 		( new Integrations\Matomo_Integration() )->register_hooks();
 		( new Integrations\PageSpeed_Platform() )->register_hooks();
+		( new Attribution\Source_Capture() )->register_hooks();
 	}
 
 	/**

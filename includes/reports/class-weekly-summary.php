@@ -11,7 +11,10 @@ use Specflux_Marketing_Analytics\API_Clients\Bing_Webmaster_Client;
 use Specflux_Marketing_Analytics\API_Clients\Clarity_Client;
 use Specflux_Marketing_Analytics\API_Clients\GA4_Client;
 use Specflux_Marketing_Analytics\API_Clients\GSC_Client;
+use Specflux_Marketing_Analytics\Commerce\Edd_Sales_Reader;
 use Specflux_Marketing_Analytics\Commerce\Woo_Sales_Reader;
+use Specflux_Marketing_Analytics\Content\Local_Analytics_Reader;
+use Specflux_Marketing_Analytics\Donations\Givewp_Donations_Reader;
 use Specflux_Marketing_Analytics\Content\Seo_Issue_Summary;
 use Specflux_Marketing_Analytics\Credentials\Connection_Tester;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
@@ -52,6 +55,11 @@ class Weekly_Summary {
 	const PLATFORMS = array( 'ga4', 'gsc', 'clarity' );
 
 	/**
+	 * Pseudo platform for the on-site analytics plugin fallback (non-GA4 traffic headline).
+	 */
+	const LOCAL_PLATFORM = 'localstats';
+
+	/**
 	 * Injected API clients keyed by platform (tests pass doubles).
 	 *
 	 * @var array
@@ -80,18 +88,36 @@ class Weekly_Summary {
 	private $woo;
 
 	/**
+	 * Injected Easy Digital Downloads sales reader (tests pass doubles).
+	 *
+	 * @var Edd_Sales_Reader|null
+	 */
+	private $edd;
+
+	/**
+	 * Injected GiveWP donations reader (tests pass doubles).
+	 *
+	 * @var Givewp_Donations_Reader|null
+	 */
+	private $give;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param array                  $clients   Optional platform => client object overrides (ga4, gsc, clarity, bing).
-	 * @param string[]|null          $connected Optional connected-platform override (may include bing).
-	 * @param Seo_Issue_Summary|null $seo       Optional SEO summary service.
-	 * @param Woo_Sales_Reader|null  $woo       Optional WooCommerce sales reader.
+	 * @param array                        $clients   Optional platform => client object overrides (ga4, gsc, clarity, bing).
+	 * @param string[]|null                $connected Optional connected-platform override (may include bing).
+	 * @param Seo_Issue_Summary|null       $seo       Optional SEO summary service.
+	 * @param Woo_Sales_Reader|null        $woo       Optional WooCommerce sales reader.
+	 * @param Edd_Sales_Reader|null        $edd       Optional Easy Digital Downloads sales reader.
+	 * @param Givewp_Donations_Reader|null $give Optional GiveWP donations reader.
 	 */
-	public function __construct( array $clients = array(), ?array $connected = null, ?Seo_Issue_Summary $seo = null, ?Woo_Sales_Reader $woo = null ) {
+	public function __construct( array $clients = array(), ?array $connected = null, ?Seo_Issue_Summary $seo = null, ?Woo_Sales_Reader $woo = null, ?Edd_Sales_Reader $edd = null, ?Givewp_Donations_Reader $give = null ) {
 		$this->clients   = $clients;
 		$this->connected = $connected;
 		$this->seo       = $seo;
 		$this->woo       = $woo;
+		$this->edd       = $edd;
+		$this->give      = $give;
 	}
 
 	/**
@@ -101,7 +127,7 @@ class Weekly_Summary {
 	 */
 	public function get_connected_platforms() {
 		if ( null !== $this->connected ) {
-			return array_values( array_intersect( self::PLATFORMS, $this->connected ) );
+			return array_values( array_intersect( array_merge( self::PLATFORMS, array( self::LOCAL_PLATFORM ) ), $this->connected ) );
 		}
 
 		$credential_manager = new Credential_Manager();
@@ -111,6 +137,11 @@ class Weekly_Summary {
 			if ( $credential_manager->has_credentials( $platform ) ) {
 				$connected[] = $platform;
 			}
+		}
+
+		// Without GA4, an on-site analytics plugin (Burst, Koko, Independent Analytics, Jetpack Stats) supplies the traffic headline.
+		if ( ! in_array( 'ga4', $connected, true ) && '' !== $this->local_reader()->get_label() ) {
+			$connected[] = self::LOCAL_PLATFORM;
 		}
 
 		return $connected;
@@ -129,7 +160,9 @@ class Weekly_Summary {
 		}
 
 		try {
-			return null !== $this->collect_sales( $this->get_ranges( $now )['ga4'] );
+			$ranges = $this->get_ranges( $now )['ga4'];
+
+			return null !== $this->collect_sales( $ranges ) || null !== $this->collect_donations( $ranges );
 		} catch ( \Throwable $e ) {
 			return false;
 		}
@@ -217,6 +250,9 @@ class Weekly_Summary {
 					case 'gsc':
 						$data = $this->collect_gsc( $ranges['gsc'] );
 						break;
+					case self::LOCAL_PLATFORM:
+						$data = $this->collect_localstats( $ranges['ga4'] );
+						break;
 					default:
 						$data = $this->collect_clarity();
 						break;
@@ -292,7 +328,65 @@ class Weekly_Summary {
 			unset( $context['sales'] );
 		}
 
+		try {
+			$donations = $this->collect_donations( $context['ranges']['ga4'] ?? $this->get_ranges( $now )['ga4'] );
+			if ( null !== $donations ) {
+				$context['donations'] = array(
+					'status' => 'ok',
+					'data'   => $donations,
+				);
+			}
+		} catch ( \Throwable $e ) {
+			unset( $context['donations'] );
+		}
+
 		return $context;
+	}
+
+	/**
+	 * GiveWP donations for a week against the week before, one entry per currency.
+	 *
+	 * Returns null when GiveWP is not active or the week has no completed donations,
+	 * so the email and the dashboard widget leave the section out.
+	 *
+	 * @param array $range Window with `current` and `previous` (each start, end Y-m-d).
+	 * @return array|null Keys: range, currencies (each: currency, amount, previous_amount, change, donations, donors).
+	 */
+	public function collect_donations( array $range ) {
+		$reader = $this->give ?? new Givewp_Donations_Reader();
+
+		if ( ! $reader->available() ) {
+			return null;
+		}
+
+		$current = $reader->get_donations_by_source( $range['current'][0], $range['current'][1], 'channel', 1, false );
+		if ( (int) $current['total_donations'] < 1 ) {
+			return null;
+		}
+
+		$previous = $reader->get_donations_by_source( $range['previous'][0], $range['previous'][1], 'channel', 1, false );
+		$prior    = array();
+		foreach ( $previous['currencies'] as $row ) {
+			$prior[ $row['currency'] ] = (float) $row['amount'];
+		}
+
+		$currencies = array();
+		foreach ( $current['currencies'] as $row ) {
+			$before       = $prior[ $row['currency'] ] ?? 0.0;
+			$currencies[] = array(
+				'currency'        => (string) $row['currency'],
+				'amount'          => (float) $row['amount'],
+				'previous_amount' => $before,
+				'change'          => $before > 0 ? round( ( $row['amount'] - $before ) / $before * 100, 1 ) : null,
+				'donations'       => (int) $row['donations'],
+				'donors'          => (int) $row['donors'],
+			);
+		}
+
+		return array(
+			'range'      => $range['current'],
+			'currencies' => $currencies,
+		);
 	}
 
 	/**
@@ -307,8 +401,12 @@ class Weekly_Summary {
 	public function collect_sales( array $range ) {
 		$reader = $this->woo ?? new Woo_Sales_Reader();
 
+		// Easy Digital Downloads stands in only when WooCommerce is absent.
 		if ( ! $reader->available() ) {
-			return null;
+			$reader = $this->edd ?? new Edd_Sales_Reader();
+			if ( ! $reader->available() ) {
+				return null;
+			}
 		}
 
 		$current = $reader->get_sales_by_source( $range['current'][0], $range['current'][1], 'channel', 10, false );
@@ -568,6 +666,67 @@ class Weekly_Summary {
 			'sources'  => $sources,
 			'range'    => $range['current'],
 			'previous' => $range['previous'],
+		);
+	}
+
+	/**
+	 * The on-site analytics plugin reader (tests pass a double under the `localstats` client key).
+	 *
+	 * @return Local_Analytics_Reader
+	 */
+	private function local_reader() {
+		return $this->clients[ self::LOCAL_PLATFORM ] ?? new Local_Analytics_Reader();
+	}
+
+	/**
+	 * Collect the traffic headline from the on-site analytics plugin (GA4 fallback).
+	 *
+	 * @param array $range Current and previous windows (same as GA4).
+	 * @return array Same shape as collect_ga4(), plus `source_label` and `answered_by`.
+	 */
+	private function collect_localstats( array $range ) {
+		$reader  = $this->local_reader();
+		$bounds  = Local_Analytics_Reader::build_range(
+			array(
+				'start_date' => $range['current'][0],
+				'end_date'   => $range['current'][1],
+			)
+		);
+		$traffic = $reader->get_traffic( $bounds );
+		$totals  = $traffic['totals'];
+		$prev    = $traffic['previous_totals'];
+
+		$rows   = array();
+		$rows[] = $this->metric( 'visitors', __( 'Visitors', 'specflux-marketing-analytics-chat' ), (float) $totals['visitors'], (float) $prev['visitors'] );
+		$rows[] = $this->metric( 'pageviews', __( 'Page views', 'specflux-marketing-analytics-chat' ), (float) $totals['pageviews'], (float) $prev['pageviews'] );
+
+		$pages   = array();
+		$sources = array();
+		try {
+			foreach ( $reader->get_top_pages( $bounds, 5 )['items'] as $item ) {
+				$pages[] = array(
+					'label' => (string) $item['path'],
+					'value' => (float) $item['pageviews'],
+				);
+			}
+			foreach ( $reader->get_referrers( $bounds, 3 )['items'] as $item ) {
+				$sources[] = array(
+					'label' => (string) $item['source'],
+					'value' => (float) ( null !== $item['pageviews'] ? $item['pageviews'] : $item['sessions'] ),
+				);
+			}
+		} catch ( \Throwable $e ) {
+			unset( $e ); // Detail lists are best-effort.
+		}
+
+		return array(
+			'metrics'      => $rows,
+			'pages'        => $pages,
+			'sources'      => $sources,
+			'range'        => $range['current'],
+			'previous'     => $range['previous'],
+			'source_label' => $traffic['source']['plugin'],
+			'answered_by'  => $traffic['source']['answered_by'] ?? '',
 		);
 	}
 

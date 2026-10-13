@@ -226,7 +226,7 @@ class Weekly_Summary_Scheduler {
 			}
 		}
 
-		if ( 'ok' === ( $context['sales']['status'] ?? '' ) ) {
+		if ( 'ok' === ( $context['sales']['status'] ?? '' ) || 'ok' === ( $context['donations']['status'] ?? '' ) ) {
 			$has_data = true;
 		}
 

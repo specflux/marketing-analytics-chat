@@ -91,7 +91,7 @@ class Forms_Platform {
 		if ( ! $plugins ) {
 			return array(
 				'success' => false,
-				'message' => __( 'No supported form plugin is active (WPForms, Gravity Forms, Fluent Forms, Contact Form 7 with Flamingo, or Formidable Forms).', 'specflux-marketing-analytics-chat' ),
+				'message' => __( 'No supported form plugin is active (WPForms, Gravity Forms, Fluent Forms, Contact Form 7 with Flamingo, Formidable Forms, or Ninja Forms).', 'specflux-marketing-analytics-chat' ),
 				'plugins' => array(),
 			);
 		}

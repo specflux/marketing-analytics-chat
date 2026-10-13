@@ -44,6 +44,11 @@ class Widget_Headline {
 	const SALES_TRANSIENT = 'specflux_mac_widget_sales';
 
 	/**
+	 * Transient holding the GiveWP donations row (a "none" marker when the week has no donations).
+	 */
+	const DONATIONS_TRANSIENT = 'specflux_mac_widget_donations';
+
+	/**
 	 * Transient lifetime in seconds (a glance view; the API clients cache too).
 	 *
 	 * @return int
@@ -115,10 +120,11 @@ class Widget_Headline {
 
 		set_transient( self::TRANSIENT, $payload, self::ttl() );
 
-		$sales = self::refresh_sales( $summary );
+		$sales     = self::refresh_sales( $summary );
+		$donations = self::refresh_donations( $summary );
 
 		// A store with sales but no analytics connection shows only the sales row.
-		$sales_only = empty( $headline ) && is_array( $sales );
+		$sales_only = empty( $headline ) && ( is_array( $sales ) || is_array( $donations ) );
 
 		try {
 			$seo_summary = $sales_only ? null : ( $seo ?? new Seo_Issue_Summary() )->get_or_refresh();
@@ -132,6 +138,7 @@ class Widget_Headline {
 			'headline_html' => $sales_only ? '' : self::render( $headline ),
 			'seo_html'      => self::render_seo( $seo_summary ),
 			'sales_html'    => self::render_sales( $sales ),
+			'donations_html' => self::render_donations( $donations ),
 		);
 	}
 
@@ -152,6 +159,75 @@ class Widget_Headline {
 		set_transient( self::SALES_TRANSIENT, null === $sales ? 'none' : $sales, self::ttl() );
 
 		return $sales;
+	}
+
+	/**
+	 * Rebuild and store the GiveWP donations row. Failures leave the row empty.
+	 *
+	 * @param Weekly_Summary $summary Collector.
+	 * @return array|null Donations data, or null when GiveWP is off or there are no donations.
+	 */
+	public static function refresh_donations( Weekly_Summary $summary ) {
+		try {
+			$ranges    = $summary->get_ranges();
+			$donations = $summary->collect_donations( $ranges['ga4'] );
+		} catch ( \Throwable $e ) {
+			$donations = null;
+		}
+
+		set_transient( self::DONATIONS_TRANSIENT, null === $donations ? 'none' : $donations, self::ttl() );
+
+		return $donations;
+	}
+
+	/**
+	 * Cached donations row: an array, 'none' (nothing to show) or null (not cached yet).
+	 *
+	 * @return array|string|null
+	 */
+	public static function cached_donations() {
+		$stored = get_transient( self::DONATIONS_TRANSIENT );
+
+		if ( is_array( $stored ) || 'none' === $stored ) {
+			return $stored;
+		}
+
+		return null;
+	}
+
+	/**
+	 * The "Donations:" row: this week's total per currency against last week.
+	 *
+	 * Reads data that was already built; it never queries donations.
+	 *
+	 * @param array|string|null $donations Data from collect_donations(), 'none' or null.
+	 * @return string HTML (escaped).
+	 */
+	public static function render_donations( $donations ) {
+		if ( ! is_array( $donations ) || empty( $donations['currencies'] ) ) {
+			return '';
+		}
+
+		ob_start();
+		foreach ( $donations['currencies'] as $row ) :
+			?>
+			<p class="smac-widget-sales-line">
+				<strong>
+					<?php
+					printf(
+						/* translators: %s: donation total with currency code, e.g. "1,234.50 USD" */
+						esc_html__( 'Donations: %s', 'specflux-marketing-analytics-chat' ),
+						esc_html( number_format_i18n( (float) $row['amount'], 2 ) . ' ' . $row['currency'] )
+					);
+					?>
+				</strong>
+				<?php echo self::format_change( $row['change'] ?? null ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in format_change(). ?>
+				<span class="smac-widget-stat-period"><?php esc_html_e( 'vs last week', 'specflux-marketing-analytics-chat' ); ?></span>
+			</p>
+			<?php
+		endforeach;
+
+		return (string) ob_get_clean();
 	}
 
 	/**
@@ -247,6 +323,16 @@ class Widget_Headline {
 					'period'     => '',
 				);
 				$row  = self::find_metric( $data, 'sessions' );
+				break;
+			case Weekly_Summary::LOCAL_PLATFORM:
+				$item = array(
+					'platform'   => Weekly_Summary::LOCAL_PLATFORM,
+					/* translators: %s: analytics plugin name, e.g. Jetpack Stats. */
+					'label'      => sprintf( __( '%s visitors', 'specflux-marketing-analytics-chat' ), (string) ( $data['source_label'] ?? __( 'Site', 'specflux-marketing-analytics-chat' ) ) ),
+					'has_change' => true,
+					'period'     => '',
+				);
+				$row  = self::find_metric( $data, 'visitors' );
 				break;
 			case 'gsc':
 				$item = array(

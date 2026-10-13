@@ -179,7 +179,11 @@ class Abilities_Registrar {
 		$woo_abilities = new Woo_Abilities();
 		$woo_abilities->register();
 
-		// Register site analytics plugin abilities (only when Burst, Independent Analytics or Koko has data).
+		// Register GiveWP donation abilities (only when GiveWP is active).
+		$givewp_abilities = new Givewp_Abilities();
+		$givewp_abilities->register();
+
+		// Register site analytics plugin abilities (only when Burst, Independent Analytics, Koko or a connected Jetpack Stats has data).
 		$local_analytics_abilities = new Local_Analytics_Abilities();
 		$local_analytics_abilities->register();
 

@@ -65,7 +65,7 @@ class Local_Analytics_Platform {
 			'label'           => __( 'Site analytics plugin', 'specflux-marketing-analytics-chat' ),
 			'auth'            => 'none',
 			/* translators: %s: analytics plugin name, e.g. Koko Analytics. */
-			'description'     => sprintf( __( 'Reads visitors, pageviews, top pages and referrers recorded on this site by %s. No credentials needed and no personal data is read.', 'specflux-marketing-analytics-chat' ), $label ),
+			'description'     => sprintf( __( 'Reads visitors, pageviews, top pages and referrers recorded by %s (Jetpack Stats is fetched from WordPress.com). No credentials needed and no personal data is read.', 'specflux-marketing-analytics-chat' ), $label ),
 			'connection_test' => array( $this, 'test_connection' ),
 			'prompt_hint'     => 'First-party traffic recorded on this site by the ' . $label . ' plugin (visitors, pageviews, sessions where available, top pages, referrers). Use get-site-traffic, get-site-top-pages and get-site-referrers for traffic questions when Google Analytics 4 is not connected, and always say the numbers come from ' . $label . ', not GA4.',
 		);
@@ -82,10 +82,25 @@ class Local_Analytics_Platform {
 		$label = $this->reader->get_label();
 
 		if ( '' === $label ) {
+			$message = __( 'No supported site analytics plugin with recorded data was found.', 'specflux-marketing-analytics-chat' );
+			foreach ( $this->reader->get_unreadable() as $plugin_label => $reason ) {
+				$message .= ' ' . $plugin_label . ': ' . $reason;
+			}
+
 			return array(
 				'success' => false,
-				'message' => __( 'No supported site analytics plugin with recorded data was found.', 'specflux-marketing-analytics-chat' ),
+				'message' => $message,
 				'plugin'  => '',
+			);
+		}
+
+		$provider = $this->reader->get_provider();
+		if ( '' !== $provider ) {
+			return array(
+				'success' => true,
+				/* translators: 1: analytics plugin name, 2: plugin that answered, e.g. Jetpack plugin. */
+				'message' => sprintf( __( 'Reading traffic from %1$s (answered by the %2$s).', 'specflux-marketing-analytics-chat' ), $label, $provider ),
+				'plugin'  => $this->reader->detect(),
 			);
 		}
 
