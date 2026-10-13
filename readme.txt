@@ -306,6 +306,7 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 == Changelog ==
 
 = 0.6.0 =
+* Added: A `specflux_mac_widget_headline_rows` filter lets add-ons put extra rows in the Dashboard widget's "This week" stats, in the page and in the refresh. Malformed rows are ignored
 * Added: First-party visit source capture. An anonymous cookie records how a visitor arrived and saves it with new Easy Digital Downloads orders, GiveWP donations and form entries (Ninja Forms, Formidable, Contact Form 7 with Flamingo, Fluent Forms, Gravity Forms, WPForms Pro). Respects the WP Consent API; can be turned off under Settings > Advanced
 * Added: Ninja Forms support in Form entries. Leads are counted per form and day, and pages, sources and channels appear for submissions the attribution tracker recorded. Names, emails and messages are never read. Formidable Forms entries now also show a channel per source.
 * Added: Form entries now show the landing page, source, medium, campaign and channel recorded by the attribution tracker for Formidable Forms, Fluent Forms, WPForms Pro, Gravity Forms and Contact Form 7 with Flamingo, falling back to each plugin's own page data and otherwise "Not tracked"

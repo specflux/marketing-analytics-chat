@@ -30,6 +30,9 @@ defined( 'ABSPATH' ) || exit;
  *         'has_change' => bool,        // false when the source has no previous window.
  *         'period'     => string,      // optional note such as "Last 3 days".
  *     )
+ *
+ * Rows added through the `specflux_mac_widget_headline_rows` filter may also set
+ * 'value_text' (string), shown instead of the formatted number.
  */
 class Widget_Headline {
 
@@ -393,6 +396,72 @@ class Widget_Headline {
 	}
 
 	/**
+	 * Apply the `specflux_mac_widget_headline_rows` filter and keep only well-formed rows.
+	 *
+	 * Runs inside render(), so the server-rendered widget and the AJAX refresh
+	 * both pass through it. A callback that throws, or returns a non-array, is
+	 * ignored and the original rows are kept.
+	 *
+	 * @param array[] $items Headline rows.
+	 * @return array[] Normalized rows.
+	 */
+	public static function filter_rows( array $items ) {
+		$rows = $items;
+
+		try {
+			/**
+			 * Filters the dashboard widget headline rows ("This week" stats).
+			 *
+			 * Each row is an array:
+			 *
+			 *     array(
+			 *         'platform'   => string,       // required, identifier such as 'stripe'.
+			 *         'label'      => string,       // required, shown above the value.
+			 *         'value'      => float|null,   // null renders as a dash.
+			 *         'value_text' => string,       // optional, shown instead of the number (e.g. "1,200 USD" or "Not tracked").
+			 *         'change'     => float|null,   // percent vs previous period, null when unknown.
+			 *         'has_change' => bool,         // show the change arrow.
+			 *         'period'     => string,       // optional note such as "Last 3 days".
+			 *     )
+			 *
+			 * Rows missing 'platform' or 'label' (or that are not arrays) are dropped.
+			 * The widget reads cached data only and never calls APIs on page load:
+			 * callbacks MUST use cached data (transients) and never make live requests.
+			 * All values are escaped on output.
+			 *
+			 * @param array[] $rows Headline rows.
+			 */
+			$filtered = apply_filters( 'specflux_mac_widget_headline_rows', $rows );
+		} catch ( \Throwable $e ) {
+			$filtered = $items;
+		}
+
+		if ( ! is_array( $filtered ) ) {
+			$filtered = $items;
+		}
+
+		$clean = array();
+
+		foreach ( $filtered as $row ) {
+			if ( ! is_array( $row ) || ! is_string( $row['platform'] ?? null ) || '' === $row['platform'] || ! is_string( $row['label'] ?? null ) || '' === $row['label'] ) {
+				continue;
+			}
+
+			$clean[] = array(
+				'platform'   => $row['platform'],
+				'label'      => $row['label'],
+				'value'      => is_numeric( $row['value'] ?? null ) ? (float) $row['value'] : null,
+				'value_text' => is_string( $row['value_text'] ?? null ) ? $row['value_text'] : '',
+				'change'     => is_numeric( $row['change'] ?? null ) ? (float) $row['change'] : null,
+				'has_change' => ! empty( $row['has_change'] ),
+				'period'     => is_string( $row['period'] ?? null ) ? $row['period'] : '',
+			);
+		}
+
+		return $clean;
+	}
+
+	/**
 	 * Arrow and percentage markup for a change.
 	 *
 	 * @param float|null $change Percent change, null when there is no baseline.
@@ -424,6 +493,8 @@ class Widget_Headline {
 	 * @return string HTML (escaped).
 	 */
 	public static function render( array $items ) {
+		$items = self::filter_rows( $items );
+
 		if ( empty( $items ) ) {
 			return self::render_empty_state();
 		}
@@ -435,7 +506,9 @@ class Widget_Headline {
 			<?php foreach ( $items as $item ) : ?>
 				<div class="smac-widget-stat">
 					<span class="smac-widget-stat-label"><?php echo esc_html( (string) ( $item['label'] ?? '' ) ); ?></span>
-					<?php if ( isset( $item['value'] ) && null !== $item['value'] ) : ?>
+					<?php if ( ! empty( $item['value_text'] ) ) : ?>
+						<span class="smac-widget-stat-value"><?php echo esc_html( $item['value_text'] ); ?></span>
+					<?php elseif ( isset( $item['value'] ) && null !== $item['value'] ) : ?>
 						<span class="smac-widget-stat-value"><?php echo esc_html( number_format_i18n( (float) $item['value'] ) ); ?></span>
 						<?php if ( ! empty( $item['has_change'] ) ) : ?>
 							<?php echo self::format_change( $item['change'] ?? null ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in format_change(). ?>
