@@ -305,6 +305,9 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 
 == Changelog ==
 
+= 0.6.0 =
+* Added: Easy Digital Downloads sales source. When Easy Digital Downloads 3.x is active the chat can answer "where did my sales come from?" and "which downloads sell best?" with paid live-mode orders and revenue (refunds subtracted, each currency kept separate) by channel, source, campaign or landing page, compared with the previous period. The weekly email and Dashboard widget show a "Sales:" row on sites without WooCommerce. Totals only, never customer details
+
 = 0.5.0 - 2026-10-06 =
 * Added: Matomo connection (self-hosted or Matomo Cloud) with visits and change against the previous period, top pages, traffic sources and goal conversions
 * Added: Site analytics plugin source. Sites without GA4 can ask about traffic, top pages and referrers answered from Burst Statistics, Independent Analytics or Koko Analytics (whichever is active and has data), with the plugin named in every answer. Jetpack Stats is detected but not supported yet

@@ -278,11 +278,11 @@ if ( empty( $mac_abilities ) ) {
 			'icon'        => 'dashicons-feedback',
 		),
 
-		// WooCommerce abilities (registered only when WooCommerce is active).
+		// Store abilities (registered only when WooCommerce or Easy Digital Downloads is active).
 		array(
 			'name'        => __( 'Get Sales by Source', 'specflux-marketing-analytics-chat' ),
 			'slug'        => 'marketing-analytics/get-sales-by-source',
-			'description' => __( 'WooCommerce paid orders and revenue by channel, source, campaign, device or landing page, with the change versus the previous period. Totals only, never customer details.', 'specflux-marketing-analytics-chat' ),
+			'description' => __( 'WooCommerce or Easy Digital Downloads paid orders and revenue by channel, source, campaign, device or landing page, with the change versus the previous period (and top downloads for Easy Digital Downloads). Totals only, never customer details.', 'specflux-marketing-analytics-chat' ),
 			'category'    => 'store',
 			'tier'        => 'free',
 			'icon'        => 'dashicons-cart',
@@ -367,7 +367,7 @@ $mac_mcp_endpoint = rest_url( 'mcp/mcp-adapter-default-server' );
 			<?php esc_html_e( 'Form entries', 'specflux-marketing-analytics-chat' ); ?>
 		</button>
 		<button type="button" class="smac-abilities-filter-btn" data-filter="store">
-			<?php esc_html_e( 'WooCommerce', 'specflux-marketing-analytics-chat' ); ?>
+			<?php esc_html_e( 'Store', 'specflux-marketing-analytics-chat' ); ?>
 		</button>
 		<button type="button" class="smac-abilities-filter-btn" data-filter="localstats">
 			<?php esc_html_e( 'Site analytics plugin', 'specflux-marketing-analytics-chat' ); ?>

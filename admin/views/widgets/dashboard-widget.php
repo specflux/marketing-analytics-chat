@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use Specflux_Marketing_Analytics\Admin\Widget_Headline;
+use Specflux_Marketing_Analytics\Commerce\Edd_Sales_Reader;
 use Specflux_Marketing_Analytics\Commerce\Woo_Sales_Reader;
 use Specflux_Marketing_Analytics\Content\Seo_Issue_Summary;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
@@ -30,7 +31,7 @@ foreach ( $platforms as $platform_key ) {
 }
 $has_connection = ! empty( $connected );
 // WooCommerce is a data source on its own: a store with paid orders needs no Google connection.
-$sales_row        = Woo_Sales_Reader::is_available() ? Widget_Headline::cached_sales() : 'none';
+$sales_row        = ( Woo_Sales_Reader::is_available() || Edd_Sales_Reader::is_available() ) ? Widget_Headline::cached_sales() : 'none';
 $has_sales_source = 'none' !== $sales_row;
 $has_source       = $has_connection || $has_sales_source;
 $headline_items   = $has_connection ? Widget_Headline::cached() : array();
