@@ -191,6 +191,7 @@ class JetpackStatsAdapterTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$GLOBALS['mock_transients'] = array();
+		Jetpack_Stats_Adapter::reset_request_memo();
 	}
 
 	/**
@@ -203,8 +204,10 @@ class JetpackStatsAdapterTest extends TestCase {
 		$this->assertFalse( $adapter->is_supported() );
 		$this->assertFalse( $adapter->has_data() );
 		$this->assertSame( 0, $adapter->totals( $this->range() )['pageviews'] );
-		$this->assertSame( array(), $adapter->top_pages( $this->range(), 5 ) );
 		$this->assertStringContainsString( 'WPCOM_Stats', $adapter->last_error() );
+		$this->expectException( \RuntimeException::class );
+		$this->expectExceptionMessage( 'WPCOM_Stats' );
+		$adapter->top_pages( $this->range(), 5 );
 	}
 
 	/**
@@ -215,10 +218,15 @@ class JetpackStatsAdapterTest extends TestCase {
 		$adapter->connected = false;
 
 		$this->assertFalse( $adapter->has_data() );
-		$this->assertSame( array(), $adapter->referrers( $this->range(), 5 ) );
 		$this->assertSame( array(), $adapter->daily( $this->range() ) );
 		$this->assertArrayNotHasKey( 'get_visits', $adapter->client->calls );
 		$this->assertStringContainsString( 'not connected to WordPress.com', $adapter->last_error() );
+		try {
+			$adapter->referrers( $this->range(), 5 );
+			$this->fail( 'referrers should throw when not connected' );
+		} catch ( \RuntimeException $e ) {
+			$this->assertStringContainsString( 'not connected to WordPress.com', $e->getMessage() );
+		}
 
 		$reader = new Local_Analytics_Reader( array( $adapter ) );
 		$this->assertSame( '', $reader->get_label() );
@@ -415,5 +423,38 @@ class JetpackStatsAdapterTest extends TestCase {
 		$adapter->client->responses['get_top_posts'] = array();
 		$page = $reader->get_top_pages( $this->range(), 5 );
 		$this->assertSame( 'Jetpack Stats plugin', $page['source']['answered_by'] );
+	}
+
+	/**
+	 * A failed top-posts / referrers fetch raises the reason instead of answering with an empty list.
+	 */
+	public function test_failed_list_fetch_throws_reason(): void {
+		$adapter                                  = new Jetpack_Env_Adapter();
+		$adapter->client->responses['get_top_posts'] = new \WP_Error( 'stats_error', 'Failed to fetch Stats from WPCOM' );
+		$adapter->client->responses['get_referrers'] = new \WP_Error( 'stats_error', 'Failed to fetch Stats from WPCOM' );
+
+		foreach ( array( 'top_pages', 'referrers' ) as $method ) {
+			try {
+				$adapter->$method( $this->range(), 5 );
+				$this->fail( $method . ' should throw on a failed fetch' );
+			} catch ( \RuntimeException $e ) {
+				$this->assertStringContainsString( 'Failed to fetch Stats', $e->getMessage() );
+			}
+		}
+	}
+
+	/**
+	 * has_data() is asked once per request across adapter instances, even when it fails.
+	 */
+	public function test_has_data_memo_is_shared_between_instances(): void {
+		$first = new Jetpack_Env_Adapter();
+		$first->client->responses['get_visits'] = new \WP_Error( 'site_not_connected', 'not connected' );
+		$this->assertFalse( $first->has_data() );
+
+		$second = new Jetpack_Env_Adapter();
+		$second->client->responses['get_visits'] = $this->visits();
+		$this->assertFalse( $second->has_data(), 'second instance reuses the first answer' );
+		$this->assertArrayNotHasKey( 'get_visits', $second->client->calls );
+		$this->assertCount( 1, $first->client->calls['get_visits'] );
 	}
 }
