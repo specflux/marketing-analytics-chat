@@ -305,6 +305,9 @@ WordPress 7.0 and higher is required. The plugin uses the Abilities API and the 
 
 == Changelog ==
 
+= 0.6.0 =
+* Added: First-party visit source capture. An anonymous cookie records how a visitor arrived and saves it with new Easy Digital Downloads orders, GiveWP donations and form entries (Ninja Forms, Formidable, Contact Form 7 with Flamingo, Fluent Forms, Gravity Forms, WPForms Pro). Respects the WP Consent API; can be turned off under Settings > Advanced
+
 = 0.5.0 - 2026-10-06 =
 * Added: Matomo connection (self-hosted or Matomo Cloud) with visits and change against the previous period, top pages, traffic sources and goal conversions
 * Added: Site analytics plugin source. Sites without GA4 can ask about traffic, top pages and referrers answered from Burst Statistics, Independent Analytics or Koko Analytics (whichever is active and has data), with the plugin named in every answer. Jetpack Stats is detected but not supported yet
@@ -448,6 +451,7 @@ This plugin:
 * Connects only to the analytics services you configure, as detailed under External Services above
 * Reads your published posts and SEO plugin settings to answer content questions, without changing them
 * Counts form submissions from your form plugin's database tables to show which pages and sources bring leads. Submissions are counted, never read or sent: names, emails, phone numbers, messages and IP addresses are not accessed, and only counts, form titles and page paths reach the chat
-* Does not track your site's visitors and sends no data to the plugin author
+* Sets one first-party cookie, specflux_mac_src, on front-end pages (unless you turn it off under Settings > Advanced, or a WP Consent API plugin reports no statistics consent). It holds how the visitor arrived (source type, source, medium, campaign) and the landing page path. It contains no identifier, name, email or IP address and expires 30 minutes after the last page view. When an order, donation or form entry is created, those same fields are saved with it as `_specflux_mac_attribution`
+* Does not track individual visitors and sends no data to the plugin author
 * Does not store analytics data permanently; results are fetched on demand and cached temporarily
 * Stores no AI provider credentials; chat is handled by the WordPress AI Client using the provider configured for your site

@@ -41,6 +41,7 @@ class Plugin {
 		( new Integrations\Bing_Integration() )->register_hooks();
 		( new Integrations\Matomo_Integration() )->register_hooks();
 		( new Integrations\PageSpeed_Platform() )->register_hooks();
+		( new Attribution\Source_Capture() )->register_hooks();
 	}
 
 	/**
