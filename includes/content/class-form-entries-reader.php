@@ -12,6 +12,9 @@
  *   post meta holds the submission page `url`; the channel term maps to the form.
  * - Formidable: {prefix}frm_items (form_id, created_at, is_draft, description JSON
  *   with `referrer`).
+ * - Ninja Forms: `nf_sub` posts (post_date, publish) with post meta `_form_id`; forms in
+ *   {prefix}nf3_forms (id, title). No page URL is stored, so the page and source come only
+ *   from the `_specflux_mac_attribution` post meta when the attribution tracker saved one.
  * - WPForms Lite: no entries table; only a rolling 30-day site-wide daily count
  *   (option `wpforms_entries_count_daily`) and a lifetime count per form.
  *   WPForms Pro keeps {prefix}wpforms_entries (form_id, date); not verified here.
@@ -23,6 +26,7 @@
 namespace Specflux_Marketing_Analytics\Content;
 
 use Specflux_Marketing_Analytics\Admin\Post_Stats;
+use Specflux_Marketing_Analytics\Commerce\Woo_Sales_Reader;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -37,6 +41,12 @@ class Form_Entries_Reader {
 	const FLUENTFORM    = 'fluentform';
 	const CF7           = 'cf7';
 	const FORMIDABLE    = 'formidable';
+	const NINJAFORMS    = 'ninjaforms';
+
+	/**
+	 * Submission meta key A0 writes the first-touch attribution under.
+	 */
+	const ATTRIBUTION_META_KEY = '_specflux_mac_attribution';
 
 	/**
 	 * Most grouped rows or entries read per plugin in one call.
@@ -54,6 +64,7 @@ class Form_Entries_Reader {
 		self::FLUENTFORM   => 'Fluent Forms',
 		self::CF7          => 'Contact Form 7 (with Flamingo)',
 		self::FORMIDABLE   => 'Formidable Forms',
+		self::NINJAFORMS   => 'Ninja Forms',
 	);
 
 	/**
@@ -122,6 +133,10 @@ class Form_Entries_Reader {
 		}
 		if ( $this->has_class( 'FrmAppHelper' ) ) {
 			$active[] = self::FORMIDABLE;
+		}
+
+		if ( $this->has_class( 'Ninja_Forms' ) ) {
+			$active[] = self::NINJAFORMS;
 		}
 
 		return $active;
@@ -213,6 +228,9 @@ class Form_Entries_Reader {
 					'url'     => (string) $row['url'],
 					'count'   => (int) $row['count'],
 				);
+				if ( ! empty( $row['attr'] ) ) {
+					$rows[ count( $rows ) - 1 ]['attr'] = $row['attr'];
+				}
 			}
 		}
 
@@ -258,26 +276,47 @@ class Form_Entries_Reader {
 	 * @return array{sources:array<string,array{source:string,medium:string,campaign:string,entries:int}>,with_utm:int,without_utm:int}
 	 */
 	public static function group_by_source( array $rows ) {
-		$sources = array();
-		$with    = 0;
-		$without = 0;
+		$sources  = array();
+		$channels = array();
+		$with     = 0;
+		$without  = 0;
+		$mapper   = new Woo_Sales_Reader();
 
 		foreach ( $rows as $row ) {
-			$utm = self::utm_from_url( $row['url'] );
+			$type = '';
+			$attr = isset( $row['attr'] ) && is_array( $row['attr'] ) ? $row['attr'] : null;
+			if ( null !== $attr && ( '' !== $attr['source'] || '' !== $attr['source_type'] ) ) {
+				$type = $attr['source_type'];
+				$utm  = array(
+					'source'   => $attr['source'],
+					'medium'   => $attr['medium'],
+					'campaign' => $attr['campaign'],
+				);
+			} else {
+				$utm = self::utm_from_url( $row['url'] );
+			}
+
 			if ( null === $utm ) {
-				$without += $row['count'];
+				$without                                           += $row['count'];
+				$channels[ Woo_Sales_Reader::CHANNEL_NOT_TRACKED ] = ( $channels[ Woo_Sales_Reader::CHANNEL_NOT_TRACKED ] ?? 0 ) + $row['count'];
 				continue;
 			}
-			$with += $row['count'];
-			$key   = $utm['source'] . '|' . $utm['medium'] . '|' . $utm['campaign'];
+			$with   += $row['count'];
+			$channel = $mapper->channel_for( $type, $utm['source'], $utm['medium'] );
+			$key     = $utm['source'] . '|' . $utm['medium'] . '|' . $utm['campaign'];
 			if ( ! isset( $sources[ $key ] ) ) {
-				$sources[ $key ] = $utm + array( 'entries' => 0 );
+				$sources[ $key ] = $utm + array(
+					'channel' => $channel,
+					'entries' => 0,
+				);
 			}
 			$sources[ $key ]['entries'] += $row['count'];
+			$channels[ $channel ]        = ( $channels[ $channel ] ?? 0 ) + $row['count'];
 		}
 
 		return array(
 			'sources'     => $sources,
+			'channels'    => $channels,
 			'with_utm'    => $with,
 			'without_utm' => $without,
 		);
@@ -322,6 +361,8 @@ class Form_Entries_Reader {
 				return $this->query_forms( 'fluentform_forms', 'id', 'title', '' );
 			case self::GRAVITYFORMS:
 				return $this->query_forms( 'gf_form', 'id', 'title', 'is_trash = 0' );
+			case self::NINJAFORMS:
+				return $this->query_forms( 'nf3_forms', 'id', 'title', '' );
 			case self::FORMIDABLE:
 				return $this->query_forms( 'frm_forms', 'id', 'name', "is_template = 0 AND parent_form_id = 0 AND status <> 'trash'" );
 			case self::CF7:
@@ -429,6 +470,8 @@ class Form_Entries_Reader {
 				return $this->table_group_rows( 'gf_entry', 'form_id', 'date_created', 'source_url', "status = 'active'", $from, $to );
 			case self::FORMIDABLE:
 				return $this->formidable_rows( $from, $to );
+			case self::NINJAFORMS:
+				return $this->ninja_rows( $from, $to );
 			case self::CF7:
 				return $this->flamingo_rows( $from, $to );
 			case self::WPFORMS:
@@ -514,6 +557,86 @@ class Form_Entries_Reader {
 		}
 
 		return array_values( $grouped );
+	}
+
+	/**
+	 * Ninja Forms submissions (`nf_sub` posts), counted per form and day.
+	 *
+	 * Selects only the post date, the `_form_id` meta and the attribution meta;
+	 * the `_field_*` metas holding the visitor's answers are never read.
+	 *
+	 * @param string $from Range start.
+	 * @param string $to   Range end.
+	 * @return array[]
+	 */
+	private function ninja_rows( $from, $to ) {
+		global $wpdb;
+
+		$posts    = $wpdb->posts;
+		$postmeta = $wpdb->postmeta;
+
+		$sql = "SELECT DATE(p.post_date) AS day, fm.meta_value AS form_id, am.meta_value AS attribution
+			FROM {$posts} p
+			INNER JOIN {$postmeta} fm ON fm.post_id = p.ID AND fm.meta_key = '_form_id'
+			LEFT JOIN {$postmeta} am ON am.post_id = p.ID AND am.meta_key = %s
+			WHERE p.post_type = %s AND p.post_status = %s AND p.post_date >= %s AND p.post_date < %s
+			LIMIT %d";
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$found = $wpdb->get_results( $wpdb->prepare( $sql, self::ATTRIBUTION_META_KEY, 'nf_sub', 'publish', $from, $to, self::ROW_CAP ), ARRAY_A );
+		$found = is_array( $found ) ? $found : array();
+
+		if ( count( $found ) >= self::ROW_CAP ) {
+			$this->notes[] = 'Ninja Forms submissions were capped at ' . self::ROW_CAP . ' for this period, so counts may be low.';
+		}
+
+		$grouped = array();
+		foreach ( $found as $row ) {
+			$attr = self::parse_attribution( (string) ( $row['attribution'] ?? '' ) );
+			$url  = null === $attr ? '' : $attr['landing_page'];
+			$key  = $row['form_id'] . '|' . $row['day'] . '|' . md5( wp_json_encode( $attr ) );
+			if ( ! isset( $grouped[ $key ] ) ) {
+				$grouped[ $key ] = array(
+					'form_id' => $row['form_id'],
+					'day'     => $row['day'],
+					'url'     => $url,
+					'count'   => 0,
+				);
+				if ( null !== $attr ) {
+					$grouped[ $key ]['attr'] = $attr;
+				}
+			}
+			++$grouped[ $key ]['count'];
+		}
+
+		$this->notes[] = 'Ninja Forms does not store the submission page or referrer. Pages and sources appear only for submissions the attribution tracker recorded; the rest count as Not tracked.';
+
+		return array_values( $grouped );
+	}
+
+	/**
+	 * Parse the `_specflux_mac_attribution` meta value, keeping only its five known keys.
+	 *
+	 * @param string $raw Raw (serialized) meta value.
+	 * @return array{source_type:string,source:string,medium:string,campaign:string,landing_page:string}|null Null when absent or unusable.
+	 */
+	public static function parse_attribution( $raw ) {
+		if ( '' === $raw || ! is_serialized( $raw ) ) {
+			return null;
+		}
+
+		// No objects: the value is only ever a plain array of strings.
+		$meta = unserialize( $raw, array( 'allowed_classes' => false ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize
+		if ( ! is_array( $meta ) ) {
+			return null;
+		}
+
+		$out = array();
+		foreach ( array( 'source_type', 'source', 'medium', 'campaign', 'landing_page' ) as $field ) {
+			$value         = isset( $meta[ $field ] ) && is_string( $meta[ $field ] ) ? trim( $meta[ $field ] ) : '';
+			$out[ $field ] = 'landing_page' === $field ? substr( $value, 0, 500 ) : substr( strtolower( $value ), 0, 100 );
+		}
+
+		return '' === implode( '', $out ) ? null : $out;
 	}
 
 	/**

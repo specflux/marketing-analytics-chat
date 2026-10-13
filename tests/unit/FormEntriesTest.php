@@ -232,6 +232,7 @@ class FormEntriesTest extends TestCase {
 		$this->assertSame( array( 'fluentform' ), $this->reader( array( 'FLUENTFORM' ) )->detect() );
 		$this->assertSame( array( 'gravityforms' ), $this->reader( array(), array( 'GFForms' ) )->detect() );
 		$this->assertSame( array( 'formidable' ), $this->reader( array(), array( 'FrmAppHelper' ) )->detect() );
+		$this->assertSame( array( 'ninjaforms' ), $this->reader( array(), array( 'Ninja_Forms' ) )->detect() );
 		$this->assertSame( array( 'cf7' ), $this->reader( array( 'WPCF7_VERSION', 'FLAMINGO_VERSION' ) )->detect() );
 		$this->assertSame( array(), $this->reader( array( 'WPCF7_VERSION' ) )->detect(), 'Contact Form 7 alone stores nothing.' );
 		$this->assertSame( array(), $this->reader()->detect() );
@@ -362,6 +363,133 @@ class FormEntriesTest extends TestCase {
 		$this->assertSame( 2, $rows[0]['count'] );
 		$this->assertSame( 'https://example.test/blog/post-a/', $rows[0]['url'] );
 		$this->assertStringNotContainsString( 'SECRET-UA', wp_json_encode( $rows ) );
+	}
+
+	/**
+	 * Ninja Forms: counted per form and day; attribution meta gives page, source and channel.
+	 */
+	public function test_ninja_forms_counts_by_form_with_attribution(): void {
+		$attr = serialize(
+			array(
+				'source_type'  => 'utm',
+				'source'       => 'Google',
+				'medium'       => 'cpc',
+				'campaign'     => 'Spring',
+				'landing_page' => 'https://example.test/landing/',
+				'email'        => 'secret@example.test',
+			)
+		);
+		$this->fake_wpdb(
+			array( 'wp_nf3_forms' ),
+			array(
+				'FROM wp_nf3_forms' => array(
+					array(
+						'id'    => '3',
+						'title' => 'Contact me',
+					),
+				),
+				'nf_sub'            => array(
+					array(
+						'day'         => '2026-10-04',
+						'form_id'     => '3',
+						'attribution' => $attr,
+					),
+					array(
+						'day'         => '2026-10-04',
+						'form_id'     => '3',
+						'attribution' => $attr,
+					),
+					array(
+						'day'         => '2026-10-05',
+						'form_id'     => '3',
+						'attribution' => null,
+					),
+				),
+			)
+		);
+
+		$rows = $this->reader( array(), array( 'Ninja_Forms' ) )->get_rows( '2026-10-01', '2026-10-07' );
+
+		$this->assertCount( 2, $rows );
+		$this->assertSame( 'Contact me', $rows[0]['title'] );
+		$this->assertSame( 2, $rows[0]['count'] );
+		$this->assertSame( 'https://example.test/landing/', $rows[0]['url'] );
+		$this->assertStringNotContainsString( 'secret@example.test', wp_json_encode( $rows ) );
+
+		$grouped = Form_Entries_Reader::group_by_source( $rows );
+		$this->assertSame( 2, $grouped['with_utm'] );
+		$this->assertSame( 1, $grouped['without_utm'] );
+		$this->assertSame( 'Paid Search', $grouped['sources']['google|cpc|spring']['channel'] );
+		$this->assertSame( 1, $grouped['channels']['Not tracked'] );
+	}
+
+	/**
+	 * Ninja Forms: the SQL never selects field values.
+	 */
+	public function test_ninja_forms_never_reads_field_values(): void {
+		$db = $this->fake_wpdb( array(), array() );
+		$this->reader( array(), array( 'Ninja_Forms' ) )->get_rows( '2026-10-01', '2026-10-07' );
+
+		$sql = implode( ' ', $db->prepared );
+		$this->assertStringContainsString( "'_form_id'", $sql );
+		$this->assertStringNotContainsString( '_field_', $sql );
+		$this->assertStringNotContainsString( 'post_content', $sql );
+	}
+
+	/**
+	 * Ninja Forms: no submissions gives no rows, and the plugin missing gives no rows.
+	 */
+	public function test_ninja_forms_empty_and_missing(): void {
+		$this->fake_wpdb( array(), array() );
+		$this->assertSame( array(), $this->reader( array(), array( 'Ninja_Forms' ) )->get_rows( '2026-10-01', '2026-10-07' ) );
+		$this->assertSame( array(), $this->reader()->get_rows( '2026-10-01', '2026-10-07' ) );
+	}
+
+	/**
+	 * Attribution meta parsing ignores malformed values and unknown keys.
+	 */
+	public function test_parse_attribution_is_defensive(): void {
+		$this->assertNull( Form_Entries_Reader::parse_attribution( '' ) );
+		$this->assertNull( Form_Entries_Reader::parse_attribution( 'not serialized' ) );
+		$this->assertNull( Form_Entries_Reader::parse_attribution( serialize( array( 'x' => 'y' ) ) ) );
+		$parsed = Form_Entries_Reader::parse_attribution( serialize( array( 'source' => 'Bing', 'ip' => '1.2.3.4' ) ) );
+		$this->assertSame( 'bing', $parsed['source'] );
+		$this->assertArrayNotHasKey( 'ip', $parsed );
+	}
+
+	/**
+	 * Formidable: malformed or missing description JSON counts the entry with no page.
+	 */
+	public function test_formidable_malformed_description_has_no_page(): void {
+		$this->fake_wpdb(
+			array( 'wp_frm_items' ),
+			array(
+				'FROM wp_frm_items' => array(
+					array(
+						'form_id'     => '2',
+						'day'         => '2026-10-04',
+						'description' => '{not json',
+					),
+					array(
+						'form_id'     => '2',
+						'day'         => '2026-10-04',
+						'description' => '',
+					),
+					array(
+						'form_id'     => '2',
+						'day'         => '2026-10-04',
+						'description' => '{"referrer":["array"]}',
+					),
+				),
+			)
+		);
+
+		$rows = $this->reader( array(), array( 'FrmAppHelper' ) )->get_rows( '2026-10-01', '2026-10-07' );
+
+		$this->assertCount( 1, $rows );
+		$this->assertSame( 3, $rows[0]['count'] );
+		$this->assertSame( '', $rows[0]['url'] );
+		$this->assertSame( 3, Form_Entries_Reader::group_by_source( $rows )['channels']['Not tracked'] );
 	}
 
 	/**
