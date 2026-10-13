@@ -197,7 +197,7 @@ class GivewpDonationsTest extends TestCase {
 		$this->assertSame( array(), $platform->register_platform( array() ) );
 		$this->assertFalse( $platform->test_connection()['success'] );
 
-		$this->assertNull( ( new Weekly_Summary( array(), array(), null, null, $off ) )->collect_donations( $this->range() ) );
+		$this->assertNull( ( new Weekly_Summary( array(), array(), null, null, null, $off ) )->collect_donations( $this->range() ) );
 	}
 
 	/**
@@ -219,7 +219,7 @@ class GivewpDonationsTest extends TestCase {
 		$result = $this->reader()->get_donations_by_source( self::START, self::END );
 		$this->assertSame( 0, $result['total_donations'] );
 		$this->assertSame( array(), $result['currencies'] );
-		$this->assertNull( ( new Weekly_Summary( array(), array(), null, null, $this->reader() ) )->collect_donations( $this->range() ) );
+		$this->assertNull( ( new Weekly_Summary( array(), array(), null, null, null, $this->reader() ) )->collect_donations( $this->range() ) );
 	}
 
 	/**
@@ -406,7 +406,7 @@ class GivewpDonationsTest extends TestCase {
 				$this->donation( 70.0, null, array( 'date' => $day, 'currency' => 'EUR' ) ),
 			)
 		);
-		$summary = new Weekly_Summary( array(), array(), null, null, $reader );
+		$summary = new Weekly_Summary( array(), array(), null, null, null, $reader );
 		$data    = $summary->collect_donations( $summary->get_ranges()['ga4'] );
 
 		$this->assertCount( 2, $data['currencies'] );

@@ -12,6 +12,7 @@
 namespace Specflux_Marketing_Analytics\Abilities;
 
 use Specflux_Marketing_Analytics\API_Clients\GA4_Client;
+use Specflux_Marketing_Analytics\Commerce\Edd_Sales_Reader;
 use Specflux_Marketing_Analytics\Commerce\Woo_Sales_Reader;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
 
@@ -46,6 +47,13 @@ class Woo_Abilities {
 	private $reader;
 
 	/**
+	 * Easy Digital Downloads sales reader.
+	 *
+	 * @var Edd_Sales_Reader
+	 */
+	private $edd;
+
+	/**
 	 * GA4 client, or null to build one on demand.
 	 *
 	 * @var GA4_Client|null
@@ -65,9 +73,11 @@ class Woo_Abilities {
 	 * @param Woo_Sales_Reader|null $reader        Optional reader.
 	 * @param GA4_Client|null       $ga4           Optional GA4 client.
 	 * @param bool|null             $ga4_connected Optional connection override.
+	 * @param Edd_Sales_Reader|null $edd           Optional Easy Digital Downloads reader.
 	 */
-	public function __construct( $reader = null, $ga4 = null, $ga4_connected = null ) {
+	public function __construct( $reader = null, $ga4 = null, $ga4_connected = null, $edd = null ) {
 		$this->reader        = $reader ? $reader : new Woo_Sales_Reader();
+		$this->edd           = $edd ? $edd : new Edd_Sales_Reader();
 		$this->ga4           = $ga4;
 		$this->ga4_connected = $ga4_connected;
 	}
@@ -76,8 +86,11 @@ class Woo_Abilities {
 	 * Register the abilities.
 	 */
 	public function register() {
-		// Nothing to read without WooCommerce, so don't advertise the tools.
-		if ( ! $this->reader->available() ) {
+		$has_woo = $this->reader->available();
+		$has_edd = $this->edd->available();
+
+		// Nothing to read without a store, so don't advertise the tools.
+		if ( ! $has_woo && ! $has_edd ) {
 			return;
 		}
 
@@ -100,7 +113,7 @@ class Woo_Abilities {
 			'marketing-analytics/get-sales-by-source',
 			$this->definition(
 				__( 'Get Sales by Source', 'specflux-marketing-analytics-chat' ),
-				__( 'Where did this WooCommerce store\'s sales come from? Paid orders and revenue (refunds subtracted, store currency) grouped by channel (Organic Search, Paid Search, Paid Social, Organic Social, Email, Referral, Direct, Manual / admin, Other, Not tracked), source, source / medium, campaign, source and campaign together (so the same campaign name on two networks stays separate), device or landing page, with share of revenue and the change versus the previous period of the same length. Campaign rows also name the dominant source and medium; source and campaign rows name the source, dominant medium and campaign. Uses the last-click order attribution WooCommerce records at checkout, so orders placed before attribution was on show as Not tracked. Only totals are returned, never customer or order details. Use it for "where did my sales come from", "which campaign made money" or "is email or search better for revenue". Default period is the last 28 days.', 'specflux-marketing-analytics-chat' ),
+				__( 'Where did this store\'s sales come from? Works for WooCommerce and Easy Digital Downloads (the answer names the store it came from in the "store" field; with both active pass store). Paid orders and revenue (refunds subtracted; Easy Digital Downloads also skips test orders, lists top downloads and keeps each currency separate) grouped by channel (Organic Search, Paid Search, Paid Social, Organic Social, Email, Referral, Direct, Manual / admin, Other, Not tracked), source, source / medium, campaign, source and campaign together (so the same campaign name on two networks stays separate), device or landing page, with share of revenue and the change versus the previous period of the same length. Campaign rows also name the dominant source and medium; source and campaign rows name the source, dominant medium and campaign. Uses the last-click order attribution recorded at checkout (WooCommerce\'s own, or this plugin\'s for Easy Digital Downloads), so orders placed before attribution was on show as Not tracked. Only totals are returned, never customer or order details. Use it for "where did my sales come from", "which campaign made money" or "is email or search better for revenue". Default period is the last 28 days.', 'specflux-marketing-analytics-chat' ),
 				array_merge(
 					$dates,
 					array(
@@ -109,6 +122,11 @@ class Woo_Abilities {
 							'description' => 'How to group the sales.',
 							'enum'        => Woo_Sales_Reader::GROUPS,
 							'default'     => 'channel',
+						),
+						'store'    => array(
+							'type'        => 'string',
+							'description' => 'Which store to read when both are active. Default: woocommerce. (device grouping is WooCommerce only.)',
+							'enum'        => array( 'woocommerce', 'easy-digital-downloads' ),
 						),
 						'limit'    => array(
 							'type'        => 'integer',
@@ -120,6 +138,10 @@ class Woo_Abilities {
 				'execute_get_sales_by_source'
 			)
 		);
+
+		if ( ! $has_woo ) {
+			return;
+		}
 
 		wp_register_ability(
 			'marketing-analytics/get-store-funnel',
@@ -181,15 +203,42 @@ class Woo_Abilities {
 				$args = (array) $args;
 				list( $start, $end ) = $this->resolve_period( $args );
 
-				return $this->reader->get_sales_by_source(
+				if ( $this->use_edd( $args ) ) {
+					return $this->edd->get_sales_by_source(
+						$start,
+						$end,
+						isset( $args['group_by'] ) ? (string) $args['group_by'] : 'channel',
+						isset( $args['limit'] ) ? (int) $args['limit'] : 20,
+						true
+					);
+				}
+
+				$result          = $this->reader->get_sales_by_source(
 					$start,
 					$end,
 					isset( $args['group_by'] ) ? (string) $args['group_by'] : 'channel',
 					isset( $args['limit'] ) ? (int) $args['limit'] : 20,
 					true
 				);
+				$result['store'] = 'woocommerce';
+
+				return $result;
 			}
 		);
+	}
+
+	/**
+	 * Whether to answer from Easy Digital Downloads: it is the only store, or was asked for.
+	 *
+	 * @param array $args Tool arguments.
+	 * @return bool
+	 */
+	private function use_edd( array $args ) {
+		if ( ! $this->edd->available() ) {
+			return false;
+		}
+
+		return ! $this->reader->available() || ( isset( $args['store'] ) && 'easy-digital-downloads' === $args['store'] );
 	}
 
 	/**

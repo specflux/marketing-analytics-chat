@@ -215,7 +215,7 @@ class Weekly_Summary_Email {
 		$html = $this->note(
 			sprintf(
 				/* translators: %s: date range such as "Sep 28 - Oct 4" */
-				__( '%s compared with the 7 days before. Paid orders only, refunds subtracted. Attribution is last-click as recorded by WooCommerce.', 'specflux-marketing-analytics-chat' ),
+				__( '%s compared with the 7 days before. Paid orders only, refunds subtracted. Attribution is last-click as recorded at checkout.', 'specflux-marketing-analytics-chat' ),
 				$this->format_range( $data['range'] )
 			)
 		);

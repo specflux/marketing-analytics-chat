@@ -11,6 +11,7 @@ use Specflux_Marketing_Analytics\API_Clients\Bing_Webmaster_Client;
 use Specflux_Marketing_Analytics\API_Clients\Clarity_Client;
 use Specflux_Marketing_Analytics\API_Clients\GA4_Client;
 use Specflux_Marketing_Analytics\API_Clients\GSC_Client;
+use Specflux_Marketing_Analytics\Commerce\Edd_Sales_Reader;
 use Specflux_Marketing_Analytics\Commerce\Woo_Sales_Reader;
 use Specflux_Marketing_Analytics\Content\Local_Analytics_Reader;
 use Specflux_Marketing_Analytics\Donations\Givewp_Donations_Reader;
@@ -87,6 +88,13 @@ class Weekly_Summary {
 	private $woo;
 
 	/**
+	 * Injected Easy Digital Downloads sales reader (tests pass doubles).
+	 *
+	 * @var Edd_Sales_Reader|null
+	 */
+	private $edd;
+
+	/**
 	 * Injected GiveWP donations reader (tests pass doubles).
 	 *
 	 * @var Givewp_Donations_Reader|null
@@ -100,13 +108,15 @@ class Weekly_Summary {
 	 * @param string[]|null                $connected Optional connected-platform override (may include bing).
 	 * @param Seo_Issue_Summary|null       $seo       Optional SEO summary service.
 	 * @param Woo_Sales_Reader|null        $woo       Optional WooCommerce sales reader.
+	 * @param Edd_Sales_Reader|null        $edd       Optional Easy Digital Downloads sales reader.
 	 * @param Givewp_Donations_Reader|null $give Optional GiveWP donations reader.
 	 */
-	public function __construct( array $clients = array(), ?array $connected = null, ?Seo_Issue_Summary $seo = null, ?Woo_Sales_Reader $woo = null, ?Givewp_Donations_Reader $give = null ) {
+	public function __construct( array $clients = array(), ?array $connected = null, ?Seo_Issue_Summary $seo = null, ?Woo_Sales_Reader $woo = null, ?Edd_Sales_Reader $edd = null, ?Givewp_Donations_Reader $give = null ) {
 		$this->clients   = $clients;
 		$this->connected = $connected;
 		$this->seo       = $seo;
 		$this->woo       = $woo;
+		$this->edd       = $edd;
 		$this->give      = $give;
 	}
 
@@ -391,8 +401,12 @@ class Weekly_Summary {
 	public function collect_sales( array $range ) {
 		$reader = $this->woo ?? new Woo_Sales_Reader();
 
+		// Easy Digital Downloads stands in only when WooCommerce is absent.
 		if ( ! $reader->available() ) {
-			return null;
+			$reader = $this->edd ?? new Edd_Sales_Reader();
+			if ( ! $reader->available() ) {
+				return null;
+			}
 		}
 
 		$current = $reader->get_sales_by_source( $range['current'][0], $range['current'][1], 'channel', 10, false );
