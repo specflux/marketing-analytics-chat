@@ -12,6 +12,9 @@ on:
 jobs:
   deploy:
     name: Deploy to WordPress.org SVN
+    # beta.yml publishes the rolling `beta-build` prerelease on every beta
+    # push; prereleases must never reach SVN.
+    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
     runs-on: ubuntu-latest
     steps:
       # WordPress.org matches the SVN tag against readme.txt's Stable tag, which
