@@ -3,6 +3,17 @@
 
 	let currentStep = 1;
 	const totalSteps = 6;
+	const strings = (typeof specfluxMacWizard !== 'undefined' && specfluxMacWizard) || {};
+	const reducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+	const slideMs = reducedMotion ? 0 : 200;
+
+	function t(key, fallback) {
+		return strings[key] || fallback;
+	}
+
+	function icon(name) {
+		return '<svg class="aui-i" aria-hidden="true" focusable="false"><use href="#aui-i-' + name + '"/></svg>';
+	}
 
 	// Initialize wizard on document ready
 	$(document).ready(function() {
@@ -20,8 +31,7 @@
 		// Show only first step
 		$('.wizard-step').not('[data-step="1"]').hide();
 
-		// Update progress bar
-		updateProgressBar();
+		updateStepper();
 
 		// Check if credentials already exist
 		if ($('#google_client_id').val()) {
@@ -47,17 +57,10 @@
 		// Form submission
 		$('#credentials-form').on('submit', handleCredentialSave);
 
-		// Copy buttons
-		$('.copy-btn').on('click', handleCopyToClipboard);
-		$('.copy-redirect-uri').on('click', copyRedirectURI);
-
 		// Password toggle
 		$('.toggle-password').on('click', togglePasswordVisibility);
 
-		// Video toggle
-		$('.toggle-video').on('click', toggleVideo);
-
-		// Progress step clicks (allow jumping to completed steps)
+		// Stepper clicks (allow jumping to completed steps)
 		$('.progress-step').on('click', handleProgressStepClick);
 	}
 
@@ -65,26 +68,21 @@
 		if (stepNumber < 1 || stepNumber > totalSteps) return;
 
 		// Hide current step
-		$(`.wizard-step[data-step="${currentStep}"]`).slideUp(300);
+		$(`.wizard-step[data-step="${currentStep}"]`).slideUp(slideMs);
 
 		// Show target step
 		setTimeout(function() {
-			$(`.wizard-step[data-step="${stepNumber}"]`).slideDown(300);
+			$(`.wizard-step[data-step="${stepNumber}"]`).slideDown(slideMs);
 
 			// Update active states
 			$('.wizard-step').removeClass('active');
 			$(`.wizard-step[data-step="${stepNumber}"]`).addClass('active');
 
-			$('.progress-step').removeClass('active');
-			$(`.progress-step[data-step="${stepNumber}"]`).addClass('active');
-
 			currentStep = stepNumber;
 
-			// Update navigation buttons
+			// Update navigation buttons and stepper
 			updateNavigationButtons();
-
-			// Update progress bar
-			updateProgressBar();
+			updateStepper();
 
 			// Save progress
 			saveProgress();
@@ -92,8 +90,8 @@
 			// Scroll to wizard
 			$('html, body').animate({
 				scrollTop: $('.wizard-container').offset().top - 32
-			}, 300);
-		}, 300);
+			}, reducedMotion ? 0 : 200);
+		}, slideMs);
 	}
 
 	function handleNextStep() {
@@ -114,6 +112,10 @@
 		goToStep(currentStep - 1);
 	}
 
+	function hasExistingSecret() {
+		return $('#google_client_secret').data('hasSecret') === 1;
+	}
+
 	function validateStep(stepNumber) {
 		switch(stepNumber) {
 			case 1:
@@ -128,66 +130,67 @@
 				// Validate credential format
 				const clientId = $('#google_client_id').val();
 				const clientSecret = $('#google_client_secret').val();
-				const hasExisting = $('#google_client_secret').attr('placeholder').includes('new secret');
 				return validateClientIdFormat(clientId) &&
-					   (validateClientSecretFormat(clientSecret) || hasExisting);
+					   (validateClientSecretFormat(clientSecret) || hasExistingSecret());
 			default:
 				return true;
 		}
 	}
 
-	function showValidationError(stepNumber) {
-		let message = 'Please complete this step before continuing.';
-
-		if (stepNumber === 2) {
-			message = 'Please enable all 3 APIs before continuing.';
-			$('.apis-remaining').slideDown();
-		}
-
-		// Show error notice
-		const $notice = $('<div class="notice notice-error inline"><p>' + message + '</p></div>');
+	function showMessage(stepNumber, message) {
+		const $notice = $('<div class="aui-notice aui-notice--error" role="alert">' + icon('warning') + '<div></div></div>');
+		$notice.find('div').text(message);
 		$(`.wizard-step[data-step="${stepNumber}"] .step-content`).prepend($notice);
 
 		setTimeout(function() {
-			$notice.slideUp(300, function() { $(this).remove(); });
-		}, 3000);
+			$notice.slideUp(slideMs, function() { $(this).remove(); });
+		}, 4000);
+	}
+
+	function showValidationError(stepNumber) {
+		let message = t('completeStep', 'Please complete this step before continuing.');
+
+		if (stepNumber === 2) {
+			message = t('enableAllApis', 'Please enable all 3 APIs before continuing.');
+			$('.apis-remaining').slideDown(slideMs);
+		}
+
+		showMessage(stepNumber, message);
 	}
 
 	function markStepComplete(stepNumber) {
-		$(`.progress-step[data-step="${stepNumber}"]`).addClass('completed');
+		$(`.progress-step[data-step="${stepNumber}"]`).addClass('is-done');
 		$(`.wizard-step[data-step="${stepNumber}"]`).addClass('completed');
-
-		// Add checkmark to step status
-		const $status = $(`.wizard-step[data-step="${stepNumber}"] .step-status`);
-		$status.html('<span class="dashicons dashicons-yes-alt" style="color: #00a32a;"></span>');
 	}
 
-	function updateProgressBar() {
-		const progress = (currentStep / totalSteps) * 100;
-		$('.progress-fill').css('width', progress + '%');
+	// Reflect state on the kit stepper: done steps show a check, the current one is marked.
+	function updateStepper() {
+		$('.progress-step').each(function() {
+			const $step = $(this);
+			const n = parseInt($step.data('step'), 10);
+			const $badge = $step.find('.aui-step-n');
+
+			if (n === currentStep) {
+				$step.attr('aria-current', 'step');
+			} else {
+				$step.removeAttr('aria-current');
+			}
+
+			if ($step.hasClass('is-done') && n !== currentStep) {
+				$badge.html(icon('check'));
+			} else {
+				$badge.text(n);
+			}
+		});
 	}
 
 	function updateNavigationButtons() {
-		// Previous button
-		if (currentStep === 1) {
-			$('.wizard-prev').prop('disabled', true);
-		} else {
-			$('.wizard-prev').prop('disabled', false);
-		}
-
-		// Next button
-		if (currentStep === totalSteps) {
-			$('.wizard-next').hide();
-		} else {
-			$('.wizard-next').show();
-		}
+		$('.wizard-prev').prop('disabled', currentStep === 1);
+		$('.wizard-next').toggle(currentStep !== totalSteps);
 	}
 
 	function handleStepConfirmation() {
-		const stepNumber = parseInt($(this).attr('id').match(/\d+/)[0]);
-
 		if ($(this).is(':checked')) {
-			// Enable next button
 			$('.wizard-next').prop('disabled', false);
 		}
 	}
@@ -196,39 +199,45 @@
 		const enabledCount = $('.api-enabled-checkbox:checked').length;
 
 		if (enabledCount === 3) {
-			$('.apis-remaining').slideUp();
+			$('.apis-remaining').slideUp(slideMs);
 			$('.wizard-next').prop('disabled', false);
 		} else {
-			$('.apis-remaining').slideDown();
+			$('.apis-remaining').slideDown(slideMs);
 		}
+	}
+
+	function setFeedback($field, isValid, message) {
+		const $feedback = $field.closest('.aui-field').find('.validation-feedback');
+		$feedback
+			.removeClass('is-ok is-bad')
+			.addClass(isValid ? 'is-ok' : 'is-bad')
+			.html(icon(isValid ? 'check' : 'x'))
+			.append($('<span></span>').text(message));
+		$field.attr('aria-invalid', isValid ? 'false' : 'true');
 	}
 
 	function validateCredentialField() {
 		const $field = $(this);
 		const value = $field.val().trim();
-		const $feedback = $field.closest('td').find('.validation-feedback');
+		const $feedback = $field.closest('.aui-field').find('.validation-feedback');
 
 		if (!value) {
-			$feedback.empty();
+			$feedback.empty().removeClass('is-ok is-bad');
+			$field.removeAttr('aria-invalid');
 			return;
 		}
 
-		let isValid = false;
-		let message = '';
-
 		if ($field.attr('id') === 'google_client_id') {
-			isValid = validateClientIdFormat(value);
-			message = isValid ?
-				'<span class="dashicons dashicons-yes-alt" style="color: #00a32a;"></span> Valid Client ID format' :
-				'<span class="dashicons dashicons-dismiss" style="color: #d63638;"></span> Invalid format (must end with .apps.googleusercontent.com)';
+			const ok = validateClientIdFormat(value);
+			setFeedback($field, ok, ok ?
+				t('validClientId', 'Valid Client ID format') :
+				t('invalidClientIdHint', 'Invalid format (must end with .apps.googleusercontent.com)'));
 		} else if ($field.attr('id') === 'google_client_secret') {
-			isValid = validateClientSecretFormat(value);
-			message = isValid ?
-				'<span class="dashicons dashicons-yes-alt" style="color: #00a32a;"></span> Valid Client Secret format' :
-				'<span class="dashicons dashicons-dismiss" style="color: #d63638;"></span> Invalid format (must start with GOCSPX-)';
+			const ok = validateClientSecretFormat(value);
+			setFeedback($field, ok, ok ?
+				t('validClientSecret', 'Valid Client Secret format') :
+				t('invalidClientSecretHint', 'Invalid format (must start with GOCSPX-)'));
 		}
-
-		$feedback.html(message).css('color', isValid ? '#00a32a' : '#d63638');
 	}
 
 	function validateClientIdFormat(clientId) {
@@ -247,81 +256,47 @@
 
 		// Validate
 		if (!validateClientIdFormat(clientId)) {
-			alert('Invalid Client ID format');
+			setFeedback($('#google_client_id'), false, t('invalidClientId', 'Invalid Client ID format'));
+			$('#google_client_id').trigger('focus');
 			return;
 		}
 
 		// Client secret optional if already saved
-		const hasExisting = $('#google_client_secret').attr('placeholder').includes('new secret');
 		if (clientSecret && !validateClientSecretFormat(clientSecret)) {
-			alert('Invalid Client Secret format');
+			setFeedback($('#google_client_secret'), false, t('invalidClientSecret', 'Invalid Client Secret format'));
+			$('#google_client_secret').trigger('focus');
 			return;
 		}
 
-		if (!clientSecret && !hasExisting) {
-			alert('Client Secret is required for initial setup');
+		if (!clientSecret && !hasExistingSecret()) {
+			setFeedback($('#google_client_secret'), false, t('secretRequired', 'Client Secret is required for initial setup'));
+			$('#google_client_secret').trigger('focus');
 			return;
 		}
 
-		// Show spinner
+		// A disabled submit button is left out of the posted data, so submit first,
+		// then lock it against double clicks. The form still posts `save_google_oauth`.
+		const form = $('#credentials-form')[0];
+		$('<input type="hidden" name="save_google_oauth" value="1" />').appendTo(form);
 		$('#save-credentials-btn').prop('disabled', true);
-		$('.spinner').addClass('is-active');
-
-		// AJAX validate credentials (optional - can skip for faster UX)
-		// For now, just submit the form directly
-		$('#credentials-form')[0].submit();
-	}
-
-	function handleCopyToClipboard() {
-		const textToCopy = $(this).data('copy');
-		copyToClipboard(textToCopy, $(this));
-	}
-
-	function copyRedirectURI() {
-		const uri = $('#redirect-uri-display').text().trim();
-		copyToClipboard(uri, $(this));
-	}
-
-	function copyToClipboard(text, $button) {
-		navigator.clipboard.writeText(text).then(function() {
-			const originalHTML = $button.html();
-			$button.html('<span class="dashicons dashicons-yes"></span> Copied!');
-			$button.css('color', '#00a32a');
-
-			setTimeout(function() {
-				$button.html(originalHTML);
-				$button.css('color', '');
-			}, 2000);
-		}).catch(function() {
-			alert('Failed to copy. Please copy manually.');
-		});
+		form.submit();
 	}
 
 	function togglePasswordVisibility() {
 		const $input = $('#google_client_secret');
-		const $icon = $(this).find('.dashicons');
+		const $button = $(this);
+		const showing = $input.attr('type') === 'password';
 
-		if ($input.attr('type') === 'password') {
-			$input.attr('type', 'text');
-			$icon.removeClass('dashicons-visibility').addClass('dashicons-hidden');
-		} else {
-			$input.attr('type', 'password');
-			$icon.removeClass('dashicons-hidden').addClass('dashicons-visibility');
-		}
-	}
-
-	function toggleVideo() {
-		$('.video-embed').slideToggle(300);
-		const $btn = $(this);
-		const isVisible = $('.video-embed').is(':visible');
-		$btn.text(isVisible ? 'Hide Video Tutorial' : 'Show Video Tutorial');
+		$input.attr('type', showing ? 'text' : 'password');
+		$button.attr('aria-pressed', showing ? 'true' : 'false');
+		$button.find('.toggle-password-label').text(showing ? t('hide', 'Hide') : t('show', 'Show'));
 	}
 
 	function handleProgressStepClick() {
-		const stepNumber = parseInt($(this).data('step'));
+		const stepNumber = parseInt($(this).data('step'), 10);
 
 		// Only allow jumping to completed steps or next step
-		if ($(this).hasClass('completed') || stepNumber === currentStep + 1) {
+		if ($(this).hasClass('is-done') || stepNumber === currentStep + 1) {
 			goToStep(stepNumber);
 		}
 	}
@@ -337,7 +312,7 @@
 
 		// Save completed steps
 		$('.wizard-step.completed').each(function() {
-			progress.completedSteps.push(parseInt($(this).data('step')));
+			progress.completedSteps.push(parseInt($(this).data('step'), 10));
 		});
 
 		// Save API checkboxes
@@ -369,6 +344,7 @@
 				progress.completedSteps.forEach(function(stepNum) {
 					markStepComplete(stepNum);
 				});
+				updateStepper();
 			}
 
 			// Don't auto-restore current step - let user decide

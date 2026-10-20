@@ -386,11 +386,6 @@ input:checked + .slider:before {
 	margin: 10px 0;
 }
 
-/* Connections Page */
-.specflux-mac-connections .nav-tab-wrapper {
-	margin: 20px 0;
-}
-
 .connection-panel {
 	background: #fff;
 	border: 1px solid #c3c4c7;
@@ -406,17 +401,6 @@ input:checked + .slider:before {
 	margin-top: 20px;
 }
 
-/* Settings Page */
-.specflux-mac-settings h2 {
-	margin-top: 30px;
-	padding-top: 20px;
-	border-top: 1px solid #c3c4c7;
-}
-
-.specflux-mac-settings h2:first-of-type {
-	border-top: none;
-	padding-top: 0;
-}
 
 /* Notices and alerts */
 .smac-notice {

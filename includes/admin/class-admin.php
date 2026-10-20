@@ -155,12 +155,23 @@ class Admin {
 			);
 		}
 
+		// Form patterns shared by the Connections and Settings screens.
+		$is_form_screen = strpos( $hook, 'specflux-mac-connections' ) !== false || strpos( $hook, 'specflux-mac-settings' ) !== false;
+		if ( $is_form_screen ) {
+			wp_enqueue_style(
+				'specflux-mac-ui-forms',
+				SPECFLUX_MAC_URL . 'admin/css/aui-forms.css',
+				array( Ui_Kit::HANDLE_STYLE ),
+				SPECFLUX_MAC_VERSION
+			);
+		}
+
 		// Enqueue wizard styles on settings page.
 		if ( strpos( $hook, 'specflux-mac-settings' ) !== false ) {
 			wp_enqueue_style(
 				'specflux-mac-wizard',
 				SPECFLUX_MAC_URL . 'admin/css/wizard.css',
-				array(),
+				array( Ui_Kit::HANDLE_STYLE, 'specflux-mac-ui-forms' ),
 				SPECFLUX_MAC_VERSION
 			);
 		}
@@ -233,6 +244,26 @@ class Admin {
 					'error'     => __( 'Connection failed', 'specflux-marketing-analytics-chat' ),
 					'saveError' => __( 'Error saving settings', 'specflux-marketing-analytics-chat' ),
 					'redirecting' => __( 'Redirecting to Google…', 'specflux-marketing-analytics-chat' ),
+					'clearing'                   => __( 'Clearing...', 'specflux-marketing-analytics-chat' ),
+					'cleared'                    => __( 'All caches cleared successfully', 'specflux-marketing-analytics-chat' ),
+					'clearFailed'                => __( 'Failed to clear caches', 'specflux-marketing-analytics-chat' ),
+					'saving'                     => __( 'Saving...', 'specflux-marketing-analytics-chat' ),
+					'saveFailed'                 => __( 'Failed to save. Please try again.', 'specflux-marketing-analytics-chat' ),
+					'saveFailedShort'            => __( 'Failed to save', 'specflux-marketing-analytics-chat' ),
+					'selectProperty'             => __( 'Please select a property', 'specflux-marketing-analytics-chat' ),
+					'selectSite'                 => __( 'Please select a site', 'specflux-marketing-analytics-chat' ),
+					'propertySaved'              => __( 'Property saved successfully!', 'specflux-marketing-analytics-chat' ),
+					'siteSaved'                  => __( 'Site saved successfully!', 'specflux-marketing-analytics-chat' ),
+					'loadPropertiesFailed'       => __( 'Failed to load properties. Please try again.', 'specflux-marketing-analytics-chat' ),
+					'loadPropertiesFailedShort'  => __( 'Failed to load properties', 'specflux-marketing-analytics-chat' ),
+					'loadSitesFailed'            => __( 'Failed to load sites. Please try again.', 'specflux-marketing-analytics-chat' ),
+					'loadSitesFailedShort'       => __( 'Failed to load sites', 'specflux-marketing-analytics-chat' ),
+					'reloadProperties'           => __( 'Reload Properties', 'specflux-marketing-analytics-chat' ),
+					'reloadSites'                => __( 'Reload Sites', 'specflux-marketing-analytics-chat' ),
+					/* translators: %s: GA4 property ID */
+					'matchedGa4'                 => __( 'Matched this site to GA4 property %s.', 'specflux-marketing-analytics-chat' ),
+					/* translators: %s: Search Console property URL */
+					'matchedGsc'                 => __( 'Matched this site to Search Console property %s.', 'specflux-marketing-analytics-chat' ),
 				),
 			)
 		);
@@ -261,6 +292,24 @@ class Admin {
 				array( 'jquery', 'specflux-mac-admin' ),
 				SPECFLUX_MAC_VERSION,
 				true
+			);
+
+			wp_localize_script(
+				'specflux-mac-wizard',
+				'specfluxMacWizard',
+				array(
+					'completeStep'            => __( 'Please complete this step before continuing.', 'specflux-marketing-analytics-chat' ),
+					'enableAllApis'           => __( 'Please enable all 3 APIs before continuing.', 'specflux-marketing-analytics-chat' ),
+					'validClientId'           => __( 'Valid Client ID format', 'specflux-marketing-analytics-chat' ),
+					'invalidClientIdHint'     => __( 'Invalid format (must end with .apps.googleusercontent.com)', 'specflux-marketing-analytics-chat' ),
+					'validClientSecret'       => __( 'Valid Client Secret format', 'specflux-marketing-analytics-chat' ),
+					'invalidClientSecretHint' => __( 'Invalid format (must start with GOCSPX-)', 'specflux-marketing-analytics-chat' ),
+					'invalidClientId'         => __( 'Invalid Client ID format', 'specflux-marketing-analytics-chat' ),
+					'invalidClientSecret'     => __( 'Invalid Client Secret format', 'specflux-marketing-analytics-chat' ),
+					'secretRequired'          => __( 'Client Secret is required for initial setup', 'specflux-marketing-analytics-chat' ),
+					'show'                    => __( 'Show', 'specflux-marketing-analytics-chat' ),
+					'hide'                    => __( 'Hide', 'specflux-marketing-analytics-chat' ),
+				)
 			);
 
 			wp_localize_script(

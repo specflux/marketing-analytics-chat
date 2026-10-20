@@ -8,6 +8,14 @@
 	'use strict';
 
 	/**
+	 * Translated string by key, falling back to the English text.
+	 */
+	function t(key, fallback) {
+		var strings = (typeof specfluxMacAdmin !== 'undefined' && specfluxMacAdmin.strings) || {};
+		return strings[key] || fallback;
+	}
+
+	/**
 	 * Copy MCP endpoint URL to clipboard
 	 */
 	function initCopyEndpoint() {
@@ -157,7 +165,6 @@
 			});
 
 			$panel.find('.smac-generic-disconnect').on('click', function() {
-				if (!confirm('Disconnect this platform?')) { return; }
 				post({ action: 'specflux_mac_disconnect_platform' }, $(this), function(response) {
 					if (response.success) { window.location.reload(); }
 				});
@@ -172,14 +179,10 @@
 		$('.clear-all-caches').on('click', function(e) {
 			e.preventDefault();
 
-			if (!confirm('Are you sure you want to clear all cached data?')) {
-				return;
-			}
-
 			var $button = $(this);
 			var originalText = $button.text();
 
-			$button.text('Clearing...').prop('disabled', true);
+			$button.text(t('clearing', 'Clearing...')).prop('disabled', true);
 
 			$.ajax({
 				url: specfluxMacAdmin.ajaxUrl,
@@ -190,13 +193,13 @@
 				},
 				success: function(response) {
 					if (response.success) {
-						showNotice('success', 'All caches cleared successfully');
+						showNotice('success', t('cleared', 'All caches cleared successfully'));
 					} else {
-						showNotice('error', 'Failed to clear caches');
+						showNotice('error', t('clearFailed', 'Failed to clear caches'));
 					}
 				},
 				error: function() {
-					showNotice('error', 'Failed to clear caches');
+					showNotice('error', t('clearFailed', 'Failed to clear caches'));
 				},
 				complete: function() {
 					$button.text(originalText).prop('disabled', false);
@@ -209,11 +212,18 @@
 	 * Show admin notice
 	 */
 	function showNotice(type, message) {
-		var noticeClass = 'notice-' + type;
-		var $notice = $('<div class="notice ' + noticeClass + ' is-dismissible"><p></p></div>');
-		$notice.find('p').text(message);
+		var icons = { success: 'check', error: 'warning', warning: 'warning', info: 'info' };
+		var kind = icons[type] ? type : 'info';
+		var $notice = $('<div class="aui-notice aui-notice--' + kind + '"><svg class="aui-i" aria-hidden="true" focusable="false"><use href="#aui-i-' + icons[kind] + '"/></svg><div></div></div>');
+		$notice.attr('role', kind === 'error' ? 'alert' : 'status');
+		$notice.find('div').text(message);
 
-		$('.wrap > h1').after($notice);
+		var $region = $('[data-smac-notices]').first();
+		if ($region.length) {
+			$region.empty().append($notice);
+		} else {
+			$('.wrap > h1').after($notice);
+		}
 
 		// Auto-dismiss after 5 seconds
 		setTimeout(function() {
@@ -256,7 +266,7 @@
 				},
 				success: function(response) {
 					if (response.success && response.data.auto_selected) {
-						showNotice('success', 'Matched this site to GA4 property ' + response.data.auto_selected + '.');
+						showNotice('success', t('matchedGa4', 'Matched this site to GA4 property %s.').replace('%s', response.data.auto_selected));
 						setTimeout(function() {
 							location.reload();
 						}, 1000);
@@ -287,14 +297,14 @@
 						// Show selector and save button
 						$selector.show();
 						$saveButton.show();
-						$button.text('Reload Properties');
+						$button.text(t('reloadProperties', 'Reload Properties'));
 					} else {
-						$error.find('p').text(response.data.message || 'Failed to load properties');
+						$error.find('p').text(response.data.message || t('loadPropertiesFailedShort', 'Failed to load properties'));
 						$error.show();
 					}
 				},
 				error: function() {
-					$error.find('p').text('Failed to load properties. Please try again.');
+					$error.find('p').text(t('loadPropertiesFailed', 'Failed to load properties. Please try again.'));
 					$error.show();
 				},
 				complete: function() {
@@ -317,12 +327,12 @@
 			var propertyId = $selector.val();
 
 			if (!propertyId) {
-				showNotice('error', 'Please select a property');
+				showNotice('error', t('selectProperty', 'Please select a property'));
 				return;
 			}
 
 			var originalText = $button.text();
-			$button.text('Saving...').prop('disabled', true);
+			$button.text(t('saving', 'Saving...')).prop('disabled', true);
 
 			// Save property via AJAX
 			$.ajax({
@@ -335,17 +345,17 @@
 				},
 				success: function(response) {
 					if (response.success) {
-						showNotice('success', response.data.message || 'Property saved successfully!');
+						showNotice('success', response.data.message || t('propertySaved', 'Property saved successfully!'));
 						// Reload page after 1 second to show the updated current property
 						setTimeout(function() {
 							location.reload();
 						}, 1000);
 					} else {
-						showNotice('error', response.data.message || 'Failed to save property');
+						showNotice('error', response.data.message || t('saveFailedShort', 'Failed to save'));
 					}
 				},
 				error: function() {
-					showNotice('error', 'Failed to save property. Please try again.');
+					showNotice('error', t('saveFailed', 'Failed to save. Please try again.'));
 				},
 				complete: function() {
 					$button.text(originalText).prop('disabled', false);
@@ -387,7 +397,7 @@
 				},
 				success: function(response) {
 					if (response.success && response.data.auto_selected) {
-						showNotice('success', 'Matched this site to Search Console property ' + response.data.auto_selected + '.');
+						showNotice('success', t('matchedGsc', 'Matched this site to Search Console property %s.').replace('%s', response.data.auto_selected));
 						setTimeout(function() {
 							location.reload();
 						}, 1000);
@@ -419,14 +429,14 @@
 						// Show selector and save button
 						$selector.show();
 						$saveButton.show();
-						$button.text('Reload Sites');
+						$button.text(t('reloadSites', 'Reload Sites'));
 					} else {
-						$error.find('p').text(response.data.message || 'Failed to load sites');
+						$error.find('p').text(response.data.message || t('loadSitesFailedShort', 'Failed to load sites'));
 						$error.show();
 					}
 				},
 				error: function() {
-					$error.find('p').text('Failed to load sites. Please try again.');
+					$error.find('p').text(t('loadSitesFailed', 'Failed to load sites. Please try again.'));
 					$error.show();
 				},
 				complete: function() {
@@ -449,12 +459,12 @@
 			var siteUrl = $selector.val();
 
 			if (!siteUrl) {
-				showNotice('error', 'Please select a site');
+				showNotice('error', t('selectSite', 'Please select a site'));
 				return;
 			}
 
 			var originalText = $button.text();
-			$button.text('Saving...').prop('disabled', true);
+			$button.text(t('saving', 'Saving...')).prop('disabled', true);
 
 			// Save site via AJAX
 			$.ajax({
@@ -467,17 +477,17 @@
 				},
 				success: function(response) {
 					if (response.success) {
-						showNotice('success', response.data.message || 'Site saved successfully!');
+						showNotice('success', response.data.message || t('siteSaved', 'Site saved successfully!'));
 						// Reload page after 1 second to show the updated current site
 						setTimeout(function() {
 							location.reload();
 						}, 1000);
 					} else {
-						showNotice('error', response.data.message || 'Failed to save site');
+						showNotice('error', response.data.message || t('saveFailedShort', 'Failed to save'));
 					}
 				},
 				error: function() {
-					showNotice('error', 'Failed to save site. Please try again.');
+					showNotice('error', t('saveFailed', 'Failed to save. Please try again.'));
 				},
 				complete: function() {
 					$button.text(originalText).prop('disabled', false);
@@ -577,7 +587,7 @@
 		}
 
 		// The server already switched to the right tab; mirror it in the URL.
-		var activeHref = $('.nav-tab-wrapper .nav-tab-active').attr('href') || '';
+		var activeHref = $('.smac-subnav [aria-current="page"], .nav-tab-wrapper .nav-tab-active').first().attr('href') || '';
 		var tabMatch   = activeHref.match(/[?&]tab=([a-z0-9_-]+)/);
 
 		['oauth_callback', 'code', 'state', 'scope', 'handoff', 'nonce', 'service', 'smac_oauth_error'].forEach(function(key) {
