@@ -12,9 +12,10 @@
 
 /* Prompts: table cells. */
 .aui .smac-prompt-table td { vertical-align: top; }
-.aui .smac-prompt-table { min-width: 760px; }
-.aui .smac-prompt-desc { min-width: 240px; max-width: 420px; color: var(--aui-text-2); }
-.aui .smac-prompt-table td:first-child, .aui .smac-prompt-table td:last-child { white-space: nowrap; }
+.aui .smac-prompt-table { min-width: 680px; }
+.aui .smac-prompt-desc { min-width: 200px; max-width: 420px; color: var(--aui-text-2); }
+.aui .smac-prompt-table td:last-child { white-space: nowrap; }
+.aui .smac-prompt-table td:first-child .aui-code { overflow-wrap: anywhere; }
 .aui .smac-prompt-table .aui-actions { justify-content: flex-end; flex-wrap: nowrap; }
 .aui .smac-presets .aui-item { padding-left: 20px; }
 .aui .smac-presets form { margin: 0; }

@@ -79,7 +79,7 @@
   }
 
   w.AUI = {
-    version: '0.2.4',
+    version: '0.2.6',
     init: function (root) {
       root = root || d;
       $$('.aui-seg[data-name]', root).forEach(syncSeg);

@@ -32,8 +32,8 @@
 .aui .aui-header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; min-height: 56px; padding: 8px 24px; background: var(--aui-surface); border-bottom: 1px solid var(--aui-border); }
 .aui .aui-brand { display: flex; align-items: center; gap: 12px; }
 .aui .aui-mark { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: var(--aui-r-sm); background: var(--aui-accent-soft); color: var(--aui-brand); }
-.aui .aui-nav { display: flex; align-items: center; gap: 4px; }
-.aui .aui-nav a { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: var(--aui-r-sm); color: var(--aui-text-2); font-weight: 500; text-decoration: none; transition: background-color var(--aui-fast) var(--aui-ease), color var(--aui-fast) var(--aui-ease); }
+.aui .aui-nav { display: flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; overflow-x: auto; scrollbar-width: thin; }
+.aui .aui-nav a { flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: var(--aui-r-sm); color: var(--aui-text-2); font-weight: 500; text-decoration: none; transition: background-color var(--aui-fast) var(--aui-ease), color var(--aui-fast) var(--aui-ease); }
 .aui .aui-nav a:hover, .aui .aui-nav a.is-hover { background: var(--aui-inset); color: var(--aui-text); }
 .aui .aui-nav a[aria-current="page"] { background: var(--aui-accent); color: var(--aui-accent-contrast); }
 .aui .aui-header-end { margin-left: auto; display: flex; align-items: center; gap: 12px; }
@@ -180,7 +180,7 @@
 .aui .aui-show-desc .aui-item-d { display: block; }
 
 /* ---------- Table ---------- */
-.aui .aui-table-wrap { overflow: auto; max-width: 100%; }
+.aui .aui-table-wrap { position: relative; overflow: auto; max-width: 100%; }
 .aui .aui-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; }
 .aui .aui-table th { position: sticky; top: 0; padding: 8px 16px; background: #FAFBFC; border-bottom: 1px solid var(--aui-border); font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--aui-text-3); white-space: nowrap; }
 .aui .aui-table td { padding: 12px 16px; border-bottom: 1px solid var(--aui-border); vertical-align: middle; }
@@ -315,6 +315,7 @@
   .aui { margin-left: -10px; }
   .aui .aui-body { padding: 16px; }
   .aui .aui-header { padding: 8px 16px; }
+  .aui .aui-nav { order: 3; flex-basis: 100%; }
   .aui .aui-grid-2, .aui .aui-grid-3 { grid-template-columns: minmax(0, 1fr); }
   .aui .aui-savebar { padding: 12px 16px; flex-wrap: wrap; }
   .aui .aui-lane { grid-template-columns: minmax(0, 1fr); gap: 8px; }
