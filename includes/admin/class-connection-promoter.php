@@ -132,6 +132,15 @@ class Connection_Promoter {
 	}
 
 	/**
+	 * Total number of platforms that can be connected.
+	 *
+	 * @return int
+	 */
+	public function get_platform_total() {
+		return count( self::PLATFORMS );
+	}
+
+	/**
 	 * Suggest the best next platform to connect.
 	 *
 	 * Priority order when none connected: Clarity (easiest setup).

@@ -1241,7 +1241,7 @@ if ( ! function_exists( 'wp_enqueue_script' ) ) {
 
 if ( ! function_exists( 'wp_enqueue_style' ) ) {
 	function wp_enqueue_style( $handle, $src = '', $deps = array(), $ver = false, $media = 'all' ) {
-		// In tests, do nothing.
+		$GLOBALS['mock_enqueued_styles'][ $handle ] = $deps;
 	}
 }
 

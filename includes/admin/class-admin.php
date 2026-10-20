@@ -111,10 +111,17 @@ class Admin {
 			return;
 		}
 
+		// Shared admin UI kit (all rules scoped under .aui), on our screens only.
+		$admin_style_deps = array();
+		if ( Ui_Kit::is_plugin_screen( $hook ) ) {
+			Ui_Kit::enqueue();
+			$admin_style_deps[] = Ui_Kit::HANDLE_STYLE;
+		}
+
 		wp_enqueue_style(
 			'specflux-mac-admin',
 			SPECFLUX_MAC_URL . 'admin/css/admin-styles.css',
-			array(),
+			$admin_style_deps,
 			SPECFLUX_MAC_VERSION
 		);
 
