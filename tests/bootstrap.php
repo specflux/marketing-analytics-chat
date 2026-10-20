@@ -1567,3 +1567,15 @@ if ( ! function_exists( 'get_woocommerce_currency' ) ) {
 		return 'USD';
 	}
 }
+
+if ( ! function_exists( 'wp_kses_post' ) ) {
+	/**
+	 * Mock wp_kses_post: drop script tags, keep the rest.
+	 *
+	 * @param string $content Content.
+	 * @return string
+	 */
+	function wp_kses_post( $content ) {
+		return preg_replace( '#<script\b[^>]*>.*?</script>#is', '', (string) $content );
+	}
+}
