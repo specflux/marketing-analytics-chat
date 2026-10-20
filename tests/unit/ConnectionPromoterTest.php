@@ -9,6 +9,7 @@ namespace Specflux_Marketing_Analytics\Tests\unit;
 
 use Specflux_Marketing_Analytics\Admin\Connection_Promoter;
 use PHPUnit\Framework\TestCase;
+use Specflux_Marketing_Analytics\Credentials\Platform_Registry;
 
 /**
  * Connection Promoter test class.
@@ -29,7 +30,18 @@ class ConnectionPromoterTest extends TestCase {
 		parent::setUp();
 		global $mock_options;
 		$mock_options   = array();
+		unset( $GLOBALS['specflux_mac_test_filters']['specflux_mac_platforms'] );
+		Platform_Registry::reset();
 		$this->promoter = new Connection_Promoter();
+	}
+
+	/**
+	 * Clean up the registry.
+	 */
+	protected function tearDown(): void {
+		unset( $GLOBALS['specflux_mac_test_filters']['specflux_mac_platforms'] );
+		Platform_Registry::reset();
+		parent::tearDown();
 	}
 
 	/**
@@ -117,47 +129,101 @@ class ConnectionPromoterTest extends TestCase {
 	}
 
 	/**
-	 * Test platform definitions have required fields.
+	 * The platform list is the registry, so every registered platform counts toward the total.
 	 */
-	public function test_platform_definitions(): void {
-		$reflection = new \ReflectionClass( $this->promoter );
-		$constant   = $reflection->getReflectionConstant( 'PLATFORMS' );
-		$platforms  = $constant->getValue();
+	public function test_total_follows_the_platform_registry(): void {
+		$this->assertSame( count( Platform_Registry::slugs() ), $this->promoter->get_platform_total() );
 
-		$this->assertArrayHasKey( 'clarity', $platforms );
-		$this->assertArrayHasKey( 'ga4', $platforms );
-		$this->assertArrayHasKey( 'gsc', $platforms );
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_platforms'] = static function ( $platforms ) {
+			$platforms['matomo'] = array(
+				'slug'        => 'matomo',
+				'label'       => 'Matomo',
+				'auth'        => 'api_key',
+				'fields'      => array( 'token' ),
+				'description' => 'Visits and goals from Matomo.',
+			);
+			return $platforms;
+		};
+		Platform_Registry::reset();
 
-		$required_keys = array( 'name', 'icon', 'benefit', 'tab' );
-
-		foreach ( $platforms as $key => $platform ) {
-			foreach ( $required_keys as $field ) {
-				$this->assertArrayHasKey(
-					$field,
-					$platform,
-					"Platform '{$key}' should have '{$field}' field"
-				);
-			}
-		}
+		$this->assertSame( 4, $this->promoter->get_platform_total() );
 	}
 
 	/**
-	 * Test platform tab values are valid (used in admin URLs).
+	 * Connected platforms come from the registry, not a fixed three.
 	 */
-	public function test_platform_tab_values(): void {
-		$reflection = new \ReflectionClass( $this->promoter );
-		$constant   = $reflection->getReflectionConstant( 'PLATFORMS' );
-		$platforms  = $constant->getValue();
+	public function test_connected_platforms_include_registered_extras(): void {
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_platforms'] = static function ( $platforms ) {
+			$platforms['optional'] = array(
+				'slug'            => 'optional',
+				'label'           => 'Optional Source',
+				'auth'            => 'api_key',
+				'fields'          => array( 'note' ),
+				'optional_fields' => array( 'note' ),
+			);
+			return $platforms;
+		};
+		Platform_Registry::reset();
 
-		$expected_tabs = array(
-			'clarity' => 'clarity',
-			'ga4'     => 'ga4',
-			'gsc'     => 'gsc',
-		);
+		$this->assertSame( array( 'optional' ), $this->promoter->get_connected_platforms(), 'A key platform whose fields are all optional counts as connected.' );
+	}
 
-		foreach ( $expected_tabs as $key => $tab ) {
-			$this->assertEquals( $tab, $platforms[ $key ]['tab'] );
-		}
+	/**
+	 * Once the three shipped platforms are done, the next recommendation is the next registered one.
+	 */
+	public function test_recommendation_continues_into_registered_extras(): void {
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_platforms'] = static function ( $platforms ) {
+			$platforms['matomo'] = array(
+				'slug'        => 'matomo',
+				'label'       => 'Matomo',
+				'auth'        => 'api_key',
+				'fields'      => array( 'token' ),
+				'description' => 'Visits and goals from Matomo.',
+				'tab'         => false,
+			);
+			return $platforms;
+		};
+		Platform_Registry::reset();
+
+		$next = $this->promoter->get_next_recommendation( array( 'clarity', 'ga4', 'gsc' ) );
+
+		$this->assertSame( 'matomo', $next['key'] );
+		$this->assertSame( 'Matomo', $next['name'] );
+		$this->assertSame( '', $next['tab'], 'A platform without a tab has no tab slug.' );
+		$this->assertSame( 'visits and goals from Matomo.', $next['benefit'] );
+		$this->assertEmpty( $this->promoter->get_next_recommendation( array( 'clarity', 'ga4', 'gsc', 'matomo' ) ) );
+	}
+
+	/**
+	 * The all-connected hook fires only when every registered platform is connected.
+	 */
+	public function test_all_connected_hook_does_not_fire_while_something_is_missing(): void {
+		$GLOBALS['specflux_mac_test_actions'] = array();
+
+		$this->assertFalse( $this->promoter->maybe_fire_all_connected() );
+		$this->assertSame( array(), $GLOBALS['specflux_mac_test_actions'] );
+	}
+
+	/**
+	 * With every platform connected the hook fires once.
+	 */
+	public function test_all_connected_hook_fires_when_complete(): void {
+		$GLOBALS['specflux_mac_test_actions']                           = array();
+		$GLOBALS['specflux_mac_test_filters']['specflux_mac_platforms'] = static function () {
+			return array(
+				'only' => array(
+					'slug'            => 'only',
+					'label'           => 'Only',
+					'auth'            => 'api_key',
+					'fields'          => array( 'note' ),
+					'optional_fields' => array( 'note' ),
+				),
+			);
+		};
+		Platform_Registry::reset();
+
+		$this->assertTrue( $this->promoter->maybe_fire_all_connected() );
+		$this->assertSame( 'specflux_mac_all_platforms_connected', $GLOBALS['specflux_mac_test_actions'][0][0] );
 	}
 
 	/**
@@ -168,18 +234,6 @@ class ConnectionPromoterTest extends TestCase {
 		$next = $this->promoter->get_next_recommendation( array( 'ga4' ) );
 
 		$this->assertEquals( 'clarity', $next['key'] );
-	}
-
-	/**
-	 * Test render_connection_prompt does not throw when no connections.
-	 */
-	public function test_render_connection_prompt_outputs_html(): void {
-		ob_start();
-		$this->promoter->render_connection_prompt();
-		$output = ob_get_clean();
-
-		$this->assertStringContainsString( 'smac-connection-prompt', $output );
-		$this->assertStringContainsString( 'specflux-mac-connections', $output );
 	}
 
 	/**

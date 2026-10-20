@@ -1,0 +1,46 @@
+/*
+ * Dashboard screen, layered on the shared admin UI kit.
+ * Only layout glue and the few states the kit does not cover; every colour,
+ * size and radius comes from kit tokens (--aui-*).
+ */
+
+/* The plugin's own .wrap supplies the page gutter; the kit grid sits inside it. */
+.aui .specflux-marketing-analytics-chat-dashboard { max-width: none; margin: 0; padding: 24px; }
+
+.aui .smac-stack { display: flex; flex-direction: column; gap: 16px; }
+.aui .smac-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+
+/* Stat cards: label, number, delta stacked. */
+.aui .smac-stat { flex-direction: column; gap: 4px; justify-content: flex-start; }
+.aui .smac-stat .aui-stat-v { color: var(--aui-text); }
+.aui .smac-stat .smac-stat-none { color: var(--aui-text-4); }
+.aui .smac-stat-link { font-weight: 500; }
+.aui .smac-stats-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -4px 0 0; }
+
+/* Suggestion chips are links into the chat, so they work without JavaScript. */
+.aui .smac-suggest a { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border: 1px solid var(--aui-border-strong); border-radius: var(--aui-r-sm); background: var(--aui-surface); color: var(--aui-text-2); text-decoration: none; }
+.aui .smac-suggest a:hover { background: var(--aui-inset); color: var(--aui-text); }
+.aui .smac-quick .aui-muted { margin-right: 4px; }
+
+/* Platform rows use the kit's list item without the grouped-list indent. */
+.aui .smac-platforms .aui-item { padding-left: 20px; }
+
+/* Advanced (MCP) card: a collapsed kit group. */
+.aui .smac-advanced .aui-group-b { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.aui .smac-advanced .aui-group-b[hidden] { display: none; }
+.aui .smac-advanced .aui-group-b p { margin: 0; }
+
+/* Rail */
+.aui .smac-empty { padding: 8px 0; }
+.aui .smac-recent a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 782px) {
+	.aui .specflux-marketing-analytics-chat-dashboard { padding: 16px; }
+}
+
+/* Narrow screens: the name and description take a full line, badge and button sit below it. */
+@media (max-width: 600px) {
+	.aui .smac-platforms .aui-item { flex-wrap: wrap; row-gap: 8px; }
+	.aui .smac-platforms .aui-grow { flex: 1 1 calc(100% - 52px); min-width: 0; }
+	.aui .smac-platforms .aui-badge { margin-left: 44px; }
+}

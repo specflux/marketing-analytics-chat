@@ -125,6 +125,16 @@ class Admin {
 			SPECFLUX_MAC_VERSION
 		);
 
+		// Dashboard-only styles, layered on the kit.
+		if ( 'toplevel_page_specflux-mac' === $hook ) {
+			wp_enqueue_style(
+				'specflux-mac-aui-dashboard',
+				SPECFLUX_MAC_URL . 'admin/css/aui-dashboard.css',
+				array( Ui_Kit::HANDLE_STYLE ),
+				SPECFLUX_MAC_VERSION
+			);
+		}
+
 		// Enqueue chat styles on AI Assistant page.
 		if ( strpos( $hook, 'specflux-mac-ai-assistant' ) !== false ) {
 			wp_enqueue_style(
@@ -253,22 +263,23 @@ class Admin {
 			);
 		}
 
-		// Enqueue sparklines on the dashboard page.
+		// Dashboard behaviour: refresh the cached numbers, submit the ask box on Enter.
 		if ( 'toplevel_page_specflux-mac' === $hook ) {
 			wp_enqueue_script(
-				'specflux-mac-sparklines',
-				SPECFLUX_MAC_URL . 'admin/js/sparklines.js',
+				'specflux-mac-dashboard',
+				SPECFLUX_MAC_URL . 'admin/js/dashboard.js',
 				array( 'jquery' ),
 				SPECFLUX_MAC_VERSION,
 				true
 			);
 
 			wp_localize_script(
-				'specflux-mac-sparklines',
-				'specfluxMacDashboardInsights',
+				'specflux-mac-dashboard',
+				'specfluxMacDashboard',
 				array(
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-					'nonce'   => wp_create_nonce( 'specflux_mac_dashboard_insights' ),
+					'nonce'   => wp_create_nonce( 'specflux_mac_admin' ),
+					'failed'  => __( 'The numbers could not be refreshed. Try again in a moment.', 'specflux-marketing-analytics-chat' ),
 				)
 			);
 		}
