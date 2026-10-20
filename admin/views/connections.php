@@ -171,8 +171,10 @@ $platforms         = isset( $settings['platforms'] ) ? $settings['platforms'] : 
 $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 ?>
 
+<div class="aui" data-brand="specflux">
+<?php \Specflux_Marketing_Analytics\Admin\Ui_Kit::render_header( 'specflux-mac-connections' ); ?>
+
 <div class="wrap specflux-mac-connections">
-	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
 	<?php if ( $success_message ) : ?>
 		<div class="notice notice-success is-dismissible">
@@ -239,4 +241,5 @@ $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 		}
 		?>
 	</div>
+</div>
 </div>

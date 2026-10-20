@@ -1540,3 +1540,41 @@ input:checked + .slider:before {
 	}
 }
 
+
+/*
+ * Shared admin UI kit mapping.
+ *
+ * Kit tokens (--aui-*) only exist inside .aui, so existing MAC components on a
+ * MAC screen pick up the kit palette by re-declaring the --smac-* tokens onto
+ * their closest kit tokens here. The :root values above stay as they are: the
+ * WordPress Dashboard widget renders outside .aui and keeps them.
+ */
+.aui {
+	--smac-primary: var(--aui-accent);
+	--smac-primary-hover: var(--aui-accent-hover);
+	--smac-success: var(--aui-ok);
+	--smac-success-bg: var(--aui-ok-bg);
+	--smac-warning: var(--aui-warn);
+	--smac-warning-bg: var(--aui-warn-bg);
+	--smac-error: var(--aui-bad);
+	--smac-error-bg: var(--aui-bad-bg);
+
+	--smac-text-primary: var(--aui-text);
+	--smac-text-secondary: var(--aui-text-3);
+	--smac-text-muted: var(--aui-text-3);
+
+	--smac-border: var(--aui-border-strong);
+	--smac-surface: var(--aui-surface);
+	--smac-surface-alt: var(--aui-inset);
+	--smac-surface-hover: var(--aui-inset-strong);
+}
+
+/*
+ * The kit root cancels wp-admin's 20px left gutter so the header runs edge to
+ * edge. Existing screen bodies sit in a .wrap and get that gutter back here,
+ * until the body restyle stages replace them with kit layout.
+ */
+.aui > .wrap {
+	margin: 0 20px;
+	padding-top: 16px;
+}

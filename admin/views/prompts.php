@@ -120,8 +120,10 @@ if ( $prompts_nonce && wp_verify_nonce( $prompts_nonce, 'specflux_mac_prompts' )
 }
 ?>
 
+<div class="aui" data-brand="specflux">
+<?php \Specflux_Marketing_Analytics\Admin\Ui_Kit::render_header( 'specflux-mac-prompts' ); ?>
+
 <div class="wrap">
-	<h1><?php esc_html_e( 'Custom MCP Prompts', 'specflux-marketing-analytics-chat' ); ?></h1>
 	<p class="description">
 		<?php esc_html_e( 'Create custom prompts to guide AI assistants through complex marketing analytics workflows. Prompts can combine multiple tools and provide step-by-step instructions.', 'specflux-marketing-analytics-chat' ); ?>
 	</p>
@@ -343,4 +345,5 @@ if ( $prompts_nonce && wp_verify_nonce( $prompts_nonce, 'specflux_mac_prompts' )
 
 		<button type="button" class="button" id="close-modal"><?php esc_html_e( 'Close', 'specflux-marketing-analytics-chat' ); ?></button>
 	</div>
+</div>
 </div>

@@ -23,8 +23,10 @@ $ga4_connected      = $credential_manager->has_credentials( 'ga4' );
 $gsc_connected      = $credential_manager->has_credentials( 'gsc' );
 ?>
 
+<div class="aui" data-brand="specflux">
+<?php \Specflux_Marketing_Analytics\Admin\Ui_Kit::render_header( 'specflux-mac' ); ?>
+
 <div class="wrap specflux-marketing-analytics-chat-dashboard">
-	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
 	<?php
 	$onboarding_complete = get_option( 'specflux_mac_onboarding_complete' );
@@ -395,4 +397,5 @@ $gsc_connected      = $credential_manager->has_credentials( 'gsc' );
 			</p>
 		</details>
 	</div>
+</div>
 </div>

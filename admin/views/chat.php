@@ -65,8 +65,10 @@ if ( ! function_exists( 'specflux_mac_format_chat_markdown' ) ) {
 
 ?>
 
+<div class="aui" data-brand="specflux">
+<?php \Specflux_Marketing_Analytics\Admin\Ui_Kit::render_header( 'specflux-mac-ai-assistant' ); ?>
+
 <div class="wrap specflux-marketing-analytics-chat">
-	<h1 class="wp-heading-inline"><?php esc_html_e( 'AI Assistant', 'specflux-marketing-analytics-chat' ); ?></h1>
 	<p class="description">
 		<?php esc_html_e( 'Chat with an AI assistant about your marketing analytics data. The assistant answers from the sources connected on the Connections page: Google Analytics 4, Search Console, Microsoft Clarity, Bing Webmaster Tools, PageSpeed Insights, and your own posts and SEO plugin.', 'specflux-marketing-analytics-chat' ); ?>
 	</p>
@@ -296,4 +298,5 @@ if ( ! function_exists( 'specflux_mac_format_chat_markdown' ) ) {
 			<?php endif; ?>
 		</div>
 	</div>
+</div>
 </div>

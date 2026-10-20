@@ -135,8 +135,10 @@ if ( isset( $_POST['save_email_settings'] ) && current_user_can( 'manage_options
 	$has_oauth_credentials = $oauth_handler->has_oauth_credentials();
 ?>
 
+<div class="aui" data-brand="specflux">
+<?php \Specflux_Marketing_Analytics\Admin\Ui_Kit::render_header( 'specflux-mac-settings' ); ?>
+
 <div class="wrap specflux-mac-settings">
-	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
 	<?php if ( $success_message ) : ?>
 		<div class="notice notice-success is-dismissible">
@@ -1136,4 +1138,5 @@ if ( isset( $_POST['save_email_settings'] ) && current_user_can( 'manage_options
 		}
 		?>
 	</div>
+</div>
 </div>

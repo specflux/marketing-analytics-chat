@@ -338,8 +338,10 @@ if ( empty( $mac_abilities ) ) {
 $mac_mcp_endpoint = rest_url( 'mcp/mcp-adapter-default-server' );
 ?>
 
+<div class="aui" data-brand="specflux">
+<?php \Specflux_Marketing_Analytics\Admin\Ui_Kit::render_header( 'specflux-mac-abilities' ); ?>
+
 <div class="wrap smac-abilities-catalog">
-	<h1><?php esc_html_e( 'MCP Abilities Catalog', 'specflux-marketing-analytics-chat' ); ?></h1>
 	<p class="description">
 		<?php esc_html_e( 'All the analytics abilities available to your AI assistants via the Model Context Protocol. No competitor has MCP-native architecture.', 'specflux-marketing-analytics-chat' ); ?>
 	</p>
@@ -428,4 +430,5 @@ $mac_mcp_endpoint = rest_url( 'mcp/mcp-adapter-default-server' );
 			?>
 		</p>
 	</div>
+</div>
 </div>
