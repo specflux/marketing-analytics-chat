@@ -1,7 +1,7 @@
 /*! Admin UI Kit aui.js - vanilla ES2018, no dependencies. AUI.init(root) is idempotent. */
 (function (w, d) {
   'use strict';
-  var FOC = 'a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])';
+  var FOC = 'a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
   var $ = function (s, r) { return (r || d).querySelector(s); };
   var $$ = function (s, r) { return [].slice.call((r || d).querySelectorAll(s)); };
   var emit = function (e, n, x) { return e.dispatchEvent(new CustomEvent(n, { bubbles: true, cancelable: true, detail: x || {} })); };
@@ -79,7 +79,7 @@
   }
 
   w.AUI = {
-    version: '0.2.3',
+    version: '0.2.4',
     init: function (root) {
       root = root || d;
       $$('.aui-seg[data-name]', root).forEach(syncSeg);
