@@ -11,391 +11,218 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use Specflux_Marketing_Analytics\Admin\Connection_Promoter;
+use Specflux_Marketing_Analytics\Admin\Dashboard_Data;
+use Specflux_Marketing_Analytics\Admin\Ui_Kit;
+use Specflux_Marketing_Analytics\Admin\Widget_Headline;
+use Specflux_Marketing_Analytics\Chat\Chat_Manager;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Prompts\Prompt_Manager;
 
-$settings  = get_option( 'specflux_mac_settings', array() );
-$platforms = isset( $settings['platforms'] ) ? $settings['platforms'] : array();
+$specflux_mac_credentials = new Credential_Manager();
+$specflux_mac_chat        = new Chat_Manager();
+$specflux_mac_user_id     = get_current_user_id();
+$specflux_mac_chat_url    = admin_url( 'admin.php?page=specflux-mac-ai-assistant' );
 
-// Check actual credential existence instead of manual flags.
-$credential_manager = new Credential_Manager();
-$clarity_connected  = $credential_manager->has_credentials( 'clarity' );
-$ga4_connected      = $credential_manager->has_credentials( 'ga4' );
-$gsc_connected      = $credential_manager->has_credentials( 'gsc' );
+// Setup progress, from real state.
+$specflux_mac_onboarding_complete = (bool) get_option( 'specflux_mac_onboarding_complete' );
+$specflux_mac_setup               = Dashboard_Data::setup_steps(
+	Dashboard_Data::setup_state( $specflux_mac_credentials, $specflux_mac_chat, new Prompt_Manager(), $specflux_mac_user_id )
+);
+
+// Platforms, headline numbers (cached only, no remote calls) and recent questions.
+$specflux_mac_platforms = Dashboard_Data::platform_rows( $specflux_mac_credentials );
+$specflux_mac_connected = array();
+foreach ( $specflux_mac_platforms as $specflux_mac_platform ) {
+	if ( $specflux_mac_platform['connected'] ) {
+		$specflux_mac_connected[] = $specflux_mac_platform['slug'];
+	}
+}
+$specflux_mac_cards  = Dashboard_Data::stat_cards( Widget_Headline::cached(), $specflux_mac_connected );
+$specflux_mac_recent = Dashboard_Data::recent_questions( $specflux_mac_chat, $specflux_mac_user_id, wp_create_nonce( 'specflux_mac_conversation' ), 5 );
+
+$specflux_mac_has_source = false;
+foreach ( $specflux_mac_cards as $specflux_mac_card ) {
+	if ( 'disconnected' !== $specflux_mac_card['state'] ) {
+		$specflux_mac_has_source = true;
+	}
+}
+
+$specflux_mac_suggestions = array(
+	__( 'Which pages lost traffic last week?', 'specflux-marketing-analytics-chat' ),
+	__( 'What did people search for before buying?', 'specflux-marketing-analytics-chat' ),
+	__( 'Compare this month with last month', 'specflux-marketing-analytics-chat' ),
+);
 ?>
 
 <div class="aui" data-brand="specflux">
-<?php \Specflux_Marketing_Analytics\Admin\Ui_Kit::render_header( 'specflux-mac' ); ?>
+<?php Ui_Kit::render_header( 'specflux-mac' ); ?>
 
 <div class="wrap specflux-marketing-analytics-chat-dashboard">
+<div class="aui-layout">
+	<div class="aui-stack">
 
-	<?php
-	$onboarding_complete = get_option( 'specflux_mac_onboarding_complete' );
-	if ( ! $onboarding_complete ) :
-		require_once SPECFLUX_MAC_PATH . 'admin/views/onboarding/wizard.php';
-	endif;
-	?>
+		<?php
+		if ( ! $specflux_mac_onboarding_complete && ! $specflux_mac_setup['complete'] ) {
+			require SPECFLUX_MAC_PATH . 'admin/views/onboarding/wizard.php';
+		}
 
-	<div class="smac-welcome">
-		<h2><?php esc_html_e( 'Welcome to Specflux Marketing Analytics Chat', 'specflux-marketing-analytics-chat' ); ?></h2>
-		<p><?php esc_html_e( 'Chat with your marketing analytics data using AI. Connect Google Analytics 4, Search Console, Microsoft Clarity, and more to get instant insights.', 'specflux-marketing-analytics-chat' ); ?></p>
-	</div>
-
-	<!-- AI Assistant Quick Access -->
-	<div class="smac-quick-actions">
-		<div class="quick-action-card">
-			<div class="quick-action-icon">
-				<span class="dashicons dashicons-format-chat"></span>
-			</div>
-			<div class="quick-action-content">
-				<h3><?php esc_html_e( 'AI Assistant', 'specflux-marketing-analytics-chat' ); ?></h3>
-				<p><?php esc_html_e( 'Start chatting with your analytics data right now', 'specflux-marketing-analytics-chat' ); ?></p>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-ai-assistant' ) ); ?>" class="button button-primary">
-					<?php esc_html_e( 'Open AI Chat', 'specflux-marketing-analytics-chat' ); ?>
-				</a>
-			</div>
-		</div>
-		<div class="quick-action-card">
-			<div class="quick-action-icon">
-				<span class="dashicons dashicons-editor-code"></span>
-			</div>
-			<div class="quick-action-content">
-				<h3><?php esc_html_e( 'Custom Prompts', 'specflux-marketing-analytics-chat' ); ?></h3>
-				<p><?php esc_html_e( 'Create reusable prompt templates for common analyses', 'specflux-marketing-analytics-chat' ); ?></p>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-prompts' ) ); ?>" class="button">
-					<?php esc_html_e( 'Manage Prompts', 'specflux-marketing-analytics-chat' ); ?>
-				</a>
-			</div>
-		</div>
-		<div class="quick-action-card">
-			<div class="quick-action-icon">
-				<span class="dashicons dashicons-analytics"></span>
-			</div>
-			<div class="quick-action-content">
-				<h3><?php esc_html_e( 'Quick Analysis', 'specflux-marketing-analytics-chat' ); ?></h3>
-				<p><?php esc_html_e( 'Run a pre-built analysis with one click', 'specflux-marketing-analytics-chat' ); ?></p>
-				<div class="smac-quick-analysis-buttons">
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-ai-assistant&prompt=weekly-report' ) ); ?>" class="button">
-						<?php esc_html_e( 'Weekly Report', 'specflux-marketing-analytics-chat' ); ?>
-					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-ai-assistant&prompt=seo-health-check' ) ); ?>" class="button">
-						<?php esc_html_e( 'SEO Health', 'specflux-marketing-analytics-chat' ); ?>
-					</a>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<?php
-	/**
-	 * Fires after quick actions, before analytics panels.
-	 *
-	 * Used by the premium add-on to inject AI Insight Cards and other dashboard widgets.
-	 *
-	 * @since 1.5.0
-	 */
-	do_action( 'specflux_mac_dashboard_cards' );
-	?>
-
-	<?php
-	// Analytics at a Glance — only show if at least one platform is connected.
-	$has_any_connection = $clarity_connected || $ga4_connected || $gsc_connected;
-	if ( $has_any_connection ) :
-
-		// Read transients (no live API calls).
-		$ga4_data     = $ga4_connected ? get_transient( 'specflux_mac_ga4_day_summary' ) : false;
-		$clarity_data = $clarity_connected ? get_transient( 'specflux_mac_clarity_day_summary' ) : false;
-		$gsc_data     = $gsc_connected ? get_transient( 'specflux_mac_gsc_day_summary' ) : false;
-		$has_any_data = ( false !== $ga4_data || false !== $clarity_data || false !== $gsc_data );
+		/**
+		 * Fires after the welcome block, before the headline numbers.
+		 *
+		 * Used by the premium add-on to inject AI Insight Cards and other dashboard widgets.
+		 *
+		 * @since 1.5.0
+		 */
+		do_action( 'specflux_mac_dashboard_cards' );
 		?>
-		<div class="smac-insights-panel">
-			<div class="smac-insights-header">
-				<h3><?php esc_html_e( 'Analytics at a Glance', 'specflux-marketing-analytics-chat' ); ?></h3>
-				<button type="button" class="button button-small smac-insights-refresh">
-					<span class="dashicons dashicons-update"></span>
-					<?php esc_html_e( 'Refresh', 'specflux-marketing-analytics-chat' ); ?>
-				</button>
-			</div>
 
-			<?php if ( $has_any_data ) : ?>
-				<div class="smac-insights-grid">
-
-					<?php
-					// --- GA4 Metrics ---
-					if ( false !== $ga4_data && isset( $ga4_data['rows'] ) && is_array( $ga4_data['rows'] ) ) :
-						$ga4_sessions        = 0;
-						$ga4_users           = 0;
-						$ga4_pageviews       = 0;
-						$ga4_sessions_spark  = array();
-						$ga4_users_spark     = array();
-						$ga4_pageviews_spark = array();
-
-						foreach ( $ga4_data['rows'] as $ga4_row ) {
-							if ( isset( $ga4_row['metricValues'] ) && is_array( $ga4_row['metricValues'] ) ) {
-								$ga4_s = isset( $ga4_row['metricValues'][0]['value'] ) ? (int) $ga4_row['metricValues'][0]['value'] : 0;
-								$ga4_u = isset( $ga4_row['metricValues'][1]['value'] ) ? (int) $ga4_row['metricValues'][1]['value'] : 0;
-								$ga4_p = isset( $ga4_row['metricValues'][2]['value'] ) ? (int) $ga4_row['metricValues'][2]['value'] : 0;
-
-								$ga4_sessions  += $ga4_s;
-								$ga4_users     += $ga4_u;
-								$ga4_pageviews += $ga4_p;
-
-								$ga4_sessions_spark[]  = $ga4_s;
-								$ga4_users_spark[]     = $ga4_u;
-								$ga4_pageviews_spark[] = $ga4_p;
-							}
-						}
-						?>
-
-						<div class="smac-metric-card" data-platform="ga4" data-metric="sessions">
-							<span class="smac-metric-platform"><?php esc_html_e( 'GA4', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-label"><?php esc_html_e( 'Sessions', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-value"><?php echo esc_html( number_format_i18n( $ga4_sessions ) ); ?></span>
-							<?php if ( count( $ga4_sessions_spark ) > 1 ) : ?>
-								<div class="smac-sparkline" data-values="<?php echo esc_attr( wp_json_encode( $ga4_sessions_spark ) ); ?>" data-color="#2271b1"></div>
-							<?php endif; ?>
-						</div>
-
-						<div class="smac-metric-card" data-platform="ga4" data-metric="users">
-							<span class="smac-metric-platform"><?php esc_html_e( 'GA4', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-label"><?php esc_html_e( 'Users', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-value"><?php echo esc_html( number_format_i18n( $ga4_users ) ); ?></span>
-							<?php if ( count( $ga4_users_spark ) > 1 ) : ?>
-								<div class="smac-sparkline" data-values="<?php echo esc_attr( wp_json_encode( $ga4_users_spark ) ); ?>" data-color="#2271b1"></div>
-							<?php endif; ?>
-						</div>
-
-						<div class="smac-metric-card" data-platform="ga4" data-metric="pageviews">
-							<span class="smac-metric-platform"><?php esc_html_e( 'GA4', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-label"><?php esc_html_e( 'Pageviews', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-value"><?php echo esc_html( number_format_i18n( $ga4_pageviews ) ); ?></span>
-							<?php if ( count( $ga4_pageviews_spark ) > 1 ) : ?>
-								<div class="smac-sparkline" data-values="<?php echo esc_attr( wp_json_encode( $ga4_pageviews_spark ) ); ?>" data-color="#2271b1"></div>
-							<?php endif; ?>
-						</div>
-
+		<div class="aui-grid-3 smac-stats">
+			<?php foreach ( $specflux_mac_cards as $specflux_mac_card ) : ?>
+				<div class="aui-stat aui-stat--spark smac-stat" data-stat="<?php echo esc_attr( $specflux_mac_card['key'] ); ?>" data-state="<?php echo esc_attr( $specflux_mac_card['state'] ); ?>">
+					<span class="aui-label-caps"><?php echo esc_html( $specflux_mac_card['label'] ); ?></span>
+					<?php if ( 'data' === $specflux_mac_card['state'] ) : ?>
+						<div class="aui-stat-row"><div class="aui-stat-v"><?php echo esc_html( number_format_i18n( $specflux_mac_card['value'] ) ); ?></div></div>
+						<?php if ( $specflux_mac_card['has_change'] ) : ?>
+							<span class="aui-delta<?php echo $specflux_mac_card['change'] < 0 ? ' aui-delta--down' : ''; ?>"><?php echo esc_html( Dashboard_Data::format_delta( $specflux_mac_card['change'] ) ); ?><span class="aui-sr"> <?php esc_html_e( 'compared with the previous period', 'specflux-marketing-analytics-chat' ); ?></span></span>
+						<?php endif; ?>
+					<?php elseif ( 'empty' === $specflux_mac_card['state'] ) : ?>
+						<div class="aui-stat-row"><div class="aui-stat-v smac-stat-none" aria-hidden="true">&mdash;</div></div>
+						<span class="aui-muted"><?php esc_html_e( 'No numbers yet. Use Refresh numbers below.', 'specflux-marketing-analytics-chat' ); ?></span>
+					<?php else : ?>
+						<div class="aui-stat-row"><div class="aui-stat-v smac-stat-none" aria-hidden="true">&mdash;</div></div>
+						<a class="smac-stat-link" href="<?php echo esc_url( $specflux_mac_card['url'] ); ?>"><?php esc_html_e( 'Connect to see this', 'specflux-marketing-analytics-chat' ); ?></a>
 					<?php endif; ?>
-
-					<?php
-					// --- Clarity Metrics ---
-					if ( false !== $clarity_data ) :
-						$clarity_sessions          = isset( $clarity_data['totalSessions'] ) ? (int) $clarity_data['totalSessions'] : 0;
-						$clarity_pages_per_session = isset( $clarity_data['pagesPerSession'] ) ? (float) $clarity_data['pagesPerSession'] : 0;
-						?>
-
-						<div class="smac-metric-card" data-platform="clarity" data-metric="sessions">
-							<span class="smac-metric-platform"><?php esc_html_e( 'Clarity', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-label"><?php esc_html_e( 'Sessions', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-value"><?php echo esc_html( number_format_i18n( $clarity_sessions ) ); ?></span>
-						</div>
-
-						<div class="smac-metric-card" data-platform="clarity" data-metric="pages_per_session">
-							<span class="smac-metric-platform"><?php esc_html_e( 'Clarity', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-label"><?php esc_html_e( 'Pages / Session', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-value"><?php echo esc_html( number_format( $clarity_pages_per_session, 1 ) ); ?></span>
-						</div>
-
-					<?php endif; ?>
-
-					<?php
-					// --- GSC Metrics ---
-					if ( false !== $gsc_data && isset( $gsc_data['rows'] ) && is_array( $gsc_data['rows'] ) ) :
-						$gsc_clicks      = 0;
-						$gsc_impressions = 0;
-						$gsc_position    = 0;
-						$gsc_row_count   = count( $gsc_data['rows'] );
-
-						$gsc_clicks_spark      = array();
-						$gsc_impressions_spark = array();
-
-						foreach ( $gsc_data['rows'] as $gsc_row ) {
-							$gsc_c = isset( $gsc_row['clicks'] ) ? (int) $gsc_row['clicks'] : 0;
-							$gsc_i = isset( $gsc_row['impressions'] ) ? (int) $gsc_row['impressions'] : 0;
-
-							$gsc_clicks      += $gsc_c;
-							$gsc_impressions += $gsc_i;
-							$gsc_position    += isset( $gsc_row['position'] ) ? (float) $gsc_row['position'] : 0;
-
-							$gsc_clicks_spark[]      = $gsc_c;
-							$gsc_impressions_spark[] = $gsc_i;
-						}
-
-						$gsc_avg_position = $gsc_row_count > 0 ? $gsc_position / $gsc_row_count : 0;
-						?>
-
-						<div class="smac-metric-card" data-platform="gsc" data-metric="clicks">
-							<span class="smac-metric-platform"><?php esc_html_e( 'GSC', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-label"><?php esc_html_e( 'Clicks', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-value"><?php echo esc_html( number_format_i18n( $gsc_clicks ) ); ?></span>
-							<?php if ( count( $gsc_clicks_spark ) > 1 ) : ?>
-								<div class="smac-sparkline" data-values="<?php echo esc_attr( wp_json_encode( $gsc_clicks_spark ) ); ?>" data-color="#2271b1"></div>
-							<?php endif; ?>
-						</div>
-
-						<div class="smac-metric-card" data-platform="gsc" data-metric="impressions">
-							<span class="smac-metric-platform"><?php esc_html_e( 'GSC', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-label"><?php esc_html_e( 'Impressions', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-value"><?php echo esc_html( number_format_i18n( $gsc_impressions ) ); ?></span>
-							<?php if ( count( $gsc_impressions_spark ) > 1 ) : ?>
-								<div class="smac-sparkline" data-values="<?php echo esc_attr( wp_json_encode( $gsc_impressions_spark ) ); ?>" data-color="#2271b1"></div>
-							<?php endif; ?>
-						</div>
-
-						<div class="smac-metric-card" data-platform="gsc" data-metric="avg_position">
-							<span class="smac-metric-platform"><?php esc_html_e( 'GSC', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-label"><?php esc_html_e( 'Avg Position', 'specflux-marketing-analytics-chat' ); ?></span>
-							<span class="smac-metric-value"><?php echo esc_html( number_format( $gsc_avg_position, 1 ) ); ?></span>
-						</div>
-
-					<?php endif; ?>
-
 				</div>
-
-			<?php else : ?>
-				<div class="smac-insights-empty">
-					<span class="dashicons dashicons-chart-bar"></span>
-					<p><?php esc_html_e( 'No cached data yet. Click Refresh to load metrics from your connected platforms.', 'specflux-marketing-analytics-chat' ); ?></p>
-				</div>
-			<?php endif; ?>
-
+			<?php endforeach; ?>
 		</div>
-	<?php endif; ?>
-
-	<?php
-	/**
-	 * Fires after the insights panel, before the status cards.
-	 *
-	 * Used by the pro add-on to inject additional dashboard cards
-	 * (e.g. Quick Wins, AI Insights summary).
-	 */
-	do_action( 'specflux_mac_dashboard_cards_after_insights' );
-	?>
-
-	<div class="smac-status-cards">
-		<h3><?php esc_html_e( 'Platform Status', 'specflux-marketing-analytics-chat' ); ?></h3>
-
-		<div class="status-cards-grid">
-			<!-- Microsoft Clarity -->
-			<div class="status-card <?php echo esc_attr( $clarity_connected ? 'connected' : 'disconnected' ); ?>">
-				<div class="status-icon">
-					<span class="dashicons dashicons-chart-area"></span>
-				</div>
-				<h4><?php esc_html_e( 'Microsoft Clarity', 'specflux-marketing-analytics-chat' ); ?></h4>
-				<p class="status-label">
-					<?php
-					if ( $clarity_connected ) {
-						echo '<span class="status-badge connected">' . esc_html__( 'Connected', 'specflux-marketing-analytics-chat' ) . '</span>';
-					} else {
-						echo '<span class="status-badge disconnected">' . esc_html__( 'Not Connected', 'specflux-marketing-analytics-chat' ) . '</span>';
-					}
-					?>
-				</p>
-				<p class="status-description"><?php esc_html_e( 'Session recordings and heatmaps', 'specflux-marketing-analytics-chat' ); ?></p>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=clarity' ) ); ?>" class="button">
-					<?php esc_html_e( 'Configure', 'specflux-marketing-analytics-chat' ); ?>
-				</a>
-			</div>
-
-			<!-- Google Analytics 4 -->
-			<div class="status-card <?php echo esc_attr( $ga4_connected ? 'connected' : 'disconnected' ); ?>">
-				<div class="status-icon">
-					<span class="dashicons dashicons-chart-line"></span>
-				</div>
-				<h4><?php esc_html_e( 'Google Analytics 4', 'specflux-marketing-analytics-chat' ); ?></h4>
-				<p class="status-label">
-					<?php
-					if ( $ga4_connected ) {
-						echo '<span class="status-badge connected">' . esc_html__( 'Connected', 'specflux-marketing-analytics-chat' ) . '</span>';
-					} else {
-						echo '<span class="status-badge disconnected">' . esc_html__( 'Not Connected', 'specflux-marketing-analytics-chat' ) . '</span>';
-					}
-					?>
-				</p>
-				<p class="status-description"><?php esc_html_e( 'Traffic and user behavior metrics', 'specflux-marketing-analytics-chat' ); ?></p>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=ga4' ) ); ?>" class="button">
-					<?php esc_html_e( 'Configure', 'specflux-marketing-analytics-chat' ); ?>
-				</a>
-			</div>
-
-			<!-- Google Search Console -->
-			<div class="status-card <?php echo esc_attr( $gsc_connected ? 'connected' : 'disconnected' ); ?>">
-				<div class="status-icon">
-					<span class="dashicons dashicons-search"></span>
-				</div>
-				<h4><?php esc_html_e( 'Google Search Console', 'specflux-marketing-analytics-chat' ); ?></h4>
-				<p class="status-label">
-					<?php
-					if ( $gsc_connected ) {
-						echo '<span class="status-badge connected">' . esc_html__( 'Connected', 'specflux-marketing-analytics-chat' ) . '</span>';
-					} else {
-						echo '<span class="status-badge disconnected">' . esc_html__( 'Not Connected', 'specflux-marketing-analytics-chat' ) . '</span>';
-					}
-					?>
-				</p>
-				<p class="status-description"><?php esc_html_e( 'Search performance and indexing', 'specflux-marketing-analytics-chat' ); ?></p>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=gsc' ) ); ?>" class="button">
-					<?php esc_html_e( 'Configure', 'specflux-marketing-analytics-chat' ); ?>
-				</a>
-			</div>
-		</div>
-	</div>
-
-	<?php
-	// Connection depth prompt — suggest connecting more platforms.
-	$mac_connection_promoter = new Connection_Promoter();
-	$mac_connected_platforms = $mac_connection_promoter->get_connected_platforms();
-
-	if ( count( $mac_connected_platforms ) < 3 ) :
-		$mac_connection_promoter->render_connection_prompt();
-	endif;
-	?>
-
-	<div class="smac-getting-started"<?php echo ! $onboarding_complete ? ' style="display:none;"' : ''; ?>>
-		<h3><?php esc_html_e( 'Getting Started', 'specflux-marketing-analytics-chat' ); ?></h3>
-		<ol>
-			<li>
-				<strong><?php esc_html_e( 'Connect Your Analytics', 'specflux-marketing-analytics-chat' ); ?></strong>
-				<br>
-				<?php esc_html_e( 'Connect at least one analytics platform using the ', 'specflux-marketing-analytics-chat' ); ?>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-connections' ) ); ?>"><?php esc_html_e( 'Connections page', 'specflux-marketing-analytics-chat' ); ?></a>
-			</li>
-			<li>
-				<strong><?php esc_html_e( 'Start Chatting', 'specflux-marketing-analytics-chat' ); ?></strong>
-				<br>
-				<?php esc_html_e( 'Open the ', 'specflux-marketing-analytics-chat' ); ?>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-ai-assistant' ) ); ?>"><?php esc_html_e( 'AI Assistant', 'specflux-marketing-analytics-chat' ); ?></a>
-				<?php esc_html_e( ' and ask questions about your marketing data', 'specflux-marketing-analytics-chat' ); ?>
-			</li>
-			<li>
-				<strong><?php esc_html_e( 'Save Common Prompts', 'specflux-marketing-analytics-chat' ); ?></strong>
-				<br>
-				<?php esc_html_e( 'Create ', 'specflux-marketing-analytics-chat' ); ?>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-prompts' ) ); ?>"><?php esc_html_e( 'custom prompts', 'specflux-marketing-analytics-chat' ); ?></a>
-				<?php esc_html_e( ' for analyses you run frequently', 'specflux-marketing-analytics-chat' ); ?>
-			</li>
-		</ol>
-	</div>
-
-	<!-- Advanced: External AI Assistants -->
-	<div class="smac-advanced">
-		<details>
-			<summary><h3><?php esc_html_e( 'Advanced: Connect External AI Assistants', 'specflux-marketing-analytics-chat' ); ?></h3></summary>
-			<p><?php esc_html_e( 'You can also connect external AI assistants like Claude Desktop using the MCP endpoint below:', 'specflux-marketing-analytics-chat' ); ?></p>
-			<div class="mcp-endpoint-box">
-				<code class="mcp-endpoint"><?php echo esc_url( rest_url( 'mcp/mcp-adapter-default-server' ) ); ?></code>
-				<button type="button" class="button button-secondary copy-endpoint">
-					<?php esc_html_e( 'Copy URL', 'specflux-marketing-analytics-chat' ); ?>
-				</button>
-			</div>
-			<p class="description">
-				<?php
-				printf(
-					/* translators: %s: link to documentation */
-					esc_html__( 'Learn how to configure Claude Desktop and other MCP clients in our %s.', 'specflux-marketing-analytics-chat' ),
-					'<a href="https://github.com/specflux/marketing-analytics-chat#configuration" target="_blank" rel="noopener noreferrer">' . esc_html__( 'documentation', 'specflux-marketing-analytics-chat' ) . '</a>'
-				);
-				?>
+		<?php if ( $specflux_mac_has_source ) : ?>
+			<p class="smac-stats-foot aui-muted">
+				<?php esc_html_e( 'Numbers come from your last refresh, not a live call.', 'specflux-marketing-analytics-chat' ); ?>
+				<button type="button" class="aui-btn aui-btn--ghost aui-btn--sm" id="smac-refresh-stats" data-working="<?php echo esc_attr__( 'Refreshing…', 'specflux-marketing-analytics-chat' ); ?>"><?php esc_html_e( 'Refresh numbers', 'specflux-marketing-analytics-chat' ); ?></button>
+				<span class="aui-sr" role="status" id="smac-refresh-status"></span>
 			</p>
-		</details>
+		<?php endif; ?>
+
+		<?php
+		/**
+		 * Fires after the headline numbers, before the "Ask about your data" card.
+		 *
+		 * Used by the pro add-on to inject additional dashboard cards
+		 * (e.g. Quick Wins, AI Insights summary).
+		 */
+		do_action( 'specflux_mac_dashboard_cards_after_insights' );
+		?>
+
+		<section class="aui-card" aria-labelledby="smac-ask-title">
+			<div class="aui-card-h"><h2 class="aui-card-t" id="smac-ask-title"><?php esc_html_e( 'Ask about your data', 'specflux-marketing-analytics-chat' ); ?></h2></div>
+			<div class="aui-card-b smac-stack">
+				<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>" class="aui-composer" id="smac-ask-form">
+					<input type="hidden" name="page" value="specflux-mac-ai-assistant">
+					<label class="aui-sr" for="smac-ask"><?php esc_html_e( 'Your question', 'specflux-marketing-analytics-chat' ); ?></label>
+					<textarea id="smac-ask" name="prompt" rows="1" maxlength="500" placeholder="<?php echo esc_attr( $specflux_mac_suggestions[0] ); ?>"></textarea>
+					<button type="submit" class="aui-btn aui-btn--primary"><?php echo Ui_Kit::icon( 'send' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Ui_Kit::icon(). ?><?php esc_html_e( 'Ask', 'specflux-marketing-analytics-chat' ); ?></button>
+				</form>
+				<div class="aui-suggest smac-suggest">
+					<?php foreach ( $specflux_mac_suggestions as $specflux_mac_suggestion ) : ?>
+						<a href="<?php echo esc_url( add_query_arg( 'prompt', rawurlencode( $specflux_mac_suggestion ), $specflux_mac_chat_url ) ); ?>"><?php echo esc_html( $specflux_mac_suggestion ); ?></a>
+					<?php endforeach; ?>
+				</div>
+				<div class="smac-row smac-quick">
+					<span class="aui-muted"><?php esc_html_e( 'Ready-made analyses', 'specflux-marketing-analytics-chat' ); ?></span>
+					<a class="aui-btn aui-btn--secondary aui-btn--sm" href="<?php echo esc_url( add_query_arg( 'prompt', rawurlencode( 'Give me a weekly report of my website analytics for the past 7 days.' ), $specflux_mac_chat_url ) ); ?>"><?php esc_html_e( 'Weekly Report', 'specflux-marketing-analytics-chat' ); ?></a>
+					<a class="aui-btn aui-btn--secondary aui-btn--sm" href="<?php echo esc_url( add_query_arg( 'prompt', rawurlencode( 'Run an SEO health check on my website. Check search console for any issues, top queries, and indexing status.' ), $specflux_mac_chat_url ) ); ?>"><?php esc_html_e( 'SEO Health', 'specflux-marketing-analytics-chat' ); ?></a>
+				</div>
+			</div>
+		</section>
+
+		<section class="aui-card" aria-labelledby="smac-connections-title">
+			<div class="aui-card-h">
+				<h2 class="aui-card-t" id="smac-connections-title"><?php esc_html_e( 'Connections', 'specflux-marketing-analytics-chat' ); ?></h2>
+				<a class="aui-btn aui-btn--ghost aui-btn--sm aui-end" href="<?php echo esc_url( Dashboard_Data::connections_url() ); ?>"><?php esc_html_e( 'Manage', 'specflux-marketing-analytics-chat' ); ?></a>
+			</div>
+			<ul class="aui-groups smac-platforms">
+				<?php foreach ( $specflux_mac_platforms as $specflux_mac_platform ) : ?>
+					<li class="aui-item" data-platform="<?php echo esc_attr( $specflux_mac_platform['slug'] ); ?>">
+						<span class="aui-tile aui-tile--sm"><?php echo Ui_Kit::icon( $specflux_mac_platform['icon'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Ui_Kit::icon(). ?></span>
+						<div class="aui-grow">
+							<div class="aui-item-name"><?php echo esc_html( $specflux_mac_platform['label'] ); ?></div>
+							<?php if ( '' !== $specflux_mac_platform['description'] ) : ?>
+								<div class="aui-muted"><?php echo esc_html( $specflux_mac_platform['description'] ); ?></div>
+							<?php endif; ?>
+						</div>
+						<?php if ( $specflux_mac_platform['connected'] ) : ?>
+							<span class="aui-badge aui-badge--ok"><?php echo Ui_Kit::icon( 'check' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Ui_Kit::icon(). ?><?php esc_html_e( 'Connected', 'specflux-marketing-analytics-chat' ); ?></span>
+							<a class="aui-btn aui-btn--secondary aui-btn--sm" href="<?php echo esc_url( $specflux_mac_platform['url'] ); ?>"><?php esc_html_e( 'Manage', 'specflux-marketing-analytics-chat' ); ?><span class="aui-sr"> <?php echo esc_html( $specflux_mac_platform['label'] ); ?></span></a>
+						<?php else : ?>
+							<span class="aui-badge"><?php esc_html_e( 'Not connected', 'specflux-marketing-analytics-chat' ); ?></span>
+							<a class="aui-btn aui-btn--secondary aui-btn--sm" href="<?php echo esc_url( $specflux_mac_platform['url'] ); ?>"><?php esc_html_e( 'Connect', 'specflux-marketing-analytics-chat' ); ?><span class="aui-sr"> <?php echo esc_html( $specflux_mac_platform['label'] ); ?></span></a>
+						<?php endif; ?>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+		</section>
+
+		<?php
+		// Once every registered platform is connected, let the premium add-on suggest more.
+		( new Connection_Promoter() )->maybe_fire_all_connected();
+		?>
+
+		<section class="aui-card smac-advanced">
+			<div class="aui-group">
+				<div class="aui-group-h">
+					<button type="button" class="aui-group-toggle" aria-expanded="false" aria-controls="smac-mcp">
+						<span class="aui-group-name"><?php esc_html_e( 'Advanced: Connect External AI Assistants', 'specflux-marketing-analytics-chat' ); ?></span>
+						<span class="aui-leader"></span>
+						<?php echo Ui_Kit::icon( 'caret-down' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Ui_Kit::icon(). ?>
+					</button>
+				</div>
+				<div class="aui-group-b smac-mcp" id="smac-mcp" hidden>
+					<p><?php esc_html_e( 'You can also connect external AI assistants like Claude Desktop using the MCP endpoint below:', 'specflux-marketing-analytics-chat' ); ?></p>
+					<div class="aui-copy">
+						<label class="aui-sr" for="smac-mcp-url"><?php esc_html_e( 'MCP endpoint URL', 'specflux-marketing-analytics-chat' ); ?></label>
+						<input type="text" class="aui-input" id="smac-mcp-url" readonly value="<?php echo esc_url( rest_url( 'mcp/mcp-adapter-default-server' ) ); ?>">
+						<button type="button" class="aui-btn aui-btn--secondary" data-aui-copy data-aui-target="#smac-mcp-url" data-copied-label="<?php echo esc_attr__( 'Copied', 'specflux-marketing-analytics-chat' ); ?>"><?php echo Ui_Kit::icon( 'copy' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Ui_Kit::icon(). ?><span data-aui-copy-label><?php esc_html_e( 'Copy URL', 'specflux-marketing-analytics-chat' ); ?></span></button>
+					</div>
+					<p class="aui-muted">
+						<?php
+						printf(
+							/* translators: %s: link to documentation */
+							esc_html__( 'Learn how to configure Claude Desktop and other MCP clients in our %s.', 'specflux-marketing-analytics-chat' ),
+							'<a href="https://github.com/specflux/marketing-analytics-chat#configuration" target="_blank" rel="noopener noreferrer">' . esc_html__( 'documentation', 'specflux-marketing-analytics-chat' ) . '</a>'
+						);
+						?>
+					</p>
+				</div>
+			</div>
+		</section>
 	</div>
+
+	<aside class="aui-rail" aria-label="<?php echo esc_attr__( 'Sidebar', 'specflux-marketing-analytics-chat' ); ?>">
+		<section class="aui-card" aria-labelledby="smac-recent-title">
+			<div class="aui-card-h"><h2 class="aui-card-t" id="smac-recent-title"><?php esc_html_e( 'Recent questions', 'specflux-marketing-analytics-chat' ); ?></h2></div>
+			<div class="aui-card-b">
+				<?php if ( empty( $specflux_mac_recent ) ) : ?>
+					<div class="aui-empty smac-empty"><p><?php esc_html_e( 'No questions yet. Your last five show up here.', 'specflux-marketing-analytics-chat' ); ?></p></div>
+				<?php else : ?>
+					<ul class="aui-links smac-recent">
+						<?php foreach ( $specflux_mac_recent as $specflux_mac_item ) : ?>
+							<li><a href="<?php echo esc_url( $specflux_mac_item['url'] ); ?>"><?php echo Ui_Kit::icon( 'chat' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Ui_Kit::icon(). ?><span><?php echo esc_html( $specflux_mac_item['title'] ); ?></span></a></li>
+						<?php endforeach; ?>
+					</ul>
+				<?php endif; ?>
+			</div>
+		</section>
+		<section class="aui-card" aria-labelledby="smac-help-title">
+			<div class="aui-card-h"><h2 class="aui-card-t" id="smac-help-title"><?php esc_html_e( 'Help', 'specflux-marketing-analytics-chat' ); ?></h2></div>
+			<div class="aui-card-b">
+				<ul class="aui-links">
+					<li><a href="https://github.com/specflux/marketing-analytics-chat#configuration" target="_blank" rel="noopener noreferrer"><?php echo Ui_Kit::icon( 'book' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Ui_Kit::icon(). ?><span><?php esc_html_e( 'Getting started', 'specflux-marketing-analytics-chat' ); ?></span><?php echo Ui_Kit::icon( 'arrow-square-out', 'aui-end' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Ui_Kit::icon(). ?><span class="aui-sr"> <?php esc_html_e( '(opens in a new tab)', 'specflux-marketing-analytics-chat' ); ?></span></a></li>
+					<li><a href="<?php echo esc_url( Dashboard_Data::connections_url() ); ?>"><?php echo Ui_Kit::icon( 'lifebuoy' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Ui_Kit::icon(). ?><span><?php esc_html_e( 'Fix a connection', 'specflux-marketing-analytics-chat' ); ?></span></a></li>
+					<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-prompts' ) ); ?>"><?php echo Ui_Kit::icon( 'pencil' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Ui_Kit::icon(). ?><span><?php esc_html_e( 'Manage prompts', 'specflux-marketing-analytics-chat' ); ?></span></a></li>
+				</ul>
+			</div>
+		</section>
+	</aside>
+</div>
 </div>
 </div>

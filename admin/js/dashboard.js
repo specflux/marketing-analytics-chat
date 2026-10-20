@@ -1,171 +1,58 @@
 /**
- * Sparkline Renderer for Specflux Marketing Analytics Chat
- *
- * Lightweight inline SVG sparkline generator — no external dependencies.
+ * Dashboard behaviour: refresh the cached headline numbers, and make the
+ * "Ask about your data" box submit on Enter.
  *
  * @package Marketing_Analytics_MCP
  */
 
-(function( $ ) {
+/* global jQuery, specfluxMacDashboard */
+( function( $ ) {
 	'use strict';
 
-	window.specfluxMacSparkline = {
+	$( function() {
+		var $ask = $( '#smac-ask' );
 
-		/**
-		 * Default options.
-		 */
-		defaults: {
-			width: 60,
-			height: 20,
-			color: '#2271b1',
-			fillColor: 'rgba(34, 113, 177, 0.1)',
-			lineWidth: 1.5
-		},
-
-		/**
-		 * Render a sparkline SVG into a container element.
-		 *
-		 * @param {HTMLElement} container The DOM element to render into.
-		 * @param {Array}       data      Array of numeric values.
-		 * @param {Object}      options   Optional overrides for width, height, color, fillColor.
-		 */
-		render: function( container, data, options ) {
-			if ( ! container || ! Array.isArray( data ) || data.length < 2 ) {
-				return;
+		// Enter sends the question to the AI Assistant; Shift+Enter adds a line.
+		$ask.on( 'keydown', function( e ) {
+			if ( 13 === e.which && ! e.shiftKey && ! e.isComposing ) {
+				e.preventDefault();
+				$( '#smac-ask-form' ).trigger( 'submit' );
 			}
-
-			var opts = $.extend( {}, this.defaults, options || {} );
-			var w    = opts.width;
-			var h    = opts.height;
-			var pad  = opts.lineWidth;
-
-			// Calculate min / max for scaling.
-			var min = Math.min.apply( null, data );
-			var max = Math.max.apply( null, data );
-
-			// Avoid division by zero when all values are identical.
-			if ( max === min ) {
-				max = min + 1;
-			}
-
-			// Build polyline points.
-			var points = [];
-			var step   = ( w - pad * 2 ) / ( data.length - 1 );
-
-			for ( var i = 0; i < data.length; i++ ) {
-				var x = pad + i * step;
-				var y = h - pad - ( ( data[ i ] - min ) / ( max - min ) ) * ( h - pad * 2 );
-				points.push( x.toFixed( 1 ) + ',' + y.toFixed( 1 ) );
-			}
-
-			var polylinePoints = points.join( ' ' );
-
-			// Build fill polygon (closes to bottom corners).
-			var fillPoints = polylinePoints +
-				' ' + ( pad + ( data.length - 1 ) * step ).toFixed( 1 ) + ',' + ( h - pad ).toFixed( 1 ) +
-				' ' + pad.toFixed( 1 ) + ',' + ( h - pad ).toFixed( 1 );
-
-			var svg = '<svg xmlns="http://www.w3.org/2000/svg"' +
-				' width="' + w + '"' +
-				' height="' + h + '"' +
-				' viewBox="0 0 ' + w + ' ' + h + '"' +
-				' style="display:block;">' +
-				'<polygon points="' + fillPoints + '"' +
-				' fill="' + opts.fillColor + '" />' +
-				'<polyline points="' + polylinePoints + '"' +
-				' fill="none"' +
-				' stroke="' + opts.color + '"' +
-				' stroke-width="' + opts.lineWidth + '"' +
-				' stroke-linecap="round"' +
-				' stroke-linejoin="round" />' +
-				'</svg>';
-
-			container.innerHTML = svg;
-		}
-	};
-
-	/**
-	 * Auto-initialize sparklines from data attributes on page load.
-	 */
-	$( document ).ready( function() {
-		$( '.smac-sparkline' ).each( function() {
-			var rawData = $( this ).attr( 'data-values' ) || '[]';
-			var color   = $( this ).attr( 'data-color' ) || '#2271b1';
-
-			try {
-				var data = JSON.parse( rawData );
-			} catch ( e ) {
-				return;
-			}
-
-			specfluxMacSparkline.render( this, data, { color: color } );
 		} );
-	} );
 
-	/**
-	 * Dashboard metrics refresh handler.
-	 */
-	$( document ).ready( function() {
-		var $panel = $( '.smac-insights-panel' );
-		if ( ! $panel.length ) {
-			return;
-		}
+		// Grow the box a little as the question gets longer (the kit caps the height).
+		$ask.on( 'input', function() {
+			this.style.height = 'auto';
+			this.style.height = this.scrollHeight + 'px';
+		} );
 
-		$panel.on( 'click', '.smac-insights-refresh', function( e ) {
-			e.preventDefault();
-
+		// Refresh the cached headline numbers (the same call the WordPress dashboard widget makes).
+		$( '#smac-refresh-stats' ).on( 'click', function() {
 			var $btn = $( this );
-			if ( $btn.hasClass( 'updating-message' ) ) {
+			var label = $btn.text();
+			var $status = $( '#smac-refresh-status' );
+
+			if ( $btn.prop( 'disabled' ) ) {
 				return;
 			}
 
-			$btn.addClass( 'updating-message' ).prop( 'disabled', true );
+			$btn.prop( 'disabled', true ).text( $btn.data( 'working' ) );
+			$status.text( $btn.data( 'working' ) );
 
-			$.post( specfluxMacDashboardInsights.ajaxUrl, {
-				action: 'specflux_mac_refresh_dashboard_metrics',
-				nonce: specfluxMacDashboardInsights.nonce
-			}, function( response ) {
-				$btn.removeClass( 'updating-message' ).prop( 'disabled', false );
-
-				if ( response.success && response.data && response.data.metrics ) {
-					updateMetricCards( response.data.metrics );
+			$.post( specfluxMacDashboard.ajaxUrl, {
+				action: 'specflux_mac_refresh_widget',
+				nonce: specfluxMacDashboard.nonce
+			} ).done( function( response ) {
+				if ( response && response.success ) {
+					window.location.reload();
+					return;
 				}
+				$btn.prop( 'disabled', false ).text( label );
+				$status.text( specfluxMacDashboard.failed );
 			} ).fail( function() {
-				$btn.removeClass( 'updating-message' ).prop( 'disabled', false );
+				$btn.prop( 'disabled', false ).text( label );
+				$status.text( specfluxMacDashboard.failed );
 			} );
 		} );
-
-		/**
-		 * Update metric cards with fresh data from AJAX response.
-		 *
-		 * @param {Object} metrics Metrics keyed by platform.
-		 */
-		function updateMetricCards( metrics ) {
-			$.each( metrics, function( platform, platformMetrics ) {
-				$.each( platformMetrics, function( _, metric ) {
-					var $card = $( '.smac-metric-card[data-platform="' + platform + '"][data-metric="' + metric.key + '"]' );
-					if ( ! $card.length ) {
-						return;
-					}
-
-					$card.find( '.smac-metric-value' ).text( metric.formatted );
-
-					var $change = $card.find( '.smac-metric-change' );
-					$change
-						.removeClass( 'positive negative neutral' )
-						.addClass( metric.direction );
-
-					var arrow = 'neutral' === metric.direction ? '' : ( 'positive' === metric.direction ? '\u2191 ' : '\u2193 ' );
-					$change.text( arrow + metric.change );
-
-					var $sparkline = $card.find( '.smac-sparkline' );
-					if ( $sparkline.length && metric.sparkline && metric.sparkline.length > 1 ) {
-						var color = 'positive' === metric.direction ? '#00a32a' : ( 'negative' === metric.direction ? '#d63638' : '#2271b1' );
-						specfluxMacSparkline.render( $sparkline[0], metric.sparkline, { color: color } );
-					}
-				} );
-			} );
-		}
 	} );
-
-})( jQuery );
+} )( jQuery );
