@@ -135,6 +135,16 @@ class Admin {
 			);
 		}
 
+		// Prompts and Abilities screens: shared catalog styles, layered on the kit.
+		if ( Ui_Kit::is_plugin_screen( $hook ) && ( false !== strpos( $hook, 'specflux-mac-prompts' ) || false !== strpos( $hook, 'specflux-mac-abilities' ) ) ) {
+			wp_enqueue_style(
+				'specflux-mac-aui-catalog',
+				SPECFLUX_MAC_URL . 'admin/css/aui-catalog.css',
+				array( Ui_Kit::HANDLE_STYLE ),
+				SPECFLUX_MAC_VERSION
+			);
+		}
+
 		// Enqueue chat styles on AI Assistant page.
 		if ( strpos( $hook, 'specflux-mac-ai-assistant' ) !== false ) {
 			wp_enqueue_style(
@@ -387,6 +397,25 @@ class Admin {
 				SPECFLUX_MAC_VERSION,
 				true
 			);
+
+			wp_localize_script(
+				'specflux-mac-abilities-catalog',
+				'specfluxMacAbilities',
+				array(
+					'strings' => array(
+						/* translators: %d: number of abilities */
+						'abilityOne'  => __( '%d ability', 'specflux-marketing-analytics-chat' ),
+						/* translators: %d: number of abilities */
+						'abilityMany' => __( '%d abilities', 'specflux-marketing-analytics-chat' ),
+						/* translators: 1: abilities shown, 2: total abilities */
+						'shownOf'     => __( '%1$d of %2$d abilities', 'specflux-marketing-analytics-chat' ),
+						/* translators: 1: number of free abilities, 2: number of pro abilities */
+						'tierSplit'   => __( '%1$d free, %2$d pro', 'specflux-marketing-analytics-chat' ),
+						/* translators: 1: abilities shown, 2: total abilities */
+						'status'      => __( '%1$d of %2$d abilities shown', 'specflux-marketing-analytics-chat' ),
+					),
+				)
+			);
 		}
 
 		// Enqueue prompts page script.
@@ -394,7 +423,7 @@ class Admin {
 			wp_enqueue_script(
 				'specflux-mac-prompts',
 				SPECFLUX_MAC_URL . 'admin/js/prompts.js',
-				array( 'jquery' ),
+				array(),
 				SPECFLUX_MAC_VERSION,
 				true
 			);
@@ -407,7 +436,11 @@ class Admin {
 				array(
 					'customPrompts' => $custom_prompts,
 					'strings'       => array(
-						'invalidJson' => __( 'Invalid JSON in Arguments field. Please check your syntax.', 'specflux-marketing-analytics-chat' ),
+						'invalidJson'  => __( 'Invalid JSON in Arguments field. Please check your syntax.', 'specflux-marketing-analytics-chat' ),
+						'required'     => __( 'Required', 'specflux-marketing-analytics-chat' ),
+						'defaultLabel' => __( 'Default:', 'specflux-marketing-analytics-chat' ),
+						'showExample'  => __( 'Show example', 'specflux-marketing-analytics-chat' ),
+						'hideExample'  => __( 'Hide example', 'specflux-marketing-analytics-chat' ),
 					),
 				)
 			);
