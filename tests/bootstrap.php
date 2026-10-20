@@ -617,6 +617,18 @@ if ( ! function_exists( 'esc_html_e' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_kses_post' ) ) {
+	/**
+	 * Mock wp_kses_post: drops script and style blocks, keeps the rest (enough to prove the call happens).
+	 *
+	 * @param string $data Content.
+	 * @return string
+	 */
+	function wp_kses_post( $data ) {
+		return preg_replace( '#<(script|style)\b.*?</\1>#is', '', (string) $data );
+	}
+}
+
 if ( ! function_exists( 'esc_attr__' ) ) {
 	/**
 	 * Mock esc_attr__ function.
