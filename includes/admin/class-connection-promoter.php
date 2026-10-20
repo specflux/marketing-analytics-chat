@@ -11,6 +11,7 @@
 namespace Specflux_Marketing_Analytics\Admin;
 
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Credentials\Platform_Registry;
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
@@ -20,30 +21,57 @@ defined( 'ABSPATH' ) || exit;
 class Connection_Promoter {
 
 	/**
-	 * Platform definitions with metadata
+	 * Extra copy for the platforms that ship with the plugin.
+	 *
+	 * The platform list itself comes from Platform_Registry, so add-on platforms
+	 * are counted too; this only supplies the friendlier benefit line and icon.
 	 *
 	 * @var array
 	 */
-	private const PLATFORMS = array(
+	private const EXTRAS = array(
 		'clarity' => array(
-			'name'    => 'Microsoft Clarity',
 			'icon'    => 'chart-area',
 			'benefit' => 'session recordings and heatmap insights',
-			'tab'     => 'clarity',
 		),
 		'ga4'     => array(
-			'name'    => 'Google Analytics 4',
 			'icon'    => 'chart-line',
 			'benefit' => 'traffic trends and user behavior metrics',
-			'tab'     => 'ga4',
 		),
 		'gsc'     => array(
-			'name'    => 'Google Search Console',
 			'icon'    => 'search',
 			'benefit' => 'search performance and keyword rankings',
-			'tab'     => 'gsc',
 		),
 	);
+
+	/**
+	 * Recommendation order: the easiest setup first, then the rest of the registry.
+	 *
+	 * @var string[]
+	 */
+	private const PRIORITY = array( 'clarity', 'ga4', 'gsc' );
+
+	/**
+	 * Every registered platform with name, icon, benefit and Connections tab.
+	 *
+	 * @return array Map of slug => data.
+	 */
+	private function platforms() {
+		$platforms = array();
+
+		foreach ( Platform_Registry::all() as $slug => $definition ) {
+			$extra       = self::EXTRAS[ $slug ] ?? array();
+			$description = (string) $definition['description'];
+
+			$platforms[ $slug ] = array(
+				'name'    => (string) $definition['label'],
+				'icon'    => $extra['icon'] ?? 'admin-plugins',
+				'benefit' => $extra['benefit'] ?? ( '' !== $description ? lcfirst( $description ) : 'more of your marketing data' ),
+				'tab'     => ! empty( $definition['tab'] ) ? $slug : '',
+			);
+		}
+
+		return $platforms;
+	}
 
 	/**
 	 * Get the appropriate connection prompt based on current connections.
@@ -57,7 +85,7 @@ class Connection_Promoter {
 	public function get_connection_prompt() {
 		$connected = $this->get_connected_platforms();
 		$count     = count( $connected );
-		$total     = count( self::PLATFORMS );
+		$total     = $this->get_platform_total();
 		$next      = $this->get_next_recommendation( $connected );
 
 		if ( 0 === $count ) {
@@ -65,7 +93,11 @@ class Connection_Promoter {
 				'connected_count' => 0,
 				'message'         => __( 'Connect your first platform to get started with marketing analytics.', 'specflux-marketing-analytics-chat' ),
 				'next'            => $next,
-				'cta'             => __( 'Connect Clarity', 'specflux-marketing-analytics-chat' ),
+				'cta'             => empty( $next ) ? '' : sprintf(
+					/* translators: %s: platform name */
+					__( 'Connect %s', 'specflux-marketing-analytics-chat' ),
+					$next['name']
+				),
 			);
 		}
 
@@ -122,7 +154,7 @@ class Connection_Promoter {
 		$credential_manager = new Credential_Manager();
 		$connected          = array();
 
-		foreach ( array_keys( self::PLATFORMS ) as $platform ) {
+		foreach ( array_keys( $this->platforms() ) as $platform ) {
 			if ( $credential_manager->has_credentials( $platform ) ) {
 				$connected[] = $platform;
 			}
@@ -137,14 +169,14 @@ class Connection_Promoter {
 	 * @return int
 	 */
 	public function get_platform_total() {
-		return count( self::PLATFORMS );
+		return count( $this->platforms() );
 	}
 
 	/**
 	 * Suggest the best next platform to connect.
 	 *
-	 * Priority order when none connected: Clarity (easiest setup).
-	 * Otherwise, suggest the first disconnected platform.
+	 * Clarity (easiest setup) first, then Analytics, Search Console, then any other
+	 * registered platform in registry order.
 	 *
 	 * @param array $connected Already-connected platform keys.
 	 * @return array Platform data or empty array if all connected.
@@ -154,12 +186,12 @@ class Connection_Promoter {
 			$connected = $this->get_connected_platforms();
 		}
 
-		// Priority order: clarity first (easiest), then ga4, then gsc.
-		$priority = array( 'clarity', 'ga4', 'gsc' );
+		$platforms = $this->platforms();
+		$order     = array_values( array_unique( array_merge( array_intersect( self::PRIORITY, array_keys( $platforms ) ), array_keys( $platforms ) ) ) );
 
-		foreach ( $priority as $platform ) {
+		foreach ( $order as $platform ) {
 			if ( ! in_array( $platform, $connected, true ) ) {
-				$data        = self::PLATFORMS[ $platform ];
+				$data        = $platforms[ $platform ];
 				$data['key'] = $platform;
 				return $data;
 			}
@@ -169,58 +201,24 @@ class Connection_Promoter {
 	}
 
 	/**
-	 * Render the connection prompt HTML.
+	 * Fire the all-connected hook once every registered platform is connected.
 	 *
-	 * Outputs a styled prompt card on the dashboard encouraging
-	 * the user to connect additional platforms.
+	 * @return bool Whether every platform is connected.
 	 */
-	public function render_connection_prompt() {
-		$prompt    = $this->get_connection_prompt();
-		$connected = $this->get_connected_platforms();
-		$total     = count( self::PLATFORMS );
+	public function maybe_fire_all_connected() {
+		$total = $this->get_platform_total();
 
-		// Don't render if all platforms are connected and no pro hook fires.
-		if ( count( $connected ) >= $total ) {
-			/**
-			 * Fires when all free platforms are connected.
-			 *
-			 * Premium add-on can hook here to suggest Meta + DataForSEO.
-			 */
-			do_action( 'specflux_mac_all_platforms_connected' );
-			return;
+		if ( $total < 1 || count( $this->get_connected_platforms() ) < $total ) {
+			return false;
 		}
-		?>
-		<div class="smac-connection-prompt">
-			<div class="smac-connection-prompt-header">
-				<span class="dashicons dashicons-admin-links"></span>
-				<h3><?php esc_html_e( 'Expand Your Analytics', 'specflux-marketing-analytics-chat' ); ?></h3>
-			</div>
 
-			<div class="smac-connection-prompt-progress">
-				<div class="smac-connection-prompt-bar">
-					<div class="smac-connection-prompt-fill" style="width: <?php echo esc_attr( ( count( $connected ) / $total ) * 100 ); ?>%"></div>
-				</div>
-				<span class="smac-connection-prompt-count">
-					<?php
-					printf(
-						/* translators: 1: connected count, 2: total platforms */
-						esc_html__( '%1$d of %2$d platforms connected', 'specflux-marketing-analytics-chat' ),
-						count( $connected ),
-						intval( $total )
-					);
-					?>
-				</span>
-			</div>
+		/**
+		 * Fires when all free platforms are connected.
+		 *
+		 * Premium add-on can hook here to suggest Meta + DataForSEO.
+		 */
+		do_action( 'specflux_mac_all_platforms_connected' );
 
-			<p class="smac-connection-prompt-message"><?php echo esc_html( $prompt['message'] ); ?></p>
-
-			<?php if ( ! empty( $prompt['next'] ) && ! empty( $prompt['cta'] ) ) : ?>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=specflux-mac-connections&tab=' . $prompt['next']['tab'] ) ); ?>" class="button button-primary">
-					<span class="dashicons dashicons-<?php echo esc_attr( $prompt['next']['icon'] ); ?>"></span>
-					<?php echo esc_html( $prompt['cta'] ); ?>
-				</a>
-			<?php endif; ?>
-		</div>
-		<?php
+		return true;
 	}
 }
