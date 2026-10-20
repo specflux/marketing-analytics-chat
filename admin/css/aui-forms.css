@@ -1,0 +1,105 @@
+/**
+ * Form patterns for the Connections and Settings screens.
+ *
+ * Builds on the vendored admin UI kit (components.css) and uses only its
+ * tokens. Every rule is scoped under `.aui`, so nothing reaches wp-admin.
+ */
+
+/* ---------- Page chrome ---------- */
+.aui .smac-notices { display: flex; flex-direction: column; gap: 8px; }
+.aui .smac-notices:empty { display: none; }
+.aui .smac-lead { margin: 0; color: var(--aui-text-2); }
+.aui .smac-tab-content { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.aui .smac-tab-ok { width: 14px; height: 14px; margin-left: 4px; color: var(--aui-ok); }
+
+/* Link-based segmented control: also hosts the add-on's legacy `nav-tab` links. */
+.aui .smac-subnav { flex-wrap: wrap; align-self: flex-start; max-width: 100%; }
+.aui .smac-subnav a { float: none; margin: 0; }
+.aui .smac-subnav a.nav-tab { height: 28px; padding: 0 12px; border-radius: var(--aui-r-sm); font-size: 13px; line-height: 26px; font-weight: 500; }
+.aui .smac-subnav a.nav-tab[aria-current="page"] { font-weight: 600; }
+.aui .smac-subnav a.nav-tab:not([aria-current="page"]) { background: transparent; border-color: transparent; color: var(--aui-text-2); }
+.aui .smac-subnav a:focus-visible { outline: 2px solid var(--aui-accent); outline-offset: 2px; box-shadow: none; }
+
+/* ---------- Cards and fields ---------- */
+.aui .aui-card-h { flex-wrap: wrap; }
+.aui .aui-card-h > div { flex: 1 1 240px; min-width: 0; }
+.aui .smac-fields { display: flex; flex-direction: column; gap: 16px; }
+.aui .smac-fields > .aui-field { max-width: 560px; width: 100%; }
+.aui .aui-grid-2 > .aui-field { max-width: none; }
+.aui .smac-subhead { margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--aui-text); }
+.aui .smac-copy { margin: 0; color: var(--aui-text-2); }
+.aui .smac-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.aui .smac-fieldset { display: flex; flex-direction: column; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.aui .smac-fieldset > legend { padding: 0; margin-bottom: 4px; }
+.aui .smac-form > .aui-savebar { margin-top: 16px; }
+.aui .smac-result { color: var(--aui-text-2); }
+.aui .smac-result.is-ok, .aui .smac-help-ok { color: var(--aui-ok); }
+.aui .smac-result.is-bad, .aui .smac-google-connect-status.error { color: var(--aui-bad); }
+.aui .smac-suffix { display: flex; align-items: center; gap: 8px; color: var(--aui-text-2); }
+.aui .smac-suffix .aui-input { width: 120px; }
+.aui .aui-notice > div { min-width: 0; flex: 1 1 auto; }
+.aui .aui-notice > p { margin: 0; }
+.aui .aui-notice .smac-actions { margin-top: 8px; }
+
+/* Without JavaScript nothing marks the form dirty, so keep the save bar visible. */
+.no-js .aui .smac-form > .aui-savebar { display: flex; }
+
+/* ---------- Checkbox switch (a real checkbox, so it posts like one) ---------- */
+.aui .smac-toggle { position: relative; display: flex; align-items: flex-start; gap: 12px; padding: 4px 0; cursor: pointer; }
+.aui .smac-toggle-input { position: absolute; top: 4px; left: 0; width: 32px; height: 20px; margin: 0; opacity: 0; cursor: pointer; }
+.aui .smac-toggle .aui-switch-track { flex: none; margin-top: 1px; }
+.aui .smac-toggle:hover .aui-switch-track { border-color: var(--aui-text-3); }
+.aui .smac-toggle-input:checked + .aui-switch-track { background: var(--aui-accent); border-color: var(--aui-accent); }
+.aui .smac-toggle-input:checked + .aui-switch-track::after { transform: translateX(12px); background: var(--aui-accent-contrast); }
+.aui .smac-toggle-input:focus-visible + .aui-switch-track { outline: 2px solid var(--aui-accent); outline-offset: 2px; }
+.aui .smac-toggle-input:disabled { cursor: not-allowed; }
+.aui .smac-toggle-input:disabled + .aui-switch-track { opacity: 0.5; }
+.aui .smac-toggle-text { display: flex; flex: 1 1 auto; flex-direction: column; gap: 2px; min-width: 0; }
+.aui .smac-toggle-label { font-weight: 500; color: var(--aui-text); }
+.aui .smac-toggle .aui-switch-state { flex: none; margin-left: auto; }
+.aui .smac-toggle .aui-switch-state::before { content: attr(data-off); }
+.aui .smac-toggle-input:checked ~ .aui-switch-state::before { content: attr(data-on); }
+.aui .smac-toggle-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.aui .smac-toggle-row .smac-toggle { flex: 0 1 auto; }
+
+/* ---------- Checkbox rows ---------- */
+.aui .smac-checklist { display: flex; flex-direction: column; border: 1px solid var(--aui-border); border-radius: var(--aui-r-lg); overflow: hidden; }
+.aui .smac-check { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; cursor: pointer; color: var(--aui-text); }
+.aui .smac-check input[type="checkbox"] { flex: none; margin-top: 2px; }
+.aui .smac-check > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.aui .smac-check:hover { background: var(--aui-inset); }
+.aui .smac-checklist .smac-check + .smac-check { border-top: 1px solid var(--aui-border); }
+
+/* ---------- Disclosure, definition list, code ---------- */
+.aui .smac-details summary { cursor: pointer; font-weight: 500; color: var(--aui-accent); }
+.aui .smac-details summary:focus-visible { outline: 2px solid var(--aui-accent); outline-offset: 2px; }
+.aui .smac-details[open] > summary { margin-bottom: 12px; }
+.aui .smac-dl { display: grid; grid-template-columns: minmax(120px, 200px) minmax(0, 1fr); gap: 12px 16px; margin: 0; }
+.aui .smac-dl dt { color: var(--aui-text-3); }
+.aui .smac-dl dd { margin: 0; }
+.aui code { padding: 2px 6px; border-radius: var(--aui-r-sm); background: var(--aui-inset); font-family: var(--aui-mono); font-size: 12px; color: var(--aui-text); overflow-wrap: anywhere; }
+.aui .smac-code-copy { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; }
+
+/* ---------- Add-on markup rendered by extension hooks ---------- */
+.aui .smac-pro-slot { min-width: 0; }
+.aui .smac-pro-slot .wrap { margin: 0; }
+.aui .smac-pro-slot h2 { margin: 28px 0 12px; padding-top: 20px; border-top: 1px solid var(--aui-border); font-size: 14px; }
+.aui .smac-pro-slot > h2:first-child, .aui .smac-pro-slot .wrap > h2:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.aui .smac-pro-slot .connection-panel { margin: 0; padding: 0; border: 0; }
+.aui .smac-pro-slot .form-table th { color: var(--aui-text); }
+.aui .smac-pro-slot .description { color: var(--aui-text-3); }
+.aui .smac-pro-slot .button-primary { background: var(--aui-accent); border-color: var(--aui-accent); }
+.aui .smac-pro-slot .button-primary:hover { background: var(--aui-accent-hover); border-color: var(--aui-accent-hover); }
+.aui .smac-pro-slot input[type="text"], .aui .smac-pro-slot input[type="password"], .aui .smac-pro-slot input[type="email"], .aui .smac-pro-slot input[type="url"], .aui .smac-pro-slot input[type="number"], .aui .smac-pro-slot select, .aui .smac-pro-slot textarea { border-color: var(--aui-control); border-radius: var(--aui-r-sm); }
+
+@media (max-width: 600px) {
+	.aui .smac-dl { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+	.aui .smac-dl dd { margin-bottom: 8px; }
+	.aui .smac-toggle .aui-switch-state { display: none; }
+}
+
+/* Links inside form copy use the accent; lists keep their markers (the kit resets them). */
+.aui .aui-help a, .aui .smac-copy a, .aui .aui-notice a { color: var(--aui-accent); }
+.aui .smac-step ol { list-style: decimal; }
+.aui .smac-step ul { list-style: disc; }
+.aui .wizard-complete-section ol, .aui .step-help ol { list-style: decimal; }
