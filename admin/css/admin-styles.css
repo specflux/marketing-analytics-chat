@@ -386,29 +386,6 @@ input:checked + .slider:before {
 	margin: 10px 0;
 }
 
-/* MCP Configuration */
-.mcp-endpoint-box {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	margin: 15px 0;
-}
-
-.mcp-endpoint {
-	flex: 1;
-	padding: 10px 15px;
-	background: #f6f7f7;
-	border: 1px solid #c3c4c7;
-	border-radius: 3px;
-	font-family: monospace;
-	font-size: 13px;
-	word-break: break-all;
-}
-
-.copy-endpoint {
-	white-space: nowrap;
-}
-
 /* Connections Page */
 .specflux-mac-connections .nav-tab-wrapper {
 	margin: 20px 0;
@@ -439,19 +416,6 @@ input:checked + .slider:before {
 .specflux-mac-settings h2:first-of-type {
 	border-top: none;
 	padding-top: 0;
-}
-
-/* Responsive Design */
-@media screen and (max-width: 768px) {
-
-	.mcp-endpoint-box {
-		flex-direction: column;
-		align-items: stretch;
-	}
-
-	.copy-endpoint {
-		width: 100%;
-	}
 }
 
 /* Notices and alerts */
@@ -493,33 +457,6 @@ input:checked + .slider:before {
 	50% {
 		opacity: 0.5;
 	}
-}
-
-.specflux-mac-prompts-container .chat{
-	max-width: 100%;
-}
-
-.specflux-mac-prompts-container .card {
-	padding: 20px;
-	/* Core's forms.css caps .card at 520px, which is far too narrow for a table. */
-	max-width: 100%;
-}
-
-.specflux-mac-prompts-container table th {
-	font-weight: 600;
-}
-
-.specflux-mac-prompts-container .button-link-delete {
-	color: #b32d2e;
-}
-
-.specflux-mac-prompts-container .button-link-delete:hover {
-	color: #d63638;
-}
-
-.specflux-mac-prompts-container textarea.code {
-	font-family: Consolas, Monaco, monospace;
-	font-size: 13px;
 }
 
 /* ============================================
@@ -596,172 +533,6 @@ input:checked + .slider:before {
 	height: auto !important;
 	line-height: 1.4 !important;
 	padding: 6px 10px !important;
-}
-
-/* ============================================
-   Abilities Catalog
-   ============================================ */
-
-.smac-abilities-catalog {
-	max-width: 1200px;
-}
-
-.smac-abilities-catalog > .description {
-	font-size: 14px;
-	margin-bottom: var(--smac-space-lg);
-}
-
-/* Filter Button Group */
-.smac-abilities-filter {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--smac-space-sm);
-	margin: var(--smac-space-lg) 0;
-}
-
-.smac-abilities-filter-btn {
-	padding: 6px 16px;
-	background: var(--smac-surface);
-	border: 1px solid var(--smac-border);
-	border-radius: 20px;
-	color: var(--smac-text-secondary);
-	font-size: 13px;
-	font-weight: 500;
-	cursor: pointer;
-	transition: all var(--smac-transition);
-}
-
-.smac-abilities-filter-btn:hover {
-	border-color: var(--smac-primary);
-	color: var(--smac-primary);
-}
-
-.smac-abilities-filter-btn.active {
-	background: var(--smac-primary);
-	border-color: var(--smac-primary);
-	color: #fff;
-}
-
-/* Abilities Grid */
-.smac-abilities-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-	gap: var(--smac-space-lg);
-	margin: var(--smac-space-lg) 0;
-}
-
-/* Ability Card */
-.smac-ability-card {
-	background: var(--smac-surface);
-	border: 1px solid var(--smac-border);
-	border-radius: 4px;
-	padding: var(--smac-space-lg);
-	transition: box-shadow var(--smac-transition), border-color var(--smac-transition);
-	display: flex;
-	flex-direction: column;
-}
-
-.smac-ability-card:hover {
-	box-shadow: var(--smac-shadow-hover);
-	border-color: var(--smac-primary);
-}
-
-.smac-ability-icon {
-	margin-bottom: var(--smac-space-md);
-}
-
-.smac-ability-icon .dashicons {
-	font-size: 28px;
-	width: 28px;
-	height: 28px;
-	color: var(--smac-primary);
-}
-
-.smac-ability-card h3 {
-	margin: 0 0 var(--smac-space-sm) 0;
-	font-size: 15px;
-	font-weight: 600;
-	color: var(--smac-text-primary);
-}
-
-.smac-ability-card p {
-	margin: 0 0 var(--smac-space-base) 0;
-	font-size: 13px;
-	color: var(--smac-text-secondary);
-	line-height: 1.5;
-	flex: 1;
-}
-
-/* Ability Meta (status badge + slug) */
-.smac-ability-meta {
-	display: flex;
-	align-items: center;
-	gap: var(--smac-space-sm);
-	flex-wrap: wrap;
-	border-top: 1px solid var(--smac-surface-alt);
-	padding-top: var(--smac-space-md);
-	margin-top: auto;
-}
-
-.smac-ability-status {
-	display: inline-block;
-	padding: 2px 10px;
-	border-radius: 10px;
-	font-size: 11px;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
-}
-
-.smac-ability-status.free {
-	background: var(--smac-success-bg);
-	color: var(--smac-success);
-}
-
-.smac-ability-status.premium {
-	background: #f0e9ff;
-	color: #7b2dde;
-}
-
-.smac-ability-meta code {
-	font-size: 11px;
-	color: var(--smac-text-muted);
-	background: var(--smac-surface-alt);
-	padding: 2px 6px;
-	border-radius: 3px;
-}
-
-/* MCP Info Section */
-.smac-abilities-mcp-info {
-	background: var(--smac-surface);
-	border: 1px solid var(--smac-border);
-	border-left: 4px solid var(--smac-primary);
-	border-radius: 4px;
-	padding: var(--smac-space-lg);
-	margin: var(--smac-space-section) 0;
-}
-
-.smac-abilities-mcp-info h3 {
-	margin: 0 0 var(--smac-space-sm) 0;
-	font-size: 16px;
-	color: var(--smac-text-primary);
-}
-
-.smac-abilities-mcp-info p {
-	margin: 0 0 var(--smac-space-md) 0;
-	color: var(--smac-text-secondary);
-	font-size: 13px;
-}
-
-/* Responsive Abilities Grid */
-@media screen and (max-width: 768px) {
-	.smac-abilities-grid {
-		grid-template-columns: 1fr;
-	}
-
-	.smac-abilities-filter {
-		flex-wrap: wrap;
-	}
 }
 
 /*

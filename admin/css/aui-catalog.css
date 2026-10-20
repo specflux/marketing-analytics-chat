@@ -1,0 +1,55 @@
+/*
+ * Prompts and Abilities screens, layered on the shared admin UI kit.
+ * Layout glue and the few states the kit does not cover; every colour, size
+ * and radius comes from kit tokens (--aui-*).
+ */
+
+/* The plugin's own .wrap supplies the page gutter; the kit grid sits inside it. */
+.aui .smac-catalog { max-width: none; margin: 0; padding: 24px; }
+.aui .smac-catalog .smac-stack { display: flex; flex-direction: column; gap: 16px; }
+.aui .smac-catalog .aui-layout > * { min-width: 0; }
+.aui .smac-lead { max-width: 72ch; margin: 0; font-size: 14px; line-height: 20px; }
+
+/* Prompts: table cells. */
+.aui .smac-prompt-table td { vertical-align: top; }
+.aui .smac-prompt-table { min-width: 760px; }
+.aui .smac-prompt-desc { min-width: 240px; max-width: 420px; color: var(--aui-text-2); }
+.aui .smac-prompt-table td:first-child, .aui .smac-prompt-table td:last-child { white-space: nowrap; }
+.aui .smac-prompt-table .aui-actions { justify-content: flex-end; flex-wrap: nowrap; }
+.aui .smac-presets .aui-item { padding-left: 20px; }
+.aui .smac-presets form { margin: 0; }
+.aui .aui-card-h .aui-count { margin-left: 8px; vertical-align: middle; }
+
+/* Dialogs that hold a form or long text. */
+.aui .smac-dialog-wide { max-width: 640px; max-height: calc(100vh - 48px); overflow-y: auto; }
+.aui .smac-form { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+.aui .smac-mono { font-family: var(--aui-mono); font-size: 13px; line-height: 20px; }
+.aui .smac-form .aui-textarea { min-height: 72px; }
+.aui .smac-linkbtn { display: inline; padding: 0; border: 0; background: none; font: inherit; color: var(--aui-accent); text-decoration: underline; cursor: pointer; }
+.aui .smac-linkbtn:hover { color: var(--aui-accent-hover); }
+.aui .smac-pre { margin: 8px 0 0; padding: 12px; overflow-x: auto; border-radius: var(--aui-r-sm); background: var(--aui-inset); color: var(--aui-text-2); font-family: var(--aui-mono); font-size: 12px; line-height: 18px; tab-size: 2; white-space: pre-wrap; }
+.aui .smac-sub { margin-top: 16px; font-size: 14px; line-height: 20px; }
+.aui .smac-args { display: flex; flex-direction: column; gap: 12px; margin: 8px 0 0; padding: 0; list-style: none; }
+.aui .smac-arg-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.aui .aui-dialog-f { flex-wrap: wrap; }
+
+/* Abilities: the group header carries a leading tile, the rows keep the kit indent. */
+.aui .smac-abilities-catalog .aui-group-h { gap: 12px; }
+.aui .smac-abilities-catalog .aui-toolbar .aui-switch { flex: none; }
+.aui .smac-abilities-catalog .aui-item-name code { overflow-wrap: anywhere; }
+.aui .smac-abilities-catalog .aui-item .aui-badge { flex: none; align-self: flex-start; }
+.aui .smac-abilities-catalog .aui-empty[hidden] { display: none; }
+
+@media (max-width: 782px) {
+	.aui .smac-catalog { padding: 16px; }
+}
+
+/* Narrow screens: group summary wraps under the name, rows lose the deep indent. */
+@media (max-width: 600px) {
+	.aui .smac-abilities-catalog .aui-group-meta { white-space: normal; text-align: right; }
+	.aui .smac-abilities-catalog .aui-leader { display: none; }
+	.aui .smac-abilities-catalog .aui-group-toggle .aui-group-name { flex: 1 1 auto; }
+	.aui .smac-abilities-catalog .aui-item { padding-left: 20px; }
+	.aui .smac-abilities-catalog .aui-search { width: 100%; }
+	.aui .smac-abilities-catalog .aui-toolbar .aui-switch { margin-left: 0; }
+}
