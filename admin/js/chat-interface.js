@@ -1,20 +1,47 @@
 /**
  * AI Chat Interface JavaScript
  *
+ * Renders on the Admin UI kit (aui-* classes). Query parameter: ?prompt=
+ * prefills the message box (never sends); with no open conversation it opens
+ * a new one and carries the prompt over.
+ *
  * @package Marketing_Analytics_MCP
  */
 
 (function($) {
 	'use strict';
 
+	var cfg = window.specfluxMacChat || {};
+	var i18n = cfg.i18n || {};
+
 	/**
-	 * Chat Interface Object
+	 * Look up a localized string (strings come from PHP via wp_localize_script).
+	 * Replaces %s / %d (or ordered %1$d) placeholders with the extra arguments.
 	 */
+	function t(key) {
+		var str = i18n[key] !== undefined ? i18n[key] : key;
+		var args = Array.prototype.slice.call(arguments, 1);
+		var next = 0;
+		return str.replace(/%(?:(\d+)\$)?[sd]/g, function(match, pos) {
+			var idx = pos ? parseInt(pos, 10) - 1 : next++;
+			return idx < args.length ? String(args[idx]) : '';
+		});
+	}
+
+	/** Escape text for HTML. */
+	function esc(s) {
+		return $('<div>').text(s === null || s === undefined ? '' : String(s)).html();
+	}
+
+	/** Kit icon from the page sprite. */
+	function icon(name, extra) {
+		return '<svg class="aui-i' + (extra ? ' ' + extra : '') + '" aria-hidden="true" focusable="false"><use href="#aui-i-' + name + '"/></svg>';
+	}
+
+	var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 	var ChatInterface = {
 
-		/**
-		 * Initialize chat interface
-		 */
 		init: function() {
 			this.bindEvents();
 			this.renderStoredMessages();
@@ -41,13 +68,13 @@
 			}
 
 			// No conversation is open, so there is no input to fill yet: open one and carry the prompt over.
-			$.post(specfluxMacChat.ajaxUrl, {
+			$.post(cfg.ajaxUrl, {
 				action: 'specflux_mac_create_conversation',
-				nonce: specfluxMacChat.nonce,
-				user_id: specfluxMacChat.userId
+				nonce: cfg.nonce,
+				user_id: cfg.userId
 			}).done(function(response) {
 				if (response.success && response.data.conversation_id) {
-					window.location.href = specfluxMacChat.chatPageUrl + '&conversation_id=' + response.data.conversation_id + '&_wpnonce=' + specfluxMacChat.conversationNonce + '&prompt=' + encodeURIComponent(prompt);
+					window.location.href = cfg.chatPageUrl + '&conversation_id=' + response.data.conversation_id + '&_wpnonce=' + cfg.conversationNonce + '&prompt=' + encodeURIComponent(prompt);
 				}
 			});
 		},
@@ -63,9 +90,6 @@
 			});
 		},
 
-		/**
-		 * Bind event handlers
-		 */
 		bindEvents: function() {
 			// Proposed-action cards (live and server-rendered) share delegated handlers.
 			var self = this;
@@ -79,24 +103,15 @@
 				}
 			});
 
-			// New conversation buttons
 			$('#new-conversation, #new-conversation-main').on('click', this.createNewConversation.bind(this));
-
-			// Delete conversation buttons
 			$(document).on('click', '.delete-conversation', this.deleteConversation.bind(this));
-
-			// Suggested prompts
 			$('.suggested-prompt').on('click', this.fillSuggestedPrompt.bind(this));
-
-			// Form submission
 			$('#chat-form').on('submit', this.sendMessage.bind(this));
-
-			// Auto-resize textarea
 			$('#message-input').on('input', this.autoResizeTextarea);
 
 			// Keyboard shortcuts: Enter sends, Shift+Enter inserts a new line.
 			$('#message-input').on('keydown', function(e) {
-				if (e.keyCode === 13 && !e.shiftKey) {
+				if (e.keyCode === 13 && !e.shiftKey && !e.isComposing) {
 					e.preventDefault();
 					$('#chat-form').submit();
 				}
@@ -109,87 +124,81 @@
 		createNewConversation: function(e) {
 			e.preventDefault();
 
-			// Show loading state
 			var $button = $(e.currentTarget);
 			var originalText = $button.html();
-			$button.prop('disabled', true).html('<span class="dashicons dashicons-update-alt"></span> Creating...');
+			$button.prop('disabled', true).html(icon('clock') + ' ' + esc(t('creating')));
 
-			// Create conversation via AJAX
 			$.ajax({
-				url: specfluxMacChat.ajaxUrl,
+				url: cfg.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'specflux_mac_create_conversation',
-					nonce: specfluxMacChat.nonce,
-					user_id: specfluxMacChat.userId
+					nonce: cfg.nonce,
+					user_id: cfg.userId
 				},
 				success: function(response) {
 					if (response.success && response.data.conversation_id) {
-						// Redirect to new conversation
-						window.location.href = specfluxMacChat.chatPageUrl + '&conversation_id=' + response.data.conversation_id + '&_wpnonce=' + specfluxMacChat.conversationNonce;
+						window.location.href = cfg.chatPageUrl + '&conversation_id=' + response.data.conversation_id + '&_wpnonce=' + cfg.conversationNonce;
 					} else {
-						alert('Failed to create conversation. Please try again.');
+						alert(t('createFailed'));
 						$button.prop('disabled', false).html(originalText);
 					}
 				},
 				error: function() {
-					alert('Failed to create conversation. Please try again.');
+					alert(t('createFailed'));
 					$button.prop('disabled', false).html(originalText);
 				}
 			});
 		},
 
+		/**
+		 * Delete a conversation
+		 */
+		deleteConversation: function(e) {
+			e.preventDefault();
+			e.stopPropagation();
 
-	/**
-	 * Delete a conversation
-	 */
-	deleteConversation: function(e) {
-		e.preventDefault();
-		e.stopPropagation();
+			var $button = $(e.currentTarget);
+			var conversationId = $button.data('conversation-id');
+			var conversationTitle = $button.data('conversation-title');
 
-		var $button = $(e.currentTarget);
-		var conversationId = $button.data('conversation-id');
-		var conversationTitle = $button.data('conversation-title');
-
-		// Confirm deletion
-		if (!confirm('Are you sure you want to delete "' + conversationTitle + '"? This action cannot be undone.')) {
-			return;
-		}
-
-		// Show loading state
-		$button.prop('disabled', true).html('<span class="dashicons dashicons-update-alt"></span>');
-
-		// Delete conversation via AJAX
-		$.ajax({
-			url: specfluxMacChat.ajaxUrl,
-			type: 'POST',
-			data: {
-				action: 'specflux_mac_delete_conversation',
-				nonce: specfluxMacChat.nonce,
-				conversation_id: conversationId
-			},
-			success: function(response) {
-				if (response.success) {
-					// If this was the active conversation, redirect to chat page without conversation
-					if (parseInt(specfluxMacChat.conversationId) === parseInt(conversationId)) {
-						window.location.href = specfluxMacChat.chatPageUrl;
-					} else {
-						// Just remove from sidebar
-						$button.closest('.conversation-item').fadeOut(300, function() {
-							$(this).remove();
-						});
-					}
-				} else {
-					alert(response.data.message || 'Failed to delete conversation. Please try again.');
-					$button.prop('disabled', false).html('<span class="dashicons dashicons-trash"></span>');
-				}
-			},
-			error: function() {
-				alert('Failed to delete conversation. Please try again.');
-				$button.prop('disabled', false).html('<span class="dashicons dashicons-trash"></span>');
+			if (!confirm(t('deleteConfirm', conversationTitle))) {
+				return;
 			}
-		});
-	},
+
+			var originalHTML = $button.html();
+			$button.prop('disabled', true).html(icon('clock'));
+
+			$.ajax({
+				url: cfg.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'specflux_mac_delete_conversation',
+					nonce: cfg.nonce,
+					conversation_id: conversationId
+				},
+				success: function(response) {
+					if (response.success) {
+						// If this was the active conversation, go back to the chat page without one.
+						if (parseInt(cfg.conversationId, 10) === parseInt(conversationId, 10)) {
+							window.location.href = cfg.chatPageUrl;
+						} else {
+							$button.closest('.conversation-item').fadeOut(reducedMotion ? 0 : 300, function() {
+								$(this).remove();
+							});
+						}
+					} else {
+						alert((response.data && response.data.message) || t('deleteFailed'));
+						$button.prop('disabled', false).html(originalHTML);
+					}
+				},
+				error: function() {
+					alert(t('deleteFailed'));
+					$button.prop('disabled', false).html(originalHTML);
+				}
+			});
+		},
+
 		/**
 		 * Fill suggested prompt into input
 		 */
@@ -199,13 +208,16 @@
 			$('#message-input').val(prompt).focus();
 		},
 
+		sendButtonHTML: function() {
+			return icon('send') + ' ' + esc(t('send'));
+		},
+
 		/**
 		 * Send message
 		 */
 		sendMessage: function(e) {
 			e.preventDefault();
 
-			var $form = $(e.currentTarget);
 			var $input = $('#message-input');
 			var $sendButton = $('#send-button');
 			var message = $input.val().trim();
@@ -214,28 +226,24 @@
 				return;
 			}
 
-			// Disable form
 			$input.prop('disabled', true);
-			$sendButton.prop('disabled', true).html('<span class="dashicons dashicons-update-alt"></span> Sending...');
+			$sendButton.prop('disabled', true).html(icon('clock') + ' ' + esc(t('sending')));
 
 			// Hide suggested prompts after first message
-			$('#suggested-prompts').fadeOut();
+			$('#suggested-prompts').hide();
 
-			// Add user message to UI immediately
 			this.addMessageToUI('user', message);
-			$input.val('');
+			$input.val('').css('height', '');
 
-			// Show typing indicator
 			this.showTypingIndicator();
 
-			// Send message via AJAX
 			$.ajax({
-				url: specfluxMacChat.ajaxUrl,
+				url: cfg.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'specflux_mac_send_message',
-					nonce: specfluxMacChat.nonce,
-					conversation_id: specfluxMacChat.conversationId,
+					nonce: cfg.nonce,
+					conversation_id: cfg.conversationId,
 					message: message
 				},
 				success: function(response) {
@@ -246,12 +254,9 @@
 						if (response.data.messages && response.data.messages.length > 0) {
 							var self = this;
 							response.data.messages.forEach(function(msg, index) {
-								// Add each message to UI. Tool calls render as a
-								// compact chip rather than inline pseudo-text.
 								if (msg.tool_calls && msg.tool_calls.length > 0) {
 									self.addMessageToUI('assistant', msg.content || '', msg.usage || null, response.data.tool_metadata, null, msg.tool_calls, msg.actions);
 								} else if (msg.content) {
-									// Regular message or final response after tool calls
 									// Use 'error' role if is_error flag is set for distinct styling
 									var msgRole = msg.is_error ? 'error' : 'assistant';
 									// Pass failed_tools for retry buttons on error messages
@@ -260,7 +265,6 @@
 								}
 							});
 						} else if (response.data.content) {
-							// Fallback to single content (backward compatibility)
 							this.addMessageToUI('assistant', response.data.content, response.data.usage, response.data.tool_metadata);
 						}
 
@@ -269,12 +273,11 @@
 							this.updateConversationTitle(response.data.new_title);
 						}
 					} else {
-						this.addMessageToUI('system', 'Sorry, I encountered an error. Please try again.');
+						this.addMessageToUI('system', t('errorGeneric'));
 					}
 
-					// Re-enable form
 					$input.prop('disabled', false).focus();
-					$sendButton.prop('disabled', false).html('<span class="dashicons dashicons-arrow-up-alt2"></span> Send');
+					$sendButton.prop('disabled', false).html(this.sendButtonHTML());
 				}.bind(this),
 				error: function(xhr) {
 					this.hideTypingIndicator();
@@ -282,15 +285,14 @@
 					// running and saves the answer, so reload the transcript instead of
 					// telling the user to resend (which would ask the question twice).
 					if (xhr && (xhr.status === 502 || xhr.status === 503 || xhr.status === 504)) {
-						this.addMessageToUI('system', 'This answer is taking longer than usual. It will appear here in about half a minute.');
+						this.addMessageToUI('system', t('slowAnswer'));
 						setTimeout(function() { window.location.reload(); }, 30000);
 					} else {
-						this.addMessageToUI('system', 'Sorry, I couldn\'t send your message. Please check your connection and try again.');
+						this.addMessageToUI('system', t('sendFailed'));
 					}
 
-					// Re-enable form
 					$input.prop('disabled', false).focus();
-					$sendButton.prop('disabled', false).html('<span class="dashicons dashicons-arrow-up-alt2"></span> Send');
+					$sendButton.prop('disabled', false).html(this.sendButtonHTML());
 				}.bind(this)
 			});
 		},
@@ -335,89 +337,82 @@
 				return;
 			}
 
-			// Remove welcome message if present
 			$messages.find('.welcome-message').remove();
 
-			var avatarIcon, roleName;
-			switch (role) {
-				case 'user':
-					avatarIcon = 'admin-users';
-					roleName = 'You';
-					break;
-				case 'assistant':
-					avatarIcon = 'superhero';
-					roleName = 'AI Assistant';
-					break;
-				case 'error':
-					avatarIcon = 'warning';
-					roleName = 'AI Assistant';
-					break;
-				default:
-					avatarIcon = 'warning';
-					roleName = 'System';
+			var textHTML = hasText ? '<div class="message-text">' + this.formatMessage(content) + '</div>' : '';
+			var timeHTML = '<div class="message-time">' + esc(t('justNow')) + '</div>';
+
+			// User: right-aligned bubble, no avatar.
+			if (role === 'user') {
+				$messages.append(
+					'<div class="message message-user aui-msg aui-msg--user"><div class="smac-user-wrap">' +
+						'<div class="aui-bubble">' + textHTML + '</div>' + timeHTML +
+					'</div></div>'
+				);
+				this.scrollToBottom();
+				return;
+			}
+
+			// System notices: full-width kit notice.
+			if (role === 'system') {
+				$messages.append(
+					'<div class="message message-system aui-notice aui-notice--warning">' + icon('warning') +
+						'<div>' + textHTML + '</div></div>'
+				);
+				this.scrollToBottom();
+				return;
 			}
 
 			var usageHTML = '';
 			if (usage && role === 'assistant') {
-				usageHTML = '<div class="message-usage">' +
-					'<span class="dashicons dashicons-chart-bar"></span> ' +
-					usage.input_tokens + ' in / ' + usage.output_tokens + ' out';
+				usageHTML = '<div class="message-usage aui-mono aui-muted">' +
+					esc(t('tokens', usage.input_tokens, usage.output_tokens));
 
-				// Add tool metadata if available
 				if (toolMetadata) {
-					var toolsText = toolMetadata.tools_sent + ' tool' + (toolMetadata.tools_sent !== 1 ? 's' : '');
+					var toolsText = toolMetadata.tools_sent === 1 ? t('toolOne') : t('toolMany', toolMetadata.tools_sent);
 					if (toolMetadata.filtered) {
-						usageHTML += ' <span class="tools-filtered" title="Filtered from ' + toolMetadata.total_available + ' total tools">' +
-							'<span class="dashicons dashicons-filter"></span> ' + toolsText +
-							'</span>';
+						usageHTML += ' <span class="tools-filtered aui-chip" title="' + esc(t('filteredFrom', toolMetadata.total_available)) + '">' + esc(toolsText) + '</span>';
 					} else {
-						usageHTML += ' <span class="tools-all" title="All available tools sent">' +
-							'<span class="dashicons dashicons-admin-tools"></span> ' + toolsText +
-							'</span>';
+						usageHTML += ' <span class="tools-all aui-chip" title="' + esc(t('allToolsSent')) + '">' + esc(toolsText) + '</span>';
 					}
 				}
 
 				usageHTML += '</div>';
 			}
 
-			// Build tool-calls chip
 			var toolCallsHTML = '';
 			if (hasToolCalls) {
 				var toolCount = toolCalls.length;
-				toolCallsHTML = '<div class="tool-calls">' +
-					'<span class="tool-calls-label">' +
-						'<span class="dashicons dashicons-admin-tools"></span> Used ' +
-						toolCount + ' tool' + (toolCount !== 1 ? 's' : '') +
+				toolCallsHTML = '<div class="tool-calls"><span class="tool-calls-label">' +
+					esc(toolCount === 1 ? t('usedOne') : t('usedMany', toolCount)) +
 					'</span><ul>';
 				toolCalls.forEach(function(tc) {
 					var shortName = tc && tc.name ? self.normalizeAbilityName(tc.name) : 'tool';
-					toolCallsHTML += '<li>' + $('<div>').text(shortName).html() + '</li>';
+					toolCallsHTML += '<li class="aui-chip">' + esc(shortName) + '</li>';
 				});
 				toolCallsHTML += '</ul></div>';
 			}
 
-			// Build failed tools HTML with retry buttons
+			// Failed tools with retry buttons, as a kit result block.
 			var failedToolsHTML = '';
-			if (failedTools && failedTools.length > 0) {
-				failedToolsHTML = '<div class="failed-tools">' +
-					'<div class="failed-tools-header"><span class="dashicons dashicons-warning"></span> Failed Tools:</div>' +
-					'<ul class="failed-tools-list">';
+			if (hasFailed) {
+				failedToolsHTML = '<div class="failed-tools aui-result">' +
+					'<div class="failed-tools-header aui-result-h">' + icon('warning') + esc(t('failedTools')) +
+					'<span class="aui-badge aui-badge--bad aui-end">' + esc(t('failedBadge')) + '</span></div>' +
+					'<ul class="failed-tools-list aui-result-b">';
 				failedTools.forEach(function(tool, index) {
-					var toolShortName = self.normalizeAbilityName(tool.name);
 					failedToolsHTML += '<li class="failed-tool-item">' +
-						'<span class="tool-name">' + toolShortName + '</span>' +
-						'<span class="tool-error">' + tool.error + '</span>' +
-						'<button class="retry-tool-btn" data-tool-index="' + index + '" ' +
-							'data-tool-name="' + tool.name + '" ' +
-							'data-tool-args=\'' + JSON.stringify(tool.arguments) + '\'>' +
-							'<span class="dashicons dashicons-update"></span> Retry' +
+						'<span class="tool-name aui-mono">' + esc(self.normalizeAbilityName(tool.name)) + '</span>' +
+						'<span class="tool-error">' + esc(tool.error) + '</span>' +
+						'<button type="button" class="retry-tool-btn aui-btn aui-btn--secondary aui-btn--sm" data-tool-index="' + index + '" ' +
+							'data-tool-name="' + esc(tool.name) + '" ' +
+							'data-tool-args="' + esc(JSON.stringify(tool.arguments)) + '">' +
+							icon('undo') + esc(t('retry')) +
 						'</button>' +
 					'</li>';
 				});
 				failedToolsHTML += '</ul></div>';
 			}
-
-			var textHTML = hasText ? '<div class="message-text">' + this.formatMessage(content) + '</div>' : '';
 
 			var $actionCards = $();
 			if (role === 'assistant' && actions && actions.length > 0) {
@@ -426,28 +421,31 @@
 				});
 			}
 
-			var messageHTML = '<div class="message message-' + role + '">' +
-				'<div class="message-avatar" role="img" aria-label="' + roleName + '">' +
-					'<span class="dashicons dashicons-' + avatarIcon + '"></span>' +
-				'</div>' +
-				'<div class="message-content">' +
-					textHTML +
-					toolCallsHTML +
-					failedToolsHTML +
-					usageHTML +
-					'<div class="message-time">Just now</div>' +
-				'</div>' +
-			'</div>';
+			var isError = role === 'error';
+			var avatarHTML = '<span class="aui-avatar message-avatar' + (isError ? ' smac-avatar--bad' : '') + '" role="img" aria-label="' + esc(t('assistant')) + '">' +
+				icon(isError ? 'warning' : 'robot') + '</span>';
+			var bodyText = isError && hasText ?
+				'<div class="aui-notice aui-notice--error">' + icon('warning') + '<div>' + textHTML + '</div></div>' : textHTML;
 
-			var $message = $(messageHTML);
+			var $message = $(
+				'<div class="message message-' + esc(role) + ' aui-msg aui-msg--agent">' + avatarHTML +
+				'<div class="message-content aui-msg-body">' +
+					bodyText + toolCallsHTML + failedToolsHTML + usageHTML + timeHTML +
+				'</div></div>'
+			);
 			$message.find('.message-time').before($actionCards);
 			$messages.append($message);
 
 			// Bind retry button click handlers
 			$message.find('.retry-tool-btn').on('click', function() {
 				var $btn = $(this);
-				var toolName = $btn.data('tool-name');
-				var toolArgs = $btn.data('tool-args');
+				var toolName = $btn.attr('data-tool-name');
+				var toolArgs;
+				try {
+					toolArgs = JSON.parse($btn.attr('data-tool-args'));
+				} catch (err) {
+					toolArgs = {};
+				}
 				self.retryToolCall(toolName, toolArgs, $btn);
 			});
 
@@ -458,15 +456,23 @@
 		 * Build the card for a proposed action. All text goes in via .text().
 		 */
 		buildActionCard: function(action) {
-			var $card = $('<div class="smac-action smac-action--pending"></div>').attr('data-action-id', String(action.id));
-			$card.append($('<div class="smac-action-summary"></div>').text(action.summary || ''));
+			var $card = $('<div class="smac-action aui-approval-mini smac-action--pending"></div>').attr('data-action-id', String(action.id));
 			$card.append(
-				$('<div class="smac-action-buttons"></div>')
-					.append($('<button type="button" class="button button-primary smac-action-apply"></button>').text(action.label || 'Apply'))
-					.append(' ')
-					.append($('<a href="#" class="smac-action-dismiss"></a>').text('Dismiss'))
+				$('<div class="aui-result-h"></div>')
+					.append(icon('clock'))
+					.append(document.createTextNode(t('proposedChange')))
+					.append($('<span class="smac-action-badge aui-badge aui-badge--warn aui-end"></span>').text(t('needsApproval')))
 			);
-			$card.append($('<div class="smac-action-status" role="status"></div>'));
+			$card.append(
+				$('<div class="aui-result-b"></div>')
+					.append($('<div class="smac-action-summary"></div>').text(action.summary || ''))
+					.append($('<div class="smac-action-status" role="status"></div>'))
+			);
+			$card.append(
+				$('<div class="aui-result-f smac-action-buttons"></div>')
+					.append($('<button type="button" class="aui-btn aui-btn--primary aui-btn--sm smac-action-apply"></button>').text(action.label || t('apply')))
+					.append($('<button type="button" class="aui-btn aui-btn--secondary aui-btn--sm smac-action-dismiss"></button>').text(t('dismiss')))
+			);
 			return $card;
 		},
 
@@ -482,27 +488,31 @@
 			}
 			$card.data('busy', true);
 			$buttons.prop('disabled', true).attr('aria-disabled', 'true');
-			$status.removeClass('smac-action-status--error').text(decision === 'apply' ? 'Applying...' : 'Dismissing...');
+			$status.removeClass('smac-action-status--error').text(decision === 'apply' ? t('applying') : t('dismissing'));
 
 			$.ajax({
-				url: specfluxMacChat.ajaxUrl,
+				url: cfg.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: decision === 'apply' ? 'specflux_mac_apply_chat_action' : 'specflux_mac_dismiss_chat_action',
-					nonce: specfluxMacChat.nonce,
+					nonce: cfg.nonce,
 					action_id: $card.attr('data-action-id')
 				}
 			}).done(function(response) {
 				var data = response && response.data ? response.data : {};
 				var summary = $card.find('.smac-action-summary').text();
 				if (response && response.success) {
-					var label = data.status === 'dismissed' ? 'Dismissed' : 'Applied';
+					var label = data.status === 'dismissed' ? t('dismissed') : t('applied');
 					$card.removeClass('smac-action--pending').addClass('smac-action--' + data.status);
+					$card.find('.smac-action-badge')
+						.text(label)
+						.toggleClass('aui-badge--ok', data.status !== 'dismissed')
+						.removeClass('aui-badge--warn');
 					$card.find('.smac-action-summary, .smac-action-buttons').remove();
 					$status.text(label + ': ' + summary + (decision === 'apply' && data.message ? ' - ' + data.message : ''));
 				} else {
 					var terminal = data.status === 'applied' || data.status === 'dismissed' || data.status === 'expired';
-					$status.addClass('smac-action-status--error').text(data.message || 'Something went wrong.');
+					$status.addClass('smac-action-status--error').text(data.message || t('actionError'));
 					if (terminal) {
 						$card.find('.smac-action-buttons').remove();
 					} else {
@@ -511,7 +521,7 @@
 					}
 				}
 			}).fail(function() {
-				$status.addClass('smac-action-status--error').text('Could not reach the server. Please try again.');
+				$status.addClass('smac-action-status--error').text(t('actionNetwork'));
 				$card.data('busy', false);
 				$buttons.prop('disabled', false).removeAttr('aria-disabled');
 			});
@@ -524,40 +534,36 @@
 			var self = this;
 			var originalHTML = $button.html();
 
-			// Show loading state
-			$button.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> Retrying...');
+			$button.prop('disabled', true).html(icon('clock') + esc(t('retrying')));
 
 			$.ajax({
-				url: specfluxMacChat.ajaxUrl,
+				url: cfg.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'specflux_mac_retry_tool',
-					nonce: specfluxMacChat.nonce,
-					conversation_id: specfluxMacChat.conversationId,
+					nonce: cfg.nonce,
+					conversation_id: cfg.conversationId,
 					tool_name: toolName,
 					tool_arguments: JSON.stringify(toolArgs)
 				},
 				success: function(response) {
 					if (response.success && response.data) {
-						// Replace the failed tool item with success message
 						var $failedItem = $button.closest('.failed-tool-item');
 						$failedItem.removeClass('failed-tool-item').addClass('retry-success-item');
 						$failedItem.html(
-							'<span class="dashicons dashicons-yes-alt"></span> ' +
-							'<span class="tool-name">' + self.normalizeAbilityName(toolName) + '</span> - Success!'
+							'<span class="aui-badge aui-badge--ok">' + icon('check') + esc(t('retrySuccess')) + '</span> ' +
+							'<span class="tool-name aui-mono">' + esc(self.normalizeAbilityName(toolName)) + '</span>'
 						);
 
-						// Add the result as a new message
 						self.addMessageToUI('assistant', response.data.content, null, null);
 					} else {
-						// Show error but keep retry button
 						$button.prop('disabled', false).html(originalHTML);
-						alert('Retry failed: ' + (response.data ? response.data.message : 'Unknown error'));
+						alert(t('retryFailed', response.data && response.data.message ? response.data.message : t('unknownError')));
 					}
 				},
 				error: function() {
 					$button.prop('disabled', false).html(originalHTML);
-					alert('Retry failed. Please check your connection and try again.');
+					alert(t('retryFailedNetwork'));
 				}
 			});
 		},
@@ -677,81 +683,51 @@
 			return '<div class="formatted-content">' + html + '</div>';
 		},
 
+		typingStatus: function(status) {
+			switch (status) {
+				case 'executing_tools':
+					return { text: t('executingTools'), cls: 'status-tools' };
+				case 'processing':
+					return { text: t('processing'), cls: 'status-processing' };
+				default:
+					return { text: t('thinking'), cls: 'status-thinking' };
+			}
+		},
+
 		/**
 		 * Show typing indicator with optional status message
 		 *
-		 * @param {string} status Optional status message (e.g., 'thinking', 'executing_tools')
+		 * @param {string} status Optional status (e.g., 'thinking', 'executing_tools')
 		 */
 		showTypingIndicator: function(status) {
-			var $messages = $('#chat-messages');
-			var statusText = '';
-			var statusClass = '';
+			var st = this.typingStatus(status);
 
-			switch (status) {
-				case 'executing_tools':
-					statusText = 'Executing tools...';
-					statusClass = 'status-tools';
-					break;
-				case 'processing':
-					statusText = 'Processing results...';
-					statusClass = 'status-processing';
-					break;
-				default:
-					statusText = 'Thinking...';
-					statusClass = 'status-thinking';
-			}
-
-			var typingHTML = '<div class="message message-assistant typing-indicator">' +
-				'<div class="message-avatar" role="img" aria-label="AI Assistant">' +
-					'<span class="dashicons dashicons-superhero"></span>' +
-				'</div>' +
-				'<div class="message-content">' +
-					'<div class="message-loading">' +
-						'<span></span><span></span><span></span>' +
-					'</div>' +
-					'<div class="message-status ' + statusClass + '">' + statusText + '</div>' +
+			var typingHTML = '<div class="message message-assistant aui-msg aui-msg--agent typing-indicator">' +
+				'<span class="aui-avatar message-avatar" role="img" aria-label="' + esc(t('assistant')) + '">' + icon('robot') + '</span>' +
+				'<div class="message-content aui-msg-body">' +
+					'<div class="message-loading" aria-hidden="true"><span></span><span></span><span></span></div>' +
+					'<div class="message-status aui-muted ' + st.cls + '" role="status">' + esc(st.text) + '</div>' +
 				'</div>' +
 			'</div>';
 
-			$messages.append(typingHTML);
+			$('#chat-messages').append(typingHTML);
 			this.scrollToBottom();
 		},
 
 		/**
 		 * Update typing indicator status
-		 *
-		 * @param {string} status New status message
 		 */
 		updateTypingStatus: function(status) {
 			var $indicator = $('#chat-messages').find('.typing-indicator');
 			if ($indicator.length) {
-				var statusText = '';
-				var statusClass = '';
-
-				switch (status) {
-					case 'executing_tools':
-						statusText = 'Executing tools...';
-						statusClass = 'status-tools';
-						break;
-					case 'processing':
-						statusText = 'Processing results...';
-						statusClass = 'status-processing';
-						break;
-					default:
-						statusText = 'Thinking...';
-						statusClass = 'status-thinking';
-				}
-
+				var st = this.typingStatus(status);
 				$indicator.find('.message-status')
 					.removeClass('status-thinking status-tools status-processing')
-					.addClass(statusClass)
-					.text(statusText);
+					.addClass(st.cls)
+					.text(st.text);
 			}
 		},
 
-		/**
-		 * Hide typing indicator
-		 */
 		hideTypingIndicator: function() {
 			$('#chat-messages').find('.typing-indicator').remove();
 		},
@@ -761,10 +737,13 @@
 		 */
 		scrollToBottom: function() {
 			var $messages = $('#chat-messages');
-			if ($messages.length) {
-				$messages.animate({
-					scrollTop: $messages[0].scrollHeight
-				}, 300);
+			if (!$messages.length) {
+				return;
+			}
+			if (reducedMotion) {
+				$messages.scrollTop($messages[0].scrollHeight);
+			} else {
+				$messages.stop(true).animate({ scrollTop: $messages[0].scrollHeight }, 300);
 			}
 		},
 
@@ -774,21 +753,17 @@
 		autoResizeTextarea: function() {
 			var $this = $(this);
 			$this.css('height', 'auto');
-			var newHeight = Math.min($this[0].scrollHeight, 200);
-			$this.css('height', newHeight + 'px');
+			$this.css('height', Math.min($this[0].scrollHeight, 160) + 'px');
 		},
 
 		/**
-		 * Update conversation title in sidebar
+		 * Update conversation title in the list
 		 */
 		updateConversationTitle: function(newTitle) {
 			$('.conversation-item.active .conversation-title').text(newTitle);
 		}
 	};
 
-	/**
-	 * Initialize on document ready
-	 */
 	$(document).ready(function() {
 		if ($('.specflux-marketing-analytics-chat').length) {
 			ChatInterface.init();
