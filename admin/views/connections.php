@@ -13,6 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 use Specflux_Marketing_Analytics\Credentials\OAuth_Handler;
 use Specflux_Marketing_Analytics\Credentials\Platform_Registry;
 use Specflux_Marketing_Analytics\Credentials\Credential_Manager;
+use Specflux_Marketing_Analytics\Admin\Form_Ui;
+use Specflux_Marketing_Analytics\Admin\Ui_Kit;
 use Specflux_Marketing_Analytics\Utils\Permission_Manager;
 
 // This template is reached through Admin::render_connections_page(), which
@@ -169,49 +171,46 @@ if ( $clarity_has_token ) {
 $settings          = get_option( 'specflux_mac_settings', array() );
 $platforms         = isset( $settings['platforms'] ) ? $settings['platforms'] : array();
 $clarity_connected = $credential_manager->has_credentials( 'clarity' );
+
+// Core platform tabs: same slugs and URLs as before.
+$specflux_mac_nav_items = array();
+foreach ( Platform_Registry::all() as $tab_slug => $tab_definition ) {
+	if ( empty( $tab_definition['tab'] ) ) {
+		continue;
+	}
+	$specflux_mac_nav_items[] = array(
+		'slug'  => $tab_slug,
+		'label' => $tab_definition['label'],
+		'url'   => '?page=specflux-mac-connections&tab=' . $tab_slug,
+	);
+}
 ?>
 
 <div class="aui" data-brand="specflux">
-<?php \Specflux_Marketing_Analytics\Admin\Ui_Kit::render_header( 'specflux-mac-connections' ); ?>
+<?php Ui_Kit::render_header( 'specflux-mac-connections' ); ?>
 
-<div class="wrap specflux-mac-connections">
+<div class="aui-body specflux-mac-connections">
+<div class="aui-layout aui-layout--single"><div class="aui-stack">
 
-	<?php if ( $success_message ) : ?>
-		<div class="notice notice-success is-dismissible">
-			<p><?php echo esc_html( $success_message ); ?></p>
-		</div>
-	<?php endif; ?>
+	<div class="smac-notices" data-smac-notices aria-live="polite">
+		<?php if ( $success_message ) : ?>
+			<?php echo Form_Ui::notice( 'success', $success_message ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Form_Ui::notice(). ?>
+		<?php endif; ?>
+		<?php if ( $error_message ) : ?>
+			<?php echo Form_Ui::notice( 'error', $error_message ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Form_Ui::notice(). ?>
+		<?php endif; ?>
+	</div>
 
-	<?php if ( $error_message ) : ?>
-		<div class="notice notice-error is-dismissible">
-			<p><?php echo esc_html( $error_message ); ?></p>
-		</div>
-	<?php endif; ?>
-
-	<p class="description">
+	<p class="smac-lead">
 		<?php esc_html_e( 'Configure API credentials for your marketing analytics platforms.', 'specflux-marketing-analytics-chat' ); ?>
 	</p>
 
-	<h2 class="nav-tab-wrapper">
-		<?php foreach ( Platform_Registry::all() as $tab_slug => $tab_definition ) : ?>
-			<?php if ( empty( $tab_definition['tab'] ) ) : ?>
-				<?php continue; ?>
-			<?php endif; ?>
-			<a href="?page=specflux-mac-connections&tab=<?php echo esc_attr( $tab_slug ); ?>" class="nav-tab <?php echo esc_attr( $tab_slug === $active_tab ? 'nav-tab-active' : '' ); ?>">
-				<?php echo esc_html( $tab_definition['label'] ); ?>
-			</a>
-		<?php endforeach; ?>
-		<?php
-		/**
-		 * Allow pro add-on to add additional connection tabs.
-		 *
-		 * @param string $active_tab The currently active tab.
-		 */
-		do_action( 'specflux_mac_connections_tabs', $active_tab );
-		?>
-	</h2>
+	<?php
+	// Prints the core tabs, then fires `specflux_mac_connections_tabs` with the active tab.
+	Form_Ui::sub_nav( $specflux_mac_nav_items, $active_tab, 'specflux_mac_connections_tabs', __( 'Connections', 'specflux-marketing-analytics-chat' ) );
+	?>
 
-	<div class="tab-content">
+	<div class="tab-content smac-tab-content">
 		<?php
 		$panel_definition = Platform_Registry::get( $active_tab );
 		$panel_file       = __DIR__ . '/connections/' . $active_tab . '.php';
@@ -232,14 +231,24 @@ $clarity_connected = $credential_manager->has_credentials( 'clarity' );
 				do_action( 'specflux_mac_render_connection_panel_' . $active_tab, $panel_definition );
 			}
 
+			ob_start();
 			/**
 			 * Allow pro add-on to render additional connection tab content.
 			 *
 			 * @param string $active_tab The currently active tab.
 			 */
 			do_action( 'specflux_mac_connections_tab_content', $active_tab );
+			$specflux_mac_extension_html = (string) ob_get_clean();
+			?>
+			<?php if ( '' !== trim( $specflux_mac_extension_html ) ) : ?>
+				<section class="aui-card"><div class="aui-card-b smac-pro-slot">
+					<?php echo $specflux_mac_extension_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup printed by an add-on's own action callback, escaped there; unchanged from calling the action directly. ?>
+				</div></section>
+			<?php endif; ?>
+			<?php
 		}
 		?>
 	</div>
+</div></div>
 </div>
 </div>

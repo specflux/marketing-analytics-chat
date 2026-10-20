@@ -14,6 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use Specflux_Marketing_Analytics\Admin\Form_Ui;
+use Specflux_Marketing_Analytics\Admin\Ui_Kit;
 use Specflux_Marketing_Analytics\Credentials\Connection_Tester;
 use Specflux_Marketing_Analytics\Credentials\Platform_Registry;
 
@@ -36,39 +38,37 @@ if ( 'api_key' === $generic_auth && ! empty( $generic_required ) ) {
 	$generic_result    = $generic_tester->test_connection( $generic_slug );
 	$generic_connected = ! empty( $generic_result['success'] );
 }
+
+if ( $generic_connected ) {
+	$generic_state = Form_Ui::connection_state( true );
+} elseif ( '' !== $generic_failure ) {
+	$generic_state = array(
+		'state'   => 'error',
+		'label'   => __( 'Connection Failed', 'specflux-marketing-analytics-chat' ),
+		'message' => $generic_failure,
+	);
+} else {
+	$generic_state = Form_Ui::connection_state( false );
+}
 ?>
-<div class="connection-panel smac-generic-panel" data-platform="<?php echo esc_attr( $generic_slug ); ?>">
-	<h3>
-		<?php echo esc_html( $panel_definition['label'] ); ?>
-		<?php esc_html_e( 'Configuration', 'specflux-marketing-analytics-chat' ); ?>
-		<?php if ( $generic_connected ) : ?>
-			<span class="status-badge heading-connected">
-				<span class="dashicons dashicons-yes-alt"></span>
-				<?php esc_html_e( 'Connected', 'specflux-marketing-analytics-chat' ); ?>
-			</span>
-		<?php elseif ( '' !== $generic_failure ) : ?>
-			<span class="status-badge heading-disconnected">
-				<span class="dashicons dashicons-warning"></span>
-				<?php esc_html_e( 'Connection Failed', 'specflux-marketing-analytics-chat' ); ?>
-			</span>
-		<?php else : ?>
-			<span class="status-badge heading-disconnected">
-				<span class="dashicons dashicons-warning"></span>
-				<?php esc_html_e( 'Not Connected', 'specflux-marketing-analytics-chat' ); ?>
-			</span>
-		<?php endif; ?>
-	</h3>
-
-	<?php if ( '' !== $generic_failure ) : ?>
-		<div class="notice notice-error inline"><p><?php echo esc_html( $generic_failure ); ?></p></div>
-	<?php endif; ?>
-
-	<?php if ( '' !== $panel_definition['description'] ) : ?>
-		<p><?php echo esc_html( $panel_definition['description'] ); ?></p>
-	<?php endif; ?>
+<section class="aui-card smac-connection-card smac-generic-panel" data-platform="<?php echo esc_attr( $generic_slug ); ?>">
+	<div class="aui-card-h">
+		<span class="aui-tile" aria-hidden="true"><?php echo Ui_Kit::icon( 'plug' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Ui_Kit::icon(). ?></span>
+		<div>
+			<h2 class="aui-card-t"><?php echo esc_html( $panel_definition['label'] ); ?></h2>
+			<?php if ( '' !== $panel_definition['description'] ) : ?>
+				<p class="aui-card-d"><?php echo esc_html( $panel_definition['description'] ); ?></p>
+			<?php endif; ?>
+		</div>
+		<?php echo Form_Ui::status_badge( $generic_state['state'], $generic_state['label'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Form_Ui::status_badge(). ?>
+	</div>
 
 	<?php if ( 'api_key' === $generic_auth ) : ?>
-		<table class="form-table">
+		<div class="aui-card-b smac-fields">
+			<?php if ( '' !== $generic_state['message'] ) : ?>
+				<?php echo Form_Ui::notice( 'error', $generic_state['message'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside Form_Ui::notice(). ?>
+			<?php endif; ?>
+
 			<?php foreach ( $panel_definition['fields'] as $generic_field ) : ?>
 				<?php
 				$generic_secret   = Platform_Registry::is_secret_field( $generic_field );
@@ -81,48 +81,54 @@ if ( 'api_key' === $generic_auth && ! empty( $generic_required ) ) {
 				}
 				$generic_input_id = 'smac_' . $generic_slug . '_' . $generic_field;
 				?>
-				<tr>
-					<th scope="row">
-						<label for="<?php echo esc_attr( $generic_input_id ); ?>"><?php echo esc_html( Platform_Registry::field_label( $panel_definition, $generic_field ) ); ?></label>
-					</th>
-					<td>
-						<input
-							type="<?php echo esc_attr( $generic_secret ? 'password' : ( '_url' === substr( $generic_field, -4 ) ? 'url' : 'text' ) ); ?>"
-							id="<?php echo esc_attr( $generic_input_id ); ?>"
-							class="regular-text smac-generic-field"
-							data-field="<?php echo esc_attr( $generic_field ); ?>"
-							value="<?php echo esc_attr( $generic_value ); ?>"
-							autocomplete="off"
-						/>
-						<?php if ( $generic_optional ) : ?>
-							<p class="description"><?php esc_html_e( 'Optional.', 'specflux-marketing-analytics-chat' ); ?></p>
-						<?php elseif ( $generic_secret && $generic_has ) : ?>
-							<p class="description success">
-								<span class="dashicons dashicons-yes-alt"></span>
-								<?php esc_html_e( 'Securely stored and encrypted. Leave unchanged to keep the current value.', 'specflux-marketing-analytics-chat' ); ?>
-							</p>
-						<?php endif; ?>
-					</td>
-				</tr>
+				<div class="aui-field">
+					<label class="aui-label" for="<?php echo esc_attr( $generic_input_id ); ?>"><?php echo esc_html( Platform_Registry::field_label( $panel_definition, $generic_field ) ); ?></label>
+					<input
+						type="<?php echo esc_attr( $generic_secret ? 'password' : ( '_url' === substr( $generic_field, -4 ) ? 'url' : 'text' ) ); ?>"
+						id="<?php echo esc_attr( $generic_input_id ); ?>"
+						class="aui-input smac-generic-field"
+						data-field="<?php echo esc_attr( $generic_field ); ?>"
+						value="<?php echo esc_attr( $generic_value ); ?>"
+						autocomplete="off"
+					/>
+					<?php if ( $generic_optional ) : ?>
+						<p class="aui-help"><?php esc_html_e( 'Optional.', 'specflux-marketing-analytics-chat' ); ?></p>
+					<?php elseif ( $generic_secret && $generic_has ) : ?>
+						<p class="aui-help"><?php esc_html_e( 'Securely stored and encrypted. Leave unchanged to keep the current value.', 'specflux-marketing-analytics-chat' ); ?></p>
+					<?php endif; ?>
+				</div>
 			<?php endforeach; ?>
-		</table>
 
-		<?php if ( '' !== $panel_definition['help_url'] ) : ?>
-			<p class="description">
-				<a href="<?php echo esc_url( $panel_definition['help_url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Where do I find these credentials?', 'specflux-marketing-analytics-chat' ); ?></a>
-			</p>
-		<?php endif; ?>
+			<?php if ( '' !== $panel_definition['help_url'] ) : ?>
+				<p class="aui-help">
+					<a href="<?php echo esc_url( $panel_definition['help_url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Where do I find these credentials?', 'specflux-marketing-analytics-chat' ); ?></a>
+				</p>
+			<?php endif; ?>
+		</div>
 
-		<p class="submit">
-			<button type="button" class="button button-primary smac-generic-save">
+		<div class="aui-card-f">
+			<button type="button" class="aui-btn aui-btn--primary smac-generic-save">
 				<?php esc_html_e( 'Save & Test', 'specflux-marketing-analytics-chat' ); ?>
 			</button>
+			<span class="smac-generic-status aui-help" role="status" aria-live="polite"></span>
 			<?php if ( ! empty( $generic_saved ) ) : ?>
-				<button type="button" class="button button-secondary smac-generic-disconnect">
+				<button type="button" class="aui-btn aui-btn--danger-outline aui-end" data-aui-open="smac-disconnect-<?php echo esc_attr( $generic_slug ); ?>">
 					<?php esc_html_e( 'Disconnect', 'specflux-marketing-analytics-chat' ); ?>
 				</button>
 			<?php endif; ?>
-			<span class="smac-generic-status" role="status" aria-live="polite"></span>
-		</p>
+		</div>
+
+		<?php if ( ! empty( $generic_saved ) ) : ?>
+			<div class="aui-backdrop" id="smac-disconnect-<?php echo esc_attr( $generic_slug ); ?>" hidden>
+				<div class="aui-dialog" role="dialog" aria-modal="true" aria-labelledby="smac-disconnect-<?php echo esc_attr( $generic_slug ); ?>-title">
+					<h2 id="smac-disconnect-<?php echo esc_attr( $generic_slug ); ?>-title"><?php esc_html_e( 'Disconnect this platform?', 'specflux-marketing-analytics-chat' ); ?></h2>
+					<p><?php esc_html_e( 'Its saved credentials are removed from this site. You can connect it again at any time.', 'specflux-marketing-analytics-chat' ); ?></p>
+					<div class="aui-dialog-f">
+						<button type="button" class="aui-btn aui-btn--secondary" data-aui-close><?php esc_html_e( 'Keep connected', 'specflux-marketing-analytics-chat' ); ?></button>
+						<button type="button" class="aui-btn aui-btn--danger smac-generic-disconnect" data-aui-close><?php esc_html_e( 'Disconnect', 'specflux-marketing-analytics-chat' ); ?></button>
+					</div>
+				</div>
+			</div>
+		<?php endif; ?>
 	<?php endif; ?>
-</div>
+</section>
