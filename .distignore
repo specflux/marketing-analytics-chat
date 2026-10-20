@@ -9,7 +9,6 @@
 /docs
 /build
 /dist
-/assets
 
 # Files to exclude from distribution
 .distignore
@@ -68,3 +67,8 @@ Dockerfile
 .travis.yml
 .circleci
 .gitlab-ci.yml
+
+# wp.org listing assets live in /assets, but assets/vendor/admin-ui-kit ships with the plugin.
+/assets/*.png
+/assets/README.md
+/assets/blueprints
