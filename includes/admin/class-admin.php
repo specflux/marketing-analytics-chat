@@ -130,7 +130,7 @@ class Admin {
 			wp_enqueue_style(
 				'specflux-mac-interface',
 				SPECFLUX_MAC_URL . 'admin/css/chat-interface.css',
-				array(),
+				Ui_Kit::is_plugin_screen( $hook ) ? array( Ui_Kit::HANDLE_STYLE ) : array(),
 				SPECFLUX_MAC_VERSION
 			);
 		}
@@ -316,6 +316,53 @@ class Admin {
 					'userId'            => get_current_user_id(),
 					'chatPageUrl'       => admin_url( 'admin.php?page=specflux-mac-ai-assistant' ),
 					'conversationNonce' => wp_create_nonce( 'specflux_mac_conversation' ),
+					'i18n'              => array(
+						'creating' => __( 'Creating...', 'specflux-marketing-analytics-chat' ),
+						'createFailed' => __( 'Failed to create conversation. Please try again.', 'specflux-marketing-analytics-chat' ),
+						/* translators: %s: conversation title */
+						'deleteConfirm' => __( 'Are you sure you want to delete "%s"? This action cannot be undone.', 'specflux-marketing-analytics-chat' ),
+						'deleteFailed' => __( 'Failed to delete conversation. Please try again.', 'specflux-marketing-analytics-chat' ),
+						'send' => __( 'Send', 'specflux-marketing-analytics-chat' ),
+						'sending' => __( 'Sending...', 'specflux-marketing-analytics-chat' ),
+						'errorGeneric' => __( 'Sorry, I encountered an error. Please try again.', 'specflux-marketing-analytics-chat' ),
+						'slowAnswer' => __( 'This answer is taking longer than usual. It will appear here in about half a minute.', 'specflux-marketing-analytics-chat' ),
+						'sendFailed' => __( 'Sorry, I couldn\'t send your message. Please check your connection and try again.', 'specflux-marketing-analytics-chat' ),
+						'assistant' => __( 'AI Assistant', 'specflux-marketing-analytics-chat' ),
+						'justNow' => __( 'Just now', 'specflux-marketing-analytics-chat' ),
+						/* translators: 1: input tokens, 2: output tokens */
+						'tokens' => __( '%1$d in / %2$d out', 'specflux-marketing-analytics-chat' ),
+						'toolOne' => __( '1 tool', 'specflux-marketing-analytics-chat' ),
+						/* translators: %d: number of tools */
+						'toolMany' => __( '%d tools', 'specflux-marketing-analytics-chat' ),
+						/* translators: %d: total tools available */
+						'filteredFrom' => __( 'Filtered from %d total tools', 'specflux-marketing-analytics-chat' ),
+						'allToolsSent' => __( 'All available tools sent', 'specflux-marketing-analytics-chat' ),
+						'usedOne' => __( 'Used 1 tool', 'specflux-marketing-analytics-chat' ),
+						/* translators: %d: number of tools used */
+						'usedMany' => __( 'Used %d tools', 'specflux-marketing-analytics-chat' ),
+						'failedTools' => __( 'Failed tools', 'specflux-marketing-analytics-chat' ),
+						'failedBadge' => __( 'Failed', 'specflux-marketing-analytics-chat' ),
+						'retry' => __( 'Retry', 'specflux-marketing-analytics-chat' ),
+						'retrying' => __( 'Retrying...', 'specflux-marketing-analytics-chat' ),
+						'retrySuccess' => __( 'Success', 'specflux-marketing-analytics-chat' ),
+						/* translators: %s: error message */
+						'retryFailed' => __( 'Retry failed: %s', 'specflux-marketing-analytics-chat' ),
+						'retryFailedNetwork' => __( 'Retry failed. Please check your connection and try again.', 'specflux-marketing-analytics-chat' ),
+						'unknownError' => __( 'Unknown error', 'specflux-marketing-analytics-chat' ),
+						'proposedChange' => __( 'Proposed change', 'specflux-marketing-analytics-chat' ),
+						'needsApproval' => __( 'Needs approval', 'specflux-marketing-analytics-chat' ),
+						'apply' => __( 'Apply', 'specflux-marketing-analytics-chat' ),
+						'dismiss' => __( 'Dismiss', 'specflux-marketing-analytics-chat' ),
+						'applying' => __( 'Applying...', 'specflux-marketing-analytics-chat' ),
+						'dismissing' => __( 'Dismissing...', 'specflux-marketing-analytics-chat' ),
+						'applied' => __( 'Applied', 'specflux-marketing-analytics-chat' ),
+						'dismissed' => __( 'Dismissed', 'specflux-marketing-analytics-chat' ),
+						'actionError' => __( 'Something went wrong.', 'specflux-marketing-analytics-chat' ),
+						'actionNetwork' => __( 'Could not reach the server. Please try again.', 'specflux-marketing-analytics-chat' ),
+						'thinking' => __( 'Thinking...', 'specflux-marketing-analytics-chat' ),
+						'executingTools' => __( 'Executing tools...', 'specflux-marketing-analytics-chat' ),
+						'processing' => __( 'Processing results...', 'specflux-marketing-analytics-chat' ),
+					),
 				)
 			);
 		}
