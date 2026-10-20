@@ -36,6 +36,11 @@ class Ui_Kit {
 	const HANDLE_STYLE = 'specflux-mac-ui-kit';
 
 	/**
+	 * Script handle for the kit behaviour (tabs, dialogs, copy, save bar).
+	 */
+	const HANDLE_SCRIPT = 'specflux-mac-ui-kit-js';
+
+	/**
 	 * Absolute path of a vendored file.
 	 *
 	 * @param string $file File name inside the vendored kit directory.
@@ -93,6 +98,8 @@ class Ui_Kit {
 
 		wp_enqueue_style( self::HANDLE_TOKENS, $base . 'tokens.css', array(), $version );
 		wp_enqueue_style( self::HANDLE_STYLE, $base . 'components.css', array( self::HANDLE_TOKENS ), $version );
+		wp_enqueue_script( self::HANDLE_SCRIPT, $base . 'aui.js', array(), $version, true );
+		wp_add_inline_script( self::HANDLE_SCRIPT, 'window.AUI && window.AUI.init(document);' );
 	}
 
 	/**
