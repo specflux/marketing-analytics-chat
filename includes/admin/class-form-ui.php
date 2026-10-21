@@ -63,6 +63,142 @@ class Form_Ui {
 	}
 
 	/**
+	 * Platform slug => group key for the Connections list. Unlisted slugs go under "More".
+	 */
+	const PLATFORM_GROUPS = array(
+		'ga4'            => 'analytics',
+		'matomo'         => 'analytics',
+		'clarity'        => 'analytics',
+		'pagespeed'      => 'analytics',
+		'wpcontent'      => 'analytics',
+		'localstats'     => 'analytics',
+		'forms'          => 'analytics',
+		'gsc'            => 'search',
+		'bing'           => 'search',
+		'dataforseo'     => 'search',
+		'klaviyo'        => 'email',
+		'mailchimp'      => 'email',
+		'brevo'          => 'email',
+		'mailerlite'     => 'email',
+		'activecampaign' => 'email',
+		'ads'            => 'ads',
+		'msads'          => 'ads',
+		'meta'           => 'ads',
+		'callrail'       => 'sales',
+		'whatconverts'   => 'sales',
+		'stripe'         => 'sales',
+		'woocommerce'    => 'sales',
+		'easy-digital-downloads' => 'sales',
+		'givewp'         => 'sales',
+	);
+
+	/**
+	 * Print the Connections platform list.
+	 *
+	 * Same contract as sub_nav(): core items first, then the extension action
+	 * fires once with the active tab. Links the add-on prints are read back
+	 * (slug from their `tab` query arg, text as the label) so they join their
+	 * group instead of trailing the list; anything that is not such a link is
+	 * kept, sanitised, at the end.
+	 *
+	 * @param array<int,array<string,string>> $items      Core tabs (`slug`, `label`, `url`).
+	 * @param string                          $active_tab Active tab slug.
+	 * @param string                          $hook       Extension action name.
+	 * @param string                          $label      Accessible name of the navigation.
+	 * @param array<string,bool>              $status     Slug => connected, for platforms whose state is known.
+	 */
+	public static function platform_nav( array $items, $active_tab, $hook, $label, array $status = array() ) {
+		ob_start();
+		/** This action is documented in includes/admin/class-form-ui.php */
+		do_action( $hook, $active_tab ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Callers pass the plugin's own specflux_mac_*_tabs hook names.
+		$extra = (string) ob_get_clean();
+
+		echo self::platform_nav_markup( $items, $extra, $active_tab, $label, $status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built from escaped parts; add-on leftovers pass through wp_kses_post().
+	}
+
+	/**
+	 * Build the grouped platform list.
+	 *
+	 * @param array<int,array<string,string>> $items      Core tabs.
+	 * @param string                          $extra      Markup the extension action printed.
+	 * @param string                          $active_tab Active tab slug.
+	 * @param string                          $label      Accessible name of the navigation.
+	 * @param array<string,bool>              $status     Slug => connected.
+	 * @return string
+	 */
+	public static function platform_nav_markup( array $items, $extra, $active_tab, $label, array $status = array() ) {
+		$seen = array();
+		foreach ( $items as $item ) {
+			$seen[ $item['slug'] ] = true;
+		}
+
+		$leftover = (string) preg_replace_callback(
+			'/<a\b[^>]*\bhref=(["\'])([^"\']*)\1[^>]*>(.*?)<\/a>/is',
+			static function ( $m ) use ( &$items, &$seen ) {
+				$url  = html_entity_decode( $m[2], ENT_QUOTES );
+				$args = array();
+				parse_str( (string) wp_parse_url( $url, PHP_URL_QUERY ), $args );
+				$slug = isset( $args['tab'] ) && is_string( $args['tab'] ) ? sanitize_key( $args['tab'] ) : '';
+				$text = trim( wp_strip_all_tags( $m[3] ) );
+				if ( '' === $slug || '' === $text ) {
+					return $m[0];
+				}
+				if ( empty( $seen[ $slug ] ) ) {
+					$seen[ $slug ] = true;
+					$items[]       = array(
+						'slug'  => $slug,
+						'label' => $text,
+						'url'   => $url,
+					);
+				}
+				return '';
+			},
+			$extra
+		);
+
+		$names  = array(
+			'analytics' => __( 'Analytics', 'specflux-marketing-analytics-chat' ),
+			'search'    => __( 'Search & SEO', 'specflux-marketing-analytics-chat' ),
+			'email'     => __( 'Email', 'specflux-marketing-analytics-chat' ),
+			'ads'       => __( 'Advertising', 'specflux-marketing-analytics-chat' ),
+			'sales'     => __( 'Sales & calls', 'specflux-marketing-analytics-chat' ),
+			'more'      => __( 'More', 'specflux-marketing-analytics-chat' ),
+		);
+		$groups = array_fill_keys( array_keys( $names ), array() );
+		foreach ( $items as $item ) {
+			$key              = isset( self::PLATFORM_GROUPS[ $item['slug'] ] ) ? self::PLATFORM_GROUPS[ $item['slug'] ] : 'more';
+			$groups[ $key ][] = $item;
+		}
+
+		$html = '<nav class="smac-pnav" aria-label="' . esc_attr( $label ) . '">';
+		foreach ( array_filter( $groups ) as $key => $group ) {
+			$heading_id = 'smac-pnav-' . $key;
+			$html      .= '<div class="smac-pnav-group"><p class="smac-pnav-h" id="' . esc_attr( $heading_id ) . '">' . esc_html( $names[ $key ] ) . '</p>';
+			$html      .= '<ul aria-labelledby="' . esc_attr( $heading_id ) . '">';
+			foreach ( $group as $item ) {
+				$dot   = 'smac-pnav-dot is-unknown';
+				$state = '';
+				if ( isset( $status[ $item['slug'] ] ) ) {
+					$dot   = $status[ $item['slug'] ] ? 'smac-pnav-dot is-on' : 'smac-pnav-dot';
+					$state = $status[ $item['slug'] ] ? __( '(connected)', 'specflux-marketing-analytics-chat' ) : __( '(not connected)', 'specflux-marketing-analytics-chat' );
+				}
+				$html .= '<li><a href="' . esc_attr( $item['url'] ) . '"' . ( $item['slug'] === $active_tab ? ' aria-current="page"' : '' ) . '>';
+				$html .= '<span class="' . esc_attr( $dot ) . '" aria-hidden="true"></span>';
+				$html .= '<span class="smac-pnav-label">' . esc_html( $item['label'] ) . '</span>';
+				$html .= '' !== $state ? '<span class="aui-sr"> ' . esc_html( $state ) . '</span>' : '';
+				$html .= '</a></li>';
+			}
+			$html .= '</ul></div>';
+		}
+		if ( '' !== trim( wp_strip_all_tags( $leftover ) ) ) {
+			$html .= '<div class="smac-pnav-extra">' . self::mark_active_links( wp_kses_post( $leftover ) ) . '</div>';
+		}
+		$html .= '</nav>';
+
+		return $html;
+	}
+
+	/**
 	 * Add `aria-current="page"` to anchors that WordPress marks as the active tab.
 	 *
 	 * @param string $html Sanitised markup containing `<a class="nav-tab ...">` links.

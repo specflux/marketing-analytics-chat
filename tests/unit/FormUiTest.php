@@ -97,6 +97,93 @@ class FormUiTest extends TestCase {
 	}
 
 	/**
+	 * Core and add-on platforms land in their groups, in order, with the active one marked and connection state spoken.
+	 */
+	public function test_platform_nav_groups_core_and_add_on_links(): void {
+		$items = array(
+			array(
+				'slug'  => 'clarity',
+				'label' => 'Microsoft Clarity',
+				'url'   => '?page=specflux-mac-connections&tab=clarity',
+			),
+			array(
+				'slug'  => 'gsc',
+				'label' => 'Google Search Console',
+				'url'   => '?page=specflux-mac-connections&tab=gsc',
+			),
+			array(
+				'slug'  => 'acme',
+				'label' => 'Acme',
+				'url'   => '?page=specflux-mac-connections&tab=acme',
+			),
+		);
+		$extra = '<a href="?page=specflux-mac-connections&tab=meta" class="nav-tab nav-tab-active">Meta Business</a>'
+			. '<a href="?page=specflux-mac-connections&amp;tab=dataforseo" class="nav-tab ">DataForSEO</a>'
+			. '<a href="?page=specflux-mac-connections&tab=clarity" class="nav-tab ">Duplicate</a>'
+			. '<span class="pro-note">Upgrade</span>';
+
+		$html = Form_Ui::platform_nav_markup(
+			$items,
+			$extra,
+			'meta',
+			'Connections',
+			array(
+				'clarity'    => true,
+				'gsc'        => false,
+				'dataforseo' => false,
+			)
+		);
+
+		$this->assertStringStartsWith( '<nav class="smac-pnav" aria-label="Connections">', $html );
+		$this->assertSame( 1, substr_count( $html, 'aria-current="page"' ) );
+		$this->assertStringContainsString( '<a href="?page=specflux-mac-connections&amp;tab=meta" aria-current="page">', $html );
+		$this->assertStringNotContainsString( 'Duplicate', $html );
+		$this->assertStringNotContainsString( 'nav-tab', $html );
+
+		$analytics = strpos( $html, 'id="smac-pnav-analytics"' );
+		$search    = strpos( $html, 'id="smac-pnav-search"' );
+		$ads       = strpos( $html, 'id="smac-pnav-ads"' );
+		$more      = strpos( $html, 'id="smac-pnav-more"' );
+		$this->assertLessThan( $search, $analytics );
+		$this->assertLessThan( strpos( $html, 'Google Search Console' ), $search );
+		$this->assertLessThan( strpos( $html, 'DataForSEO' ), strpos( $html, 'Google Search Console' ) );
+		$this->assertLessThan( $ads, strpos( $html, 'DataForSEO' ) );
+		$this->assertLessThan( strpos( $html, 'Meta Business' ), $ads );
+		$this->assertLessThan( strpos( $html, '>Acme<' ), $more );
+		$this->assertStringNotContainsString( 'id="smac-pnav-email"', $html, 'empty groups are left out' );
+
+		$this->assertStringContainsString( '<span class="smac-pnav-dot is-on" aria-hidden="true"></span><span class="smac-pnav-label">Microsoft Clarity</span><span class="aui-sr"> (connected)</span>', $html );
+		$this->assertStringContainsString( '<span class="smac-pnav-label">DataForSEO</span><span class="aui-sr"> (not connected)</span>', $html );
+		$this->assertStringContainsString( '<span class="smac-pnav-dot is-unknown" aria-hidden="true"></span><span class="smac-pnav-label">Meta Business</span></a>', $html );
+		$this->assertStringContainsString( '<div class="smac-pnav-extra"><span class="pro-note">Upgrade</span></div>', $html );
+	}
+
+	/**
+	 * The platform list fires the Connections extension action once, with the active tab.
+	 */
+	public function test_platform_nav_fires_the_extension_hook_with_the_active_tab(): void {
+		$items = array(
+			array(
+				'slug'  => 'clarity',
+				'label' => 'Clarity',
+				'url'   => '?page=specflux-mac-connections&tab=clarity',
+			),
+		);
+
+		$html = $this->capture( static fn() => Form_Ui::platform_nav( $items, 'ads', 'specflux_mac_connections_tabs', 'Connections' ) );
+
+		$fired = array_values(
+			array_filter(
+				$GLOBALS['specflux_mac_test_actions'],
+				static fn( $a ) => 'specflux_mac_connections_tabs' === $a[0]
+			)
+		);
+		$this->assertCount( 1, $fired );
+		$this->assertSame( array( 'ads' ), $fired[0][1] );
+		$this->assertStringContainsString( '>Clarity</span>', $html );
+	}
+
+	/**
 	 * Legacy `nav-tab-active` links printed by an add-on become aria-current links.
 	 */
 	public function test_mark_active_links_flags_only_the_active_add_on_tab(): void {

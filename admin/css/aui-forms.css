@@ -20,6 +20,31 @@
 .aui .smac-subnav a.nav-tab:not([aria-current="page"]) { background: transparent; border-color: transparent; color: var(--aui-text-2); }
 .aui .smac-subnav a:focus-visible { outline: 2px solid var(--aui-accent); outline-offset: 2px; box-shadow: none; }
 
+/* Connections: grouped platform list beside the panel; one scrolling row on small screens. */
+.aui .smac-split { display: grid; grid-template-columns: 224px minmax(0, 1fr); gap: 24px; align-items: start; }
+.aui .smac-pnav { position: relative; display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 12px 8px; background: var(--aui-surface); border: 1px solid var(--aui-border); border-radius: var(--aui-r-lg); }
+.aui .smac-pnav-group { display: flex; flex-direction: column; gap: 4px; }
+.aui .smac-pnav-h { margin: 0; padding: 0 8px; font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--aui-text-3); }
+.aui .smac-pnav ul { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.aui .smac-pnav li { margin: 0; }
+.aui .smac-pnav a { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 8px; border-radius: var(--aui-r-sm); color: var(--aui-text-2); font-size: 13px; line-height: 18px; font-weight: 500; text-decoration: none; }
+.aui .smac-pnav a:hover { background: var(--aui-inset); color: var(--aui-text); }
+.aui .smac-pnav a[aria-current="page"] { background: var(--aui-accent-tint); color: var(--aui-accent); font-weight: 600; }
+.aui .smac-pnav a:focus-visible { outline: 2px solid var(--aui-accent); outline-offset: -2px; box-shadow: none; }
+.aui .smac-pnav-dot { flex: none; width: 8px; height: 8px; border: 1.5px solid var(--aui-control); border-radius: 50%; box-sizing: border-box; }
+.aui .smac-pnav-dot.is-on { background: var(--aui-ok); border-color: var(--aui-ok); }
+.aui .smac-pnav-dot.is-unknown { visibility: hidden; }
+.aui .smac-pnav-extra { padding: 0 8px; }
+.aui .smac-pnav-extra a.nav-tab { float: none; margin: 0; }
+
+@media (max-width: 782px) {
+	.aui .smac-split { grid-template-columns: minmax(0, 1fr); }
+	.aui .smac-pnav { flex-direction: row; gap: 4px; padding: 4px; overflow-x: auto; scrollbar-width: thin; }
+	.aui .smac-pnav-group, .aui .smac-pnav ul { flex-direction: row; flex: none; }
+	.aui .smac-pnav-h { display: none; }
+	.aui .smac-pnav a { white-space: nowrap; }
+}
+
 /* ---------- Cards and fields ---------- */
 .aui .aui-card-h { flex-wrap: wrap; }
 .aui .aui-card-h > div { flex: 1 1 240px; min-width: 0; }

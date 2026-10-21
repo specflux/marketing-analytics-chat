@@ -184,6 +184,11 @@ foreach ( Platform_Registry::all() as $tab_slug => $tab_definition ) {
 		'url'   => '?page=specflux-mac-connections&tab=' . $tab_slug,
 	);
 }
+
+$specflux_mac_nav_status = array();
+foreach ( Platform_Registry::slugs() as $status_slug ) {
+	$specflux_mac_nav_status[ $status_slug ] = $credential_manager->has_credentials( $status_slug );
+}
 ?>
 
 <div class="aui" data-brand="specflux">
@@ -205,9 +210,10 @@ foreach ( Platform_Registry::all() as $tab_slug => $tab_definition ) {
 		<?php esc_html_e( 'Configure API credentials for your marketing analytics platforms.', 'specflux-marketing-analytics-chat' ); ?>
 	</p>
 
+	<div class="smac-split">
 	<?php
-	// Prints the core tabs, then fires `specflux_mac_connections_tabs` with the active tab.
-	Form_Ui::sub_nav( $specflux_mac_nav_items, $active_tab, 'specflux_mac_connections_tabs', __( 'Connections', 'specflux-marketing-analytics-chat' ) );
+	// Prints the grouped platform list, then fires `specflux_mac_connections_tabs` with the active tab.
+	Form_Ui::platform_nav( $specflux_mac_nav_items, $active_tab, 'specflux_mac_connections_tabs', __( 'Connections', 'specflux-marketing-analytics-chat' ), $specflux_mac_nav_status );
 	?>
 
 	<div class="tab-content smac-tab-content">
@@ -248,6 +254,7 @@ foreach ( Platform_Registry::all() as $tab_slug => $tab_definition ) {
 			<?php
 		}
 		?>
+	</div>
 	</div>
 </div></div>
 </div>
