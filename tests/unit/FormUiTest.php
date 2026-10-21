@@ -338,6 +338,19 @@ class FormUiTest extends TestCase {
 	}
 
 	/**
+	 * Secret fields are masked text inputs that password managers skip, so the site login is never offered there.
+	 */
+	public function test_secret_fields_are_not_password_inputs(): void {
+		foreach ( array( 'connections/clarity.php', 'connections/generic.php', 'settings.php' ) as $view ) {
+			$source = $this->view( $view );
+			$this->assertDoesNotMatchRegularExpression( '/type=["\']password|\'password\' *:|this\.type/', $source, $view );
+			$this->assertStringContainsString( 'smac-secret', $source, $view );
+			$this->assertStringContainsString( 'data-1p-ignore', $source, $view );
+			$this->assertStringContainsString( 'data-lpignore="true"', $source, $view );
+		}
+	}
+
+	/**
 	 * Connection panels keep their field names, nonces, and use a confirm dialog instead of confirm().
 	 */
 	public function test_connection_panels_keep_names_and_use_dialogs(): void {

@@ -53,6 +53,9 @@
 .aui .aui-grid-2 > .aui-field { max-width: none; }
 .aui .smac-subhead { margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--aui-text); }
 .aui .smac-copy { margin: 0; color: var(--aui-text-2); }
+/* Secrets are masked text fields, not type="password", so password managers do not offer the site login. */
+.aui .smac-secret { -webkit-text-security: disc; }
+.aui .smac-secret:placeholder-shown, .aui .smac-secret.is-revealed { -webkit-text-security: none; }
 .aui .smac-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .aui .smac-fieldset { display: flex; flex-direction: column; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
 .aui .smac-fieldset > legend { padding: 0; margin-bottom: 4px; }

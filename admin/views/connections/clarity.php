@@ -40,17 +40,23 @@ $clarity_state = Form_Ui::connection_state( $clarity_connected, $clarity_connect
 				<div class="aui-field">
 					<label class="aui-label" for="clarity_api_token"><?php esc_html_e( 'API Token', 'specflux-marketing-analytics-chat' ); ?></label>
 					<input
-						type="<?php echo $clarity_has_token ? 'text' : 'password'; ?>"
+						type="text"
 						id="clarity_api_token"
 						name="clarity_api_token"
-						class="aui-input"
+						class="aui-input smac-secret"
 						autocomplete="off"
+						data-1p-ignore
+						data-lpignore="true"
+						data-bwignore
+						data-form-type="other"
+						spellcheck="false"
+						autocapitalize="off"
 						value="<?php echo esc_attr( $clarity_token_display ); ?>"
 						placeholder="<?php echo $clarity_has_token ? esc_attr__( 'Token saved (enter new token to update)', 'specflux-marketing-analytics-chat' ) : esc_attr__( 'Enter your API token', 'specflux-marketing-analytics-chat' ); ?>"
 						aria-describedby="clarity_api_token_help"
 						<?php
 						if ( $clarity_has_token ) {
-							echo 'readonly onfocus="this.removeAttribute(\'readonly\'); this.value=\'\'; this.type=\'password\';"';
+							echo 'readonly onfocus="this.removeAttribute(\'readonly\'); this.value=\'\';"';
 						}
 						?>
 					/>

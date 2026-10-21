@@ -634,11 +634,17 @@ if ( isset( $_POST['save_email_settings'] ) && current_user_can( 'manage_options
 									<div class="aui-field">
 										<label class="aui-label" for="google_client_secret"><?php esc_html_e( 'Client Secret', 'specflux-marketing-analytics-chat' ); ?></label>
 										<div class="aui-copy password-field-wrapper">
-											<input type="password"
+											<input type="text"
 													id="google_client_secret"
 													name="google_client_secret"
-													class="aui-input validate-on-blur"
+													class="aui-input validate-on-blur smac-secret"
 													autocomplete="off"
+													data-1p-ignore
+													data-lpignore="true"
+													data-bwignore
+													data-form-type="other"
+													spellcheck="false"
+													autocapitalize="off"
 													data-has-secret="<?php echo $has_oauth_credentials ? '1' : '0'; ?>"
 													aria-describedby="google_client_secret_help"
 													placeholder="<?php echo $has_oauth_credentials ? esc_attr__( 'Enter new secret to update', 'specflux-marketing-analytics-chat' ) : esc_attr__( 'GOCSPX-...', 'specflux-marketing-analytics-chat' ); ?>" />

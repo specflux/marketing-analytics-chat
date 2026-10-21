@@ -285,9 +285,9 @@
 	function togglePasswordVisibility() {
 		const $input = $('#google_client_secret');
 		const $button = $(this);
-		const showing = $input.attr('type') === 'password';
+		const showing = ! $input.hasClass('is-revealed');
 
-		$input.attr('type', showing ? 'text' : 'password');
+		$input.toggleClass('is-revealed', showing);
 		$button.attr('aria-pressed', showing ? 'true' : 'false');
 		$button.find('.toggle-password-label').text(showing ? t('hide', 'Hide') : t('show', 'Show'));
 	}

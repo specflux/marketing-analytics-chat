@@ -84,12 +84,18 @@ if ( $generic_connected ) {
 				<div class="aui-field">
 					<label class="aui-label" for="<?php echo esc_attr( $generic_input_id ); ?>"><?php echo esc_html( Platform_Registry::field_label( $panel_definition, $generic_field ) ); ?></label>
 					<input
-						type="<?php echo esc_attr( $generic_secret ? 'password' : ( '_url' === substr( $generic_field, -4 ) ? 'url' : 'text' ) ); ?>"
+						type="<?php echo esc_attr( '_url' === substr( $generic_field, -4 ) ? 'url' : 'text' ); ?>"
 						id="<?php echo esc_attr( $generic_input_id ); ?>"
-						class="aui-input smac-generic-field"
+						class="aui-input smac-generic-field<?php echo $generic_secret ? ' smac-secret' : ''; ?>"
 						data-field="<?php echo esc_attr( $generic_field ); ?>"
 						value="<?php echo esc_attr( $generic_value ); ?>"
 						autocomplete="off"
+						data-1p-ignore
+						data-lpignore="true"
+						data-bwignore
+						data-form-type="other"
+						spellcheck="false"
+						autocapitalize="off"
 					/>
 					<?php if ( $generic_optional ) : ?>
 						<p class="aui-help"><?php esc_html_e( 'Optional.', 'specflux-marketing-analytics-chat' ); ?></p>
